@@ -1,0 +1,4 @@
+svn export https://rigel.svn.sourceforge.net/svnroot/rigel/Tags/$1 Rigel-$1
+tar --owner nobody --group nobody -cf Rigel-$1.tar Rigel-$1
+gzip Rigel-$1.tar
+ftp upload.sourceforge.net
