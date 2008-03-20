@@ -471,6 +471,19 @@ BODY
 
 	($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
 
+	my $mime_type;
+
+	if( $this->{'delivery-mode'} eq 'text' ) {
+            $mime_type = 'text/plain';
+
+	    # Since we're delivering in plain text, make sure that
+	    # the subject line didn't get poluted with html from the
+	    # rss feed.
+	    $subject = $this->rss_txt_convert( $subject );
+        } else {
+            $mime_type = 'text/html';
+        }
+
 	# if line feed character include, some mailer make header broken.. :<
         $subject =~ s/\n//g;
 
@@ -480,9 +493,6 @@ BODY
         my $a_date    = scalar(localtime ());
         my $l_date    = $rss->{'Rigel:last-modified'} || $a_date;
         my $link      = $rss->{'Rigel:rss-link'} || "undef";
-
-        my $mime_type = ($this->{'delivery-mode'} eq 'text') ?
-                        'text/plain' : 'text/html';
 
         my $return_headers =<<"BODY"
 From: $m_from
