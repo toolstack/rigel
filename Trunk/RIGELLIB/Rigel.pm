@@ -586,13 +586,28 @@ BODY
 
 
     sub rss_txt_convert {
-        my $this   = shift;
-        my $string = shift;
+	my $this = shift;
+	my $string = shift;
 
         return "" if ( !$string );
 
-        $string =~ tr/\x0D\x0A//d;
-        $string =~ s/<a .*?>([^<>]*)<\/a>/$1/ig;
+	# First convert any less than or greater than tags that have been encoded 
+	# back to real entries
+	$string =~ s/&lt;/\</mg;
+	$string =~ s/&gt;/\>/mg;
+
+	# Don't know what this does ;)
+	$string =~ tr/\x0D\x0A//d;
+	# Remove all address tags?
+	$string =~ s/<a .*?>([^<>]*)<\/a>/$1/ig;
+
+	# Remove any open paragraph 
+	$string =~ s/\<P(\s*\/)?\>//mgi;
+
+	# Replace any closing paragraph marks with double new lines
+	$string =~ s/\<\/P(\s*\/)?\>/\n\n/mgi;
+	# Replace any line breaks with single new lines
+	$string =~ s/\<(\/)?(BR)(\s*\/)?\>/\n/mgi;
 
         #
         # All HTML Tag but anchor will be deleted!!
@@ -628,6 +643,7 @@ BODY
         $string =~ s/#8221;/"/g;
         $string =~ s/&#8217;/'/g;
         $string =~ s/&#146;/'/g;
+	$string =~ s/&pound;/#/g;
 
         return $string;
     }
