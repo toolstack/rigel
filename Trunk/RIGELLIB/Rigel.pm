@@ -596,10 +596,14 @@ BODY
 	$string =~ s/&lt;/\</mg;
 	$string =~ s/&gt;/\>/mg;
 
-	# Don't know what this does ;)
-	$string =~ tr/\x0D\x0A//d;
+	# Convert any new line/carrige returns to html breaks
+	$string =~ s/\r//g;
+	$string =~ s/\n/\<BR\>/g;
 	# Remove all address tags?
 	$string =~ s/<a .*?>([^<>]*)<\/a>/$1/ig;
+
+	# Convert closing Heading tags to paragraph marks
+	$string =~ s/\<\/H.\s*\>/\<\/p\>/mgi;
 
 	# Remove any open paragraph 
 	$string =~ s/\<P(\s*\/)?\>//mgi;
