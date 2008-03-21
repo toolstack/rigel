@@ -544,8 +544,8 @@ BODY
         my $return_text_body = $subject . "\n";
 
         $return_text_body .= "-" x length( $subject ) . "\n";
-        $return_text_body .= "$desc\n\n\n" if ($desc);
-        $return_text_body .= "$link";
+        $return_text_body .= "$desc\n" if ($desc);
+        $return_text_body .= "\n$link";
 
         return $return_text_body;
     }
