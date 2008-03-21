@@ -41,6 +41,7 @@ use Crypt::CBC;
 use MIME::Parser;
 use Unicode::Map8;
 use MIME::WordDecoder;
+use HTML::Entities;
 
 package RIGELLIB::Rigel;
 {
@@ -645,22 +646,7 @@ BODY
             }
         }
 
-        $string = $result;
-        $string =~ s/&amp;/&/g;
-        $string =~ s/&deg;//g;
-        $string =~ s/&#38;/&/g;
-        $string =~ s/&mdash;/-/g;
-        $string =~ s/&nbsp;/ /g;
-        $string =~ s/&raquo;/>>/g;
-        $string =~ s/&quot;/"/g;
-        $string =~ s/&#160;/  /g;
-        $string =~ s/&#39;/'/g;
-        $string =~ s/#8221;/"/g;
-        $string =~ s/&#8217;/'/g;
-        $string =~ s/&#146;/'/g;
-        $string =~ s/&pound;/#/g;
-        $string =~ s/&#43;/+/g;
-        $string =~ s/&#61;/=/g;
+        $string = HTML::Entities::decode_entities( $result );
 
         return $string;
     }
