@@ -14,6 +14,7 @@ Requirements
 		Encode
 		Encode::Guess
 		Getopt::Long;
+                HTML::Entities
 		HTTP::Date
 		IO::Socket::SSL(required in case of using IMAP over SSL). 
 		Jcode 
