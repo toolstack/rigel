@@ -93,7 +93,7 @@ package RIGELLIB::Rigel;
                                           Password      => $this->{password},
                                           Peek          => 1,
                                           Authmechanism => ($this->{'cram-md5'} ? "CRAM-MD5" : undef)
-					 );
+                                         );
 
         if( !$imap ) {
              die "imap client initialize failed. maybe you dont specify proper option...\n";
@@ -127,7 +127,7 @@ package RIGELLIB::Rigel;
     sub connect_test {
         my $this = shift;
 
-	$this->connect ();
+        $this->connect ();
         $this->{imap}->close ();
     }
 
@@ -156,7 +156,7 @@ package RIGELLIB::Rigel;
             for my $url (@{$site_config->{url}}) {
                 my $rss = $this->get_rss ($url, $site_config);
 
-	        next unless ($rss);
+                next unless ($rss);
 
                 $this->send ($rss, $site_config);
                 $this->expire ($rss);
@@ -257,7 +257,7 @@ package RIGELLIB::Rigel;
         for my $item (@items) {
             my $message_id  = $this->gen_message_id ($rss, $item);
 
-	    # Retreive the date from the item or feed for future work.
+            # Retreive the date from the item or feed for future work.
             my $rss_date = $this->get_date ($rss, $item);
 
             # Convert he above date to a unix time code, note that some broken 
@@ -292,7 +292,7 @@ package RIGELLIB::Rigel;
                 } else {
                     next unless ($rss_date); # date filed is not found, we ignore it.
 
-		    # get last-modified_date of IMAP search result.
+                    # get last-modified_date of IMAP search result.
                     my $latest = $this->get_latest_date (\@search);
 
                     # if rss date is newer, delete search result and add rss items.
@@ -353,7 +353,7 @@ package RIGELLIB::Rigel;
         $folder        = $this->get_real_folder_name ($folder, $this->{'directory_separator'});
         $expire_folder = $this->get_real_folder_name ($expire_folder, $this->{'directory_separator'}); 
 
-	my $key = Mail::IMAPClient->Rfc2060_date (time() - $expire * 60 * 60 * 24);
+        my $key = Mail::IMAPClient->Rfc2060_date (time() - $expire * 60 * 60 * 24);
 
         my $query = (defined $this->{site_config}->{'expire-unseen'}) ? "SENTBEFORE $key" : "SEEN SENTBEFORE $key";
         $query .= " HEADER x-rss-aggregator \"Rigel\"";
@@ -470,22 +470,22 @@ BODY
         my $to         = $this->{site_config}->{to};
         my $message_id = $this->gen_message_id ($rss, $item);
 
-	($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
+        ($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
 
-	my $mime_type;
+        my $mime_type;
 
-	if( $this->{'delivery-mode'} eq 'text' ) {
+        if( $this->{'delivery-mode'} eq 'text' ) {
             $mime_type = 'text/plain';
 
-	    # Since we're delivering in plain text, make sure that
-	    # the subject line didn't get poluted with html from the
-	    # rss feed.
-	    $subject = $this->rss_txt_convert( $subject );
+            # Since we're delivering in plain text, make sure that
+            # the subject line didn't get poluted with html from the
+            # rss feed.
+            $subject = $this->rss_txt_convert( $subject );
         } else {
             $mime_type = 'text/html';
         }
 
-	# if line feed character include, some mailer make header broken.. :<
+        # if line feed character include, some mailer make header broken.. :<
         $subject =~ s/\n//g;
 
         my $m_from    = RIGELLIB::Unicode::to_mime ($from);
@@ -529,7 +529,7 @@ BODY
         my $from       = $this->{site_config}->{from};
         my $desc       = $this->get_description( $item );
 
-	($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
+        ($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
 
         # convert html tag to appropriate text.
         $subject = $this->rss_txt_convert( $subject );
@@ -537,13 +537,13 @@ BODY
 
         my $link = $item->link();
 
-	# Get rid of any newlines in the subject or link
-	$subject =~ s/\n//g;
+        # Get rid of any newlines in the subject or link
+        $subject =~ s/\n//g;
         $link =~ s/\n//g;
 
         my $return_text_body = $subject . "\n";
 
-	$return_text_body .= "-" x length( $subject ) . "\n";
+        $return_text_body .= "-" x length( $subject ) . "\n";
         $return_text_body .= "$desc\n\n\n" if ($desc);
         $return_text_body .= "$link";
 
@@ -560,9 +560,9 @@ BODY
         my $from       = $this->{site_config}->{from};
         my $desc       = $this->get_description( $item );
 
-	($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
+        ($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
 
-	my $link = $item->link();
+        my $link = $item->link();
 
         my $return_body =<<"BODY"
 <html>
@@ -603,26 +603,36 @@ BODY
         return "" if ( !$string );
 
         # First convert any less than or greater than tags that have been encoded 
-        # back to real entries
+        # back to real characters
         $string =~ s/&lt;/\</mg;
         $string =~ s/&gt;/\>/mg;
 
-        # Convert any new line/carrige returns to html breaks
+        # Convert any new line/carrige returns to html breaks because most feeds
+        # mix HTML with plain text, this causes lines to break in weird ways so
+        # first converting all new lines to BR's makes sense
         $string =~ s/\r//g;
         $string =~ s/\n/\<BR\>/g;
+
         # Remove all address tags?
         $string =~ s/<a .*?>([^<>]*)<\/a>/$1/ig;
 
-        # Convert closing Heading tags to paragraph marks
-        $string =~ s/\<\/H.\s*\>/\<\/p\>/mgi;
+        # Convert Heading tags to paragraph marks, this just let's us do a single
+        # replace later to convert them to double new line entries and lets the
+        # next set of code to removed paragraph open/close pairs work on Heading
+        # tags as well
+        $string =~ s/\<(\/)?H.\s*\>/\<p\>/mgi;
 
-        # Remove any open paragraph 
-        $string =~ s/\<P(\s*\/)?\>//mgi;
+        # Replace any open/close paragraph mark pairs with just an open mark, as 
+        # we don't want to have 4 new lines, just two.
+        $string =~ s/\<P(\s*\/)?\>\<\/P(\s*\/)?\>/\<p\>/mgi;
 
-        # Replace any closing paragraph marks with double new lines
-        $string =~ s/\<\/P(\s*\/)?\>/\n\n/mgi;
+        # Replace any paragraph marks with double new lines.  We still need to 
+        # replace both open and close marks as, yet again, most sites mix plain
+        # text and html and expect it to look right.
+        $string =~ s/\<(\/)?P(\s*\/)?\>/\n\n/mgi;
+
         # Replace any line breaks with single new lines
-       	$string =~ s/\<(\/)?(BR)(\s*\/)?\>/\n/mgi;
+        $string =~ s/\<(\/)?(BR)(\s*\/)?\>/\n/mgi;
 
         #
         # All HTML Tag but anchor will be deleted!!
@@ -646,6 +656,10 @@ BODY
             }
         }
 
+        # Now that we have a mostly clean text string, we just need
+        # to clear out any HTML entities that are left, like &nbsp;
+        # etc.  The decode_entities catches all of these including
+        # hex and decimal representation.
         $string = HTML::Entities::decode_entities( $result );
 
         return $string;
@@ -667,7 +681,7 @@ BODY
         my $folder = shift;
         my $imap = $this->{imap};
 
-	unless ($imap->exists($folder)) {
+        unless ($imap->exists($folder)) {
             $imap->create ($folder) || warn "WARNING: $@\n";
         }
     }
@@ -679,7 +693,7 @@ BODY
         my $rss  = shift;
         my $item = shift;
 
-	return sprintf ('%s@%s', __trim( $item->link() ), $this->{host});
+        return sprintf ('%s@%s', __trim( $item->link() ), $this->{host});
     }
 
 
@@ -689,7 +703,7 @@ BODY
             return 0;
         }
 
-	return 1;
+        return 1;
     }
 
 
@@ -763,9 +777,9 @@ BODY
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
         my $mp       = new MIME::Parser;
 
-	# setup the message parser so we don't get any errors and we 
-	# automatically decode messages
-	$mp->ignore_errors(1);
+        # setup the message parser so we don't get any errors and we 
+        # automatically decode messages
+        $mp->ignore_errors(1);
         $mp->extract_uuencode(1);
 
         $this->{imap}->select( $folder );
@@ -774,19 +788,19 @@ BODY
                 
         foreach $message (@messages) {
             # Retreive the complete message and run it through the MIME parser
-	    eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
+            eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
             my $error = ($@ || $mp->last_error);
 
             if ($error) {
-		$feedconf = "";
+                $feedconf = "";
             } else {
                 # get_mime_text_body will retrevie all the plain text peices of the
-	        # message and return it as one string.
+                # message and return it as one string.
                 $feedconf = __trim( get_mime_text_body( $e ) );
                 $mp->filer->purge;
             }
 
-	    # parse the configuration options in to a configuration object
+            # parse the configuration options in to a configuration object
             %config = $config_obj->parse_url_list_from_string( $feedconf );
             push @config_list, { %config };
         }
@@ -827,7 +841,7 @@ BODY
         my @from       = @_;
         my %cnf;
 
-	if ($rss) {
+        if ($rss) {
             $cnf{'channel:title'}       = $rss->title();
             $cnf{'channel:link'}        = $rss->link();
             $cnf{'channel:description'} = $rss->description();
@@ -862,7 +876,7 @@ BODY
                 }
             }
 
-	    push @result, $from;
+            push @result, $from;
         }
 
         return @result;
@@ -871,7 +885,7 @@ BODY
     sub process_change_requests() {
         my $this = shift;
 
-	my @messages;
+        my @messages;
         my $message;
         my $feedconf;
         my @config_list;
@@ -981,7 +995,7 @@ BODY
     sub __fix_feed() {
         my $content  = shift;
         
-	my $fixed;
+        my $fixed;
         my $count;
 
         # First, strip any spaces from feed
