@@ -596,32 +596,32 @@ BODY
 
 
     sub rss_txt_convert {
-	my $this = shift;
-	my $string = shift;
+        my $this = shift;
+        my $string = shift;
 
         return "" if ( !$string );
 
-	# First convert any less than or greater than tags that have been encoded 
-	# back to real entries
-	$string =~ s/&lt;/\</mg;
-	$string =~ s/&gt;/\>/mg;
+        # First convert any less than or greater than tags that have been encoded 
+        # back to real entries
+        $string =~ s/&lt;/\</mg;
+        $string =~ s/&gt;/\>/mg;
 
-	# Convert any new line/carrige returns to html breaks
-	$string =~ s/\r//g;
-	$string =~ s/\n/\<BR\>/g;
-	# Remove all address tags?
-	$string =~ s/<a .*?>([^<>]*)<\/a>/$1/ig;
+        # Convert any new line/carrige returns to html breaks
+        $string =~ s/\r//g;
+        $string =~ s/\n/\<BR\>/g;
+        # Remove all address tags?
+        $string =~ s/<a .*?>([^<>]*)<\/a>/$1/ig;
 
-	# Convert closing Heading tags to paragraph marks
-	$string =~ s/\<\/H.\s*\>/\<\/p\>/mgi;
+        # Convert closing Heading tags to paragraph marks
+        $string =~ s/\<\/H.\s*\>/\<\/p\>/mgi;
 
-	# Remove any open paragraph 
-	$string =~ s/\<P(\s*\/)?\>//mgi;
+        # Remove any open paragraph 
+        $string =~ s/\<P(\s*\/)?\>//mgi;
 
-	# Replace any closing paragraph marks with double new lines
-	$string =~ s/\<\/P(\s*\/)?\>/\n\n/mgi;
-	# Replace any line breaks with single new lines
-	$string =~ s/\<(\/)?(BR)(\s*\/)?\>/\n/mgi;
+        # Replace any closing paragraph marks with double new lines
+        $string =~ s/\<\/P(\s*\/)?\>/\n\n/mgi;
+        # Replace any line breaks with single new lines
+       	$string =~ s/\<(\/)?(BR)(\s*\/)?\>/\n/mgi;
 
         #
         # All HTML Tag but anchor will be deleted!!
@@ -644,6 +644,7 @@ BODY
                 $result .= $text_tmp;
             }
         }
+
         $string = $result;
         $string =~ s/&amp;/&/g;
         $string =~ s/&deg;//g;
@@ -657,7 +658,9 @@ BODY
         $string =~ s/#8221;/"/g;
         $string =~ s/&#8217;/'/g;
         $string =~ s/&#146;/'/g;
-	$string =~ s/&pound;/#/g;
+        $string =~ s/&pound;/#/g;
+        $string =~ s/&#43;/+/g;
+        $string =~ s/&#61;/=/g;
 
         return $string;
     }
