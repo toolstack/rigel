@@ -263,12 +263,16 @@ package RIGELLIB::Rigel;
 
         my @append_items;
         my @delete_mail;
+	my $subject;
 
         for my $item (@items) {
             my $message_id  = $this->gen_message_id ($rss, $item);
 
-            # Get the subject line and add it to our cache for later
-	    push @subject_lines, $this->rss_txt_convert( $item->title() );
+            # Get the subject line and add it to our cache for later, make sure we
+	    # strip any newlines so we can store it in the IMAP message properly
+	    $subject = $this->rss_txt_convert( $item->title() );
+	    $subject =~ s/\n//g;
+	    push @subject_lines, $subject;
 
             # Retreive the date from the item or feed for future work.
             my $rss_date = $this->get_date ($rss, $item);
