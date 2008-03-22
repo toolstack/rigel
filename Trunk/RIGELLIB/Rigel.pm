@@ -355,7 +355,14 @@ package RIGELLIB::Rigel;
 
                 # if message not found, append it.
                 if (@search == 0) {
-                    push @append_items, $item;
+		    if( $site_config->{'use-subjects'} ) {
+                        if( ! $old_subject_glob =~ m/$subject/ ) {
+			    push @append_items, $item;
+			}
+		    } else {
+		        push @append_items, $item;
+		    }
+
                 } else {
                     next unless ($rss_date); # date filed is not found, we ignore it.
 
