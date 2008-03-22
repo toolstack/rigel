@@ -187,7 +187,44 @@ package RIGELLIB::Rigel;
             warn "WARNING: $@\n";
         }
 
-        if (my $latest = $this->get_latest_date (\@search))  {
+        # We're going to need a mime parser to retreive the subject list
+	# from the last update data
+	my $mp       = new MIME::Parser;
+        my $e;
+	my $subject_glob;
+	my @subject_lines;
+
+        # setup the message parser so we don't get any errors and we 
+        # automatically decode messages
+        $mp->ignore_errors(1);
+        $mp->extract_uuencode(1);
+
+	my $latest = undef;
+	my $lmsg = undef;
+	( $latest, $lmsg ) = $this->get_latest_date (\@search);
+
+        eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
+
+        my $error = ($@ || $mp->last_error);
+
+        if ($error) {
+            $subject_glob = "";
+        } else {
+            # get_mime_text_body will retrevie all the plain text peices of the
+            # message and return it as one string.
+            $subject_glob = __trim( get_mime_text_body( $e ) );
+            $mp->filer->purge;
+        }
+
+	# Now that we have the last updated subject list in a big string, time
+	# to prase it in to an array.
+	my $beyond_headers = 0;
+	foreach my $subject ( split( '\n', $subject_glob ) ) {
+	    if( $beyond_headers == 1 ) { push @subject_lines, $subject; }
+	    if( $subject eq "" ) { $beyond_headers = 1; }
+	}
+
+	if ($latest)  {
             $headers = { 'If-Modified-Since' => HTTP::Date::time2str ($latest) };
             $site_config->{'last-updated'} = $latest;        
         }
@@ -399,18 +436,27 @@ package RIGELLIB::Rigel;
         my $this   = shift;
         my $list   = shift;
         my $header = shift || 'date';
-        my $imap   = $this->{imap};
 
+	my $imap   = $this->{imap};
+	my $lmsg   = undef;
         my $latest = -1;
 
         for my $msg (@{$list}) {
             my $date = $imap->get_header ($msg, $header);
             next unless ($date);
             $date = HTTP::Date::str2time ($date);
-            $latest = $date if ($date > $latest);
+            if ($date > $latest) {
+	        $latest = $date;
+		$lmsg = $msg;
+	    }
         }
 
-        return ($latest == -1) ? undef : $latest;
+        if ($latest == -1) {
+	    $latest = undef; 
+	    $lmsg = undef;
+	} 
+
+        return ( $latest, $lmsg);
     }
 
 

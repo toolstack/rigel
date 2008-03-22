@@ -60,7 +60,7 @@ package RIGELLIB::Config;
     our $DEFAULT_SITE_CONFIG = {
         'folder'        => 'RSS%{dir:sep}%{channel:title}',
         'type'          => 'items',
-        'to'            => undef,    # this is set in __parse_siteconf function
+        'to'            => $DEFAULT_GLOBAL_CONFIG->{'user'},
         'subject'       => '%{item:title}',
         'from'          => $ENV{'USER'} . '@' . ($ENV{'HOSTNAME'} ? $ENV{'HOSTNAME'} : "localhost"),
         'expire-unseen' => undef,
@@ -68,6 +68,8 @@ package RIGELLIB::Config;
         'expire-folder' => undef,
         'sync'          => undef,
         'last-update'   => undef,
+	'use-subjects'  => undef,
+	'last-subjects' => undef,
     };
 
     # opml parse result.
@@ -453,10 +455,6 @@ package RIGELLIB::Config;
 
 
     sub __parse_conf {
-        # 'to' header default is set here, because this is dependent
-        # on $DEFAULT_SITE_CONFIG
-        $DEFAULT_SITE_CONFIG->{'to'} = $DEFAULT_GLOBAL_CONFIG->{'user'};
-
         my %parse_result = &__parse_conffile( $DEFAULT_GLOBAL_CONFIG->{'config-file'} );
 
         # override config value for the site definition
