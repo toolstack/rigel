@@ -42,6 +42,7 @@ use MIME::Parser;
 use Unicode::Map8;
 use MIME::WordDecoder;
 use HTML::Entities;
+use Text::Unidecode;
 
 package RIGELLIB::Rigel;
 {
@@ -242,7 +243,9 @@ package RIGELLIB::Rigel;
         my $imap        = $this->{imap};
 
         my @items;
+	my @subject_lines;
         my $type = $this->{site_config}->{type};
+
         if ($type eq "channel") {
             @items = ($rss); # assume that item == rss->channel
         } elsif ($type eq "items") {
@@ -264,13 +267,13 @@ package RIGELLIB::Rigel;
         for my $item (@items) {
             my $message_id  = $this->gen_message_id ($rss, $item);
 
+            # Get the subject line and add it to our cache for later
+	    push @subject_lines, $this->rss_txt_convert( $item->title() );
+
             # Retreive the date from the item or feed for future work.
             my $rss_date = $this->get_date ($rss, $item);
 
-            # Convert he above date to a unix time code, note that some broken 
-            # feeds will give full month names instead of a 3 character representation
-            # which is required for HTTP::Date::str2time to function so we convert
-            # them ahead of time.
+            # Convert the above date to a unix time code
             my $rss_time = HTTP::Date::str2time( $rss_date );
 
             # if expire enabled, get lastest-modified time of rss.
@@ -342,7 +345,7 @@ package RIGELLIB::Rigel;
             $this->send_item ($folder, $rss, $item);
         }
 
-        $this->send_last_update ($rss);
+        $this->send_last_update ($rss, \@subject_lines);
 
         return;
     }
@@ -408,13 +411,14 @@ package RIGELLIB::Rigel;
 
 
     sub send_last_update {
-        my $this       = shift;
-        my $rss        = shift;
+        my $this          = shift;
+        my $rss           = shift;
+	my $subject_lines = shift;
 
-        my $message_id = $rss->{'Rigel:message-id'};
-        my $date       = $rss->{'Rigel:last-modified'};
-        my $link       = $rss->{'Rigel:rss-link'};
-        my $a_date     = scalar (localtime ());
+        my $message_id    = $rss->{'Rigel:message-id'};
+        my $date          = $rss->{'Rigel:last-modified'};
+        my $link          = $rss->{'Rigel:rss-link'};
+        my $a_date        = scalar (localtime ());
 
         my $body =<<"BODY"
 From: Rigel@
@@ -434,8 +438,17 @@ X-RSS-Last-Modified: $date
 Link: $link
 Last-Modified: $date
 Aggregate-Date: $a_date
+
 BODY
 ;
+	my $subject;
+
+	# Add the subject lines from the update so we can skip
+	# these articles if required on the next update
+	foreach $subject (@{$subject_lines}) {
+		$body = $body . $subject . "\n";
+	}
+
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
         $this->{imap}->select( $folder );
         my $uid = $this->{imap}->append_string ($folder, $body);
@@ -668,6 +681,11 @@ BODY
         # etc.  The decode_entities catches all of these including
         # hex and decimal representation.
         $string = HTML::Entities::decode_entities( $result );
+
+	# Now that we have a Unicode string, we need to convert it
+	# back to ASCII so nothing breaks when we do something like
+	# save it to an IMAP message
+	$string = Text::Unidecode::unidecode( $string );
 
         return $string;
     }
