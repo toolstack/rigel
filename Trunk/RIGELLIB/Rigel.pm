@@ -194,7 +194,10 @@ package RIGELLIB::Rigel;
         my $common = RIGELLIB::Common->new();
         my @rss_and_response = $common->getrss_and_response( $link, $headers );
 
-        return if ( scalar(@rss_and_response) == 0 );
+	if( scalar(@rss_and_response) == 0 ) {
+	    print "\tNot modified, no update required.\n";
+            return;
+	}
 
         foreach my $MessageToDelete (@search ) {
             $imap->delete_message ($MessageToDelete); # delete other messages;
@@ -217,7 +220,11 @@ package RIGELLIB::Rigel;
             return undef;
         }
 
-        print "\tModified, updating IMAP items.\n";
+	if( $rss ) {
+            print "\tModified, updating IMAP items.\n";
+        } else { 
+            print "\tNot modified, no update required.\n";
+        }
 
         # copy session information
         $rss->{'Rigel:last-modified'} = HTTP::Date::time2str ($response->last_modified);
