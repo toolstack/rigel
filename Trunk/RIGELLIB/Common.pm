@@ -62,7 +62,6 @@ package RIGELLIB::Common;
 
         # Not Modified
         if ($response->code eq '304') {
-            print "\tNot modified, no update required.\n";
             return @rss_and_response;
         }
 
