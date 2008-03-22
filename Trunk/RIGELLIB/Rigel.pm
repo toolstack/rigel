@@ -267,7 +267,7 @@ package RIGELLIB::Rigel;
 	if( $rss ) {
             print "\tModified, updating IMAP items.\n";
         } else { 
-            print "\tNot modified, no update required.\n";
+            print "\tUnabled to retreive feed, not updating.\n";
         }
 
         # copy session information
@@ -356,7 +356,9 @@ package RIGELLIB::Rigel;
                 # if message not found, append it.
                 if (@search == 0) {
 		    if( $site_config->{'use-subjects'} ) {
-                        if( ! $old_subject_glob =~ m/$subject/ ) {
+                        # if the subject check is enabled, validate the current subject line
+                        # against the old subject lines
+                        if( $old_subject_glob !~ m/$subject/ ) {
 			    push @append_items, $item;
 			}
 		    } else {
