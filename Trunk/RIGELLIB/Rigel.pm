@@ -155,11 +155,11 @@ package RIGELLIB::Rigel;
             $this->{site_config} = $site_config;
 
             for my $url (@{$site_config->{url}}) {
-                my $rss = $this->get_rss ($url, $site_config);
+                my ( $rss, @subject_lines ) = $this->get_rss ($url, $site_config);
 
                 next unless ($rss);
 
-                $this->send ($rss, $site_config);
+                $this->send ($rss, $site_config, \@subject_lines);
                 $this->expire ($rss);
             }
         }
@@ -187,42 +187,48 @@ package RIGELLIB::Rigel;
             warn "WARNING: $@\n";
         }
 
-        # We're going to need a mime parser to retreive the subject list
-	# from the last update data
-	my $mp       = new MIME::Parser;
-        my $e;
-	my $subject_glob;
-	my @subject_lines;
-
-        # setup the message parser so we don't get any errors and we 
-        # automatically decode messages
-        $mp->ignore_errors(1);
-        $mp->extract_uuencode(1);
-
 	my $latest = undef;
 	my $lmsg = undef;
 	( $latest, $lmsg ) = $this->get_latest_date (\@search);
 
-        eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
+        # If this site is going to check subject lines against the last
+	# update we need to retreive them from the IMAP message that was
+	# the last update.
+        my @subject_lines = undef;
 
-        my $error = ($@ || $mp->last_error);
+        if( $site_config->{'use-subjects'} ) {
+            # We're going to need a mime parser to retreive the subject list
+	    # from the last update data
+	    my $mp       = new MIME::Parser;
+            my $e;
+	    my $subject_glob;
 
-        if ($error) {
-            $subject_glob = "";
-        } else {
-            # get_mime_text_body will retrevie all the plain text peices of the
-            # message and return it as one string.
-            $subject_glob = __trim( get_mime_text_body( $e ) );
-            $mp->filer->purge;
+            # setup the message parser so we don't get any errors and we 
+            # automatically decode messages
+            $mp->ignore_errors(1);
+            $mp->extract_uuencode(1);
+
+            eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
+
+            my $error = ($@ || $mp->last_error);
+
+            if ($error) {
+                $subject_glob = "";
+            } else {
+                # get_mime_text_body will retrevie all the plain text peices of the
+                # message and return it as one string.
+                $subject_glob = __trim( get_mime_text_body( $e ) );
+                $mp->filer->purge;
+            }
+
+	    # Now that we have the last updated subject list in a big string, time
+	    # to prase it in to an array.
+	    my $beyond_headers = 0;
+	    foreach my $subject ( split( '\n', $subject_glob ) ) {
+	        if( $beyond_headers == 1 ) { push @subject_lines, $subject; }
+	        if( $subject eq "" ) { $beyond_headers = 1; }
+	    }
         }
-
-	# Now that we have the last updated subject list in a big string, time
-	# to prase it in to an array.
-	my $beyond_headers = 0;
-	foreach my $subject ( split( '\n', $subject_glob ) ) {
-	    if( $beyond_headers == 1 ) { push @subject_lines, $subject; }
-	    if( $subject eq "" ) { $beyond_headers = 1; }
-	}
 
 	if ($latest)  {
             $headers = { 'If-Modified-Since' => HTTP::Date::time2str ($latest) };
@@ -269,7 +275,7 @@ package RIGELLIB::Rigel;
         $rss->{'Rigel:message-id'}    = $message_id;
         $rss->{'Rigel:rss-link'}      = $link;
 
-        return $rss;
+        return ( $rss, @subject_lines );
     }
 
 
@@ -277,10 +283,20 @@ package RIGELLIB::Rigel;
         my $this        = shift;
         my $rss         = shift;
         my $site_config = shift;
+	my $subjects    = shift;
         my $imap        = $this->{imap};
 
         my @items;
 	my @subject_lines;
+	my @old_subject_lines = @{$subjects};
+	my $old_subject_glob = "\n";
+
+	if( $subjects ) {
+	    foreach my $old_subject ( @old_subject_lines ) {
+	        $old_subject_glob = $old_subject_glob . $old_subject . "\n";
+	    }
+	}
+
         my $type = $this->{site_config}->{type};
 
         if ($type eq "channel") {
