@@ -184,7 +184,7 @@ package RIGELLIB::Rigel;
         my @search = $imap->search ("HEADER message-id \"$message_id\"" );
 
         if ($this->is_error()) {
-            warn "WARNING: $@\n";
+            print "WARNING: $@\n";
         }
 
 	my $latest = undef;
@@ -260,7 +260,7 @@ package RIGELLIB::Rigel;
         eval { $rss = XML::FeedPP->new($content); };
 
         if ($this->is_error()) {
-            warn "\nWARNING: Feed error, content will not be created for:\n\t$link\n\n";
+            print "\tFeed error, content will not be created.\n";
             return undef;
         }
 
@@ -306,7 +306,7 @@ package RIGELLIB::Rigel;
                 push(@items, $one_item);
             }
         } else {
-            warn "WARNING: unknown type [$type]\n";
+            print "WARNING: unknown type [$type]!\n";
             return;
         }
 
@@ -349,7 +349,7 @@ package RIGELLIB::Rigel;
                 my @search = $imap->search ("NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"");
 
                 if ($this->is_error()) {
-                    warn "WARNING: $@\n";
+                    print "WARNING: $@\n";
                     next;
                 }
 
@@ -411,6 +411,13 @@ package RIGELLIB::Rigel;
             $this->send_item ($folder, $rss, $item);
         }
 
+        my $ItemsUpdated = scalar( @append_items );
+        if( $ItemsUpdated > 0 ) {
+            print "\tAdded $ItemsUpdated articles.\n";
+        } else {
+	    print "\tNo items found to add.\n";
+	}
+
         $this->send_last_update ($rss, \@subject_lines);
 
         return;
@@ -438,7 +445,7 @@ package RIGELLIB::Rigel;
         my @search = $imap->search ($query);
 
         if ($this->is_error()) {
-            warn "WARNING: $@\n";
+            print "WARNING: $@\n";
             return;
         }
 
@@ -772,7 +779,7 @@ BODY
         my $folder = shift;
 
         $this->create_folder ($folder);
-        $this->{imap}->select ($folder) || warn "@!\n";
+        $this->{imap}->select ($folder) || print "@!\n";
     }
 
 
@@ -782,7 +789,7 @@ BODY
         my $imap = $this->{imap};
 
         unless ($imap->exists($folder)) {
-            $imap->create ($folder) || warn "WARNING: $@\n";
+            $imap->create ($folder) || print "WARNING: $@\n";
         }
     }
 

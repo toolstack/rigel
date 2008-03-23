@@ -67,7 +67,6 @@ package RIGELLIB::Common;
 
         # Connection Error.
         unless ($response->is_success) {
-            warn "WARNING: connection error $uri\n";
             return @rss_and_response;
         }
 
@@ -141,8 +140,8 @@ package RIGELLIB::Common;
         if( $^O =~ /Win32/ ) {
             eval 'use Term::Getch';
             if( $@ ) {
-                warn "Term::Getch is not installed, your password input will display in clear text!\n";
-                $password = <STDIN>;
+                print "Term::Getch is not installed, can not continue!\n";
+                die;
             } else {
                 my @c = ();
                 my $tmp;

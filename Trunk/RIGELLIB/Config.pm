@@ -221,7 +221,7 @@ package RIGELLIB::Config;
                     my $key   = &__trim( lc( $1 ) );
                     my $value = &__trim( $2 );
                     unless (exists $config{$key}) {
-                        warn "WARNING: key value [$1] is undefined\n";
+                        print "WARNING: key value [$1] is undefined!\n";
                         next;
                     }
                     next if ($key =~ /(expire-unseen|sync)/ && $2 =~ /^(no|0)$/i);
@@ -230,7 +230,7 @@ package RIGELLIB::Config;
                     push @config_list, { %config } if (keys %config);
                     %config = %{$DEFAULT_SITE_CONFIG};
                 } else {
-                    warn "WARNING: parse error $_\n";
+                    print "WARNING: parse error $_\n";
                 }
             }
             close(F);
@@ -260,7 +260,7 @@ package RIGELLIB::Config;
                 my $value = &__trim( $2 );
 
                 unless (exists $config{$key}) {
-                    warn "WARNING: key value [$1] is undefined\n";
+                    print "WARNING: key value [$1] is undefined!\n";
                     next;
                 }
 
@@ -270,7 +270,7 @@ package RIGELLIB::Config;
                 push @config_list, { %config } if (keys %config);
                 %config = %{$DEFAULT_SITE_CONFIG};
             } else {
-                warn "WARNING: parse error $_\n";
+                print "WARNING: parse error $_\n";
             }
         }
 
@@ -373,7 +373,7 @@ package RIGELLIB::Config;
                 eval { $rss = XML::FeedPP->new($content); };
 
                 if ($@) {
-                    warn "WARNING: $@ skip this url...\n";
+                    print "WARNING: feed error, skip this url...\n";
                     next;
                 }
                 my $title       = &__xmlval_convert($rss->title());
