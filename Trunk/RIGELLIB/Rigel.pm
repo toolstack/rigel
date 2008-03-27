@@ -953,6 +953,8 @@ BODY
             $cnf{'channel:link'}        = $rss->link();
             $cnf{'channel:description'} = $rss->description();
             $cnf{'channel:dc:date'}     = $rss->pubDate() || "";
+
+            $cnf{'dashline:channel:title'} = "-" x length( $cnf{'channel:title'} );
         }
 
         if ($item) {
@@ -962,7 +964,9 @@ BODY
             $cnf{'item:dc:date'}      = $item->pubDate();
             $cnf{'item:dc:subject'}   = $item->category();
             $cnf{'item:dc:creator'}   = $item->author();
-        }
+
+            $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
+	}
 
         $cnf{host}            = $this->{host};
         $cnf{user}            = $this->{user};
@@ -971,6 +975,7 @@ BODY
         $cnf{'dir:sep'}       = $this->{'directory_separator'};
         $cnf{'dir:manage'}    = $this->{'management-folder'};
         $cnf{'dir:lastmod'}   = $this->{'last-modified-folder'};
+	$cnf{'newline'}       = "\n";
 
         my @result;
         for my $from (@from) {
@@ -981,6 +986,8 @@ BODY
                     my $key2 = "%{" . $key . "}";
                     $from =~ s/$key2/$cnf{$key}/eg;
                 }
+
+		$from =~ s/%{.*}//g;
             }
 
             push @result, $from;
@@ -1060,6 +1067,20 @@ Content-Transfer-Encoding: 7bit
 User-Agent: Rigel version $VERSION
 
 http://template
+
+#folder = RSS%{dir:sep}%{channel:title}
+#type = items
+#to = 
+#subject = %{item:title}
+#from = 
+#delivery-mode = html
+#expire-unseen = undef
+#expire = -1
+#expire-folder = undef
+#sync = undef
+#last-update = undef
+#use-subjects = undef
+#last-subjects = undef
 BODY
 ;
         my $i = 10 - $this->{imap}->message_count( $AddFolder );
