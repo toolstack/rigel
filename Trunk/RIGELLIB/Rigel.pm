@@ -542,14 +542,14 @@ BODY
 
 
     sub send_item {
-        my $this   = shift;
-        my $folder = shift;
-        my $rss    = shift;
-        my $item   = shift;
+        my $this        = shift;
+        my $folder      = shift;
+        my $rss         = shift;
+        my $item        = shift;
 
         my $headers = $this->get_headers($rss, $item);
 
-        my $body = ($this->{'delivery-mode'} eq 'text')
+        my $body = ($this->{site_config}->{'delivery-mode'} eq 'text')
                  ? $this->get_text_body( $rss, $item )
                  : $this->get_html_body( $rss, $item );
 
@@ -560,9 +560,9 @@ BODY
 
 
     sub get_headers {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
+        my $this        = shift;
+        my $rss         = shift;
+        my $item        = shift;
 
         my $date       = $this->get_date ($rss, $item);
         my $rss_date   = $this->get_rss_date ($rss, $item) || "undef";
@@ -576,7 +576,7 @@ BODY
 
         my $mime_type;
 
-        if( $this->{'delivery-mode'} eq 'text' ) {
+        if( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
             $mime_type = 'text/plain';
 
             # Since we're delivering in plain text, make sure that

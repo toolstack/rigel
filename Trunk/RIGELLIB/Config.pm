@@ -52,7 +52,6 @@ package RIGELLIB::Config;
         'prefix'               => undef,     # if you use courier, set this to "INBOX"
         'cram-md5'             => undef,
         'use-ssl'              => undef,
-        'delivery-mode'        => 'html',
         'config-file'          => 'Rigel.conf',
         'VERSION'              => $VERSION,
     };
@@ -63,6 +62,7 @@ package RIGELLIB::Config;
         'to'            => $DEFAULT_GLOBAL_CONFIG->{'user'},
         'subject'       => '%{item:title}',
         'from'          => $ENV{'USER'} . '@' . ($ENV{'HOSTNAME'} ? $ENV{'HOSTNAME'} : "localhost"),
+        'delivery-mode' => 'html',
         'expire-unseen' => undef,
         'expire'        => -1,
         'expire-folder' => undef,
@@ -510,7 +510,7 @@ package RIGELLIB::Config;
                    'i|interval=s'      => \$DEFAULT_GLOBAL_CONFIG->{'interval'},
                    'S|use-ssl'         => \$DEFAULT_GLOBAL_CONFIG->{'use-ssl'},
                    'e|encrypt=s'       => \$DEFAULT_GLOBAL_CONFIG->{'encrypt'},
-                   'd|delivery-mode=s' => \$DEFAULT_GLOBAL_CONFIG->{'delivery-mode'},
+                   'd|delivery-mode=s' => \$DEFAULT_SITE_CONFIG->{'delivery-mode'},
                    'h|help'            => \$DEFAULT_GLOBAL_CONFIG->{'help'},
                    'v|version'         => \$DEFAULT_GLOBAL_CONFIG->{'version'},
                    'f|configfile=s'    => \$DEFAULT_GLOBAL_CONFIG->{'config-file'},
@@ -521,7 +521,8 @@ package RIGELLIB::Config;
         foreach my $item (@ARGV) {
             push @getopthold_argv, $item;
         }
-        $DEFAULT_GLOBAL_CONFIG->{list} = \@getopthold_argv;
+
+	$DEFAULT_GLOBAL_CONFIG->{list} = \@getopthold_argv;
 
         # restore ARGV.
         @ARGV = @ARGV_TMP;
