@@ -555,12 +555,20 @@ BODY
 
         my $headers = $this->get_headers($rss, $item);
 
-        my $body = ($this->{site_config}->{'delivery-mode'} eq 'text')
-                 ? $this->get_text_body( $rss, $item )
-                 : $this->get_html_body( $rss, $item );
+	my $body = "";
 
-        my $message = ($headers . $body);
-        utf8::encode($message);  # uft8 flag off.
+	if( $this->{site_config}->{'delivery-mode'} eq 'embedded' ) {
+	    $body = $this->get_embedded_body( $rss, $item );
+	} elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
+            $body = $this->get_text_body( $rss, $item );
+	} else {
+	    $body = $this->get_raw_body( $rss, $item );
+	}
+
+	my $message = ($headers . $body);
+
+	utf8::encode($message);  # uft8 flag off.
+
         $this->{imap}->append_string($folder, $message);
     }
 
@@ -659,7 +667,32 @@ BODY
     }
 
 
-    sub get_html_body {
+    sub get_raw_body {
+        my $this       = shift;
+        my $rss        = shift;
+        my $item       = shift;
+        
+        my $subject    = $this->{site_config}->{subject};
+        my $from       = $this->{site_config}->{from};
+        my $desc       = $this->get_description( $item );
+
+        ($subject, $from) = $this->apply_template ($rss, $item, undef, $subject, $from);
+
+        my $link = $item->link();
+
+        my $return_body =<<"BODY"
+$subject
+<hr>
+$desc
+<hr>
+$link
+BODY
+;
+
+        return $return_body;
+    }
+
+    sub get_embedded_body {
         my $this       = shift;
         my $rss        = shift;
         my $item       = shift;

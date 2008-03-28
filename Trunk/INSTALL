@@ -173,13 +173,19 @@ Macros
 
 Delivery mode
 -------------
-	Rigel can deliver mail in either "text delivery mode" which delivers 
-	plain text mail or "HTML delivery mode" which delivers html mail. 
-
-	HTML delivery mode is useful when you read mail with MUA which have 
-	functionality of the HTML inline presentation. Whereas in text delivery
-	mode, Rigel can deliver text/plain mail for those who dislike html 
-	mail.
+	Rigel can deliver mail in three differenet delivery modes:
+	
+		- Plain Text (text)
+			All items are converted to plain text (7-bit ASCII)
+		- Raw Feed (raw, default)
+			Uses whatever the feed provides (usually a mix of
+			text with some HTML markup
+		- Embedded HTML (embedded)
+			Creates an HTML doc with an embedded external link
+			to the article (basically shows the web page that 
+			the article points to).  As this is an external link
+			you have to be connected to the internet to see the
+			content in this mode.
 
 	You can configure delivery mode by setting "delivery-mode" value in 
 	Rigel.conf, and can override its value with command line option "-d". 
@@ -204,7 +210,7 @@ Command Line Options
 	-S   --use-ssl             use Secure Socket Layer(SSL)
 	-e   --encrypt             encrypt a string (used for passwords)
 	-d   --delivery-mode=MODE  mail delivery mode.
-				   MODE is "text"(default) or "html"
+				   MODE is "text", "raw"(default) or "embedded"
 	-f   --configfile          Location and name of the configuration file.
 	-h   --help                this help.
 	-v   --version             version info.

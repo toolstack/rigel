@@ -62,7 +62,7 @@ package RIGELLIB::Config;
         'to'            => $DEFAULT_GLOBAL_CONFIG->{'user'},
         'subject'       => '%{item:title}',
         'from'          => $ENV{'USER'} . '@' . ($ENV{'HOSTNAME'} ? $ENV{'HOSTNAME'} : "localhost"),
-        'delivery-mode' => 'html',
+        'delivery-mode' => 'raw',
         'expire-unseen' => undef,
         'expire'        => -1,
         'expire-folder' => undef,
