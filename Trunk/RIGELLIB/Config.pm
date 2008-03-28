@@ -255,6 +255,8 @@ package RIGELLIB::Config;
                 push @{$config{url}}, __trim( $_ );
             } elsif (/^\#/) {
                 # It's a comment line, so don't do anything :)
+            } elsif (/^\s*$/) {
+		# It's a blank link, so don't do anything :)
             } elsif (/^([^=]+)\s*=\s*(.*)\s*/) {
                 my $key   = &__trim( lc( $1 ) );
                 my $value = &__trim( $2 );
@@ -266,9 +268,6 @@ package RIGELLIB::Config;
 
                 next if ($key =~ /(expire-unseen|sync)/ && $2 =~ /^(no|0)$/i);
                 $config{$key} = RIGELLIB::Unicode::to_utf8 ($value);
-            } elsif (/^\s*$/) {
-                push @config_list, { %config } if (keys %config);
-                %config = %{$DEFAULT_SITE_CONFIG};
             } else {
                 print "WARNING: parse error $_\n";
             }
