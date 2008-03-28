@@ -102,6 +102,12 @@ package RIGELLIB::Rigel;
 
         $this->{'directory_separator'} = $imap->separator();
 
+	# Now that we have the directory seperator, update the management
+	# folder value and last modified folder value with the proper template 
+	# values
+        ( $this->{'management-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'management-folder'} );
+        ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
+
         if ($this->{debug}) {
             $imap->Debug(1);
             $imap->Debug_fh();
@@ -535,7 +541,7 @@ BODY
         $this->{imap}->select( $folder );
         my $uid = $this->{imap}->append_string ($folder, $body);
 
-        $this->{imap}->Uid(1);
+	$this->{imap}->Uid(1);
         $this->{imap}->see ( $uid );
         $this->{imap}->Uid(0);
     }
@@ -1026,8 +1032,10 @@ BODY
 
             $siteurl = "";
             foreach my $site (@{$config{url}}) {
-                $siteurl = $site;
+                $siteurl = $siteurl . $site;
             }
+
+	    $siteurl = __trim( $siteurl );
 
             if ($siteurl ne "http://template") {
                 my $headers =<<"BODY"
