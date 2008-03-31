@@ -173,7 +173,7 @@ Macros
 
 Delivery mode
 -------------
-	Rigel can deliver mail in three differenet delivery modes:
+	Rigel can deliver mail in three different delivery modes:
 	
 		- Plain Text (text)
 			All items are converted to plain text (7-bit ASCII)
@@ -184,7 +184,7 @@ Delivery mode
 			Creates an HTML doc with an embedded external link
 			to the article (basically shows the web page that 
 			the article points to).  As this is an external link
-			you have to be connected to the internet to see the
+			you have to be connected to the Internet to see the
 			content in this mode.
 
 	You can configure delivery mode by setting "delivery-mode" value in 
