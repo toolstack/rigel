@@ -1,4 +1,4 @@
-Rig el change log:
+Rigel change log:
 ================
 
 version 1.0b2
@@ -6,10 +6,10 @@ version 1.0b2
 	- Second Beta
 	- Significant changes to the HTML->text converter code to better
 	  handle the kind of HTML that comes from RSS feeds
-	- Rig el now strips HTML from subject lines when delivering in 
+	- Rigel now strips HTML from subject lines when delivering in 
 	  text mode
-	- Rig el now requires HTML::Entities
-	- Rig el now can cache the subject lines of feed items and use
+	- Rigel now requires HTML::Entities
+	- Rigel now can cache the subject lines of feed items and use
 	  them to exclude items as being seen as new
 	- Removed the use of WARN in the code
 	- Delivery mode is now a per feed option instead of a global 
@@ -35,6 +35,6 @@ version 1.0b1
 	- Combined the local and site configuration files in
 	  to a single configuration file
 	- Changed logic on feeds so that if you delete an article
-	  Rig el will not re-add it on the next update
+	  Rigel will not re-add it on the next update
 	- General code standardization and removal of of unused code
  
