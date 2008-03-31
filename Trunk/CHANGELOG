@@ -1,6 +1,31 @@
 Rigel changelog:
 ================
 
+version 1.0b2
+-------------
+	- Second Beta
+	- Signficant changes to the HTML->text converter code to better
+	  handle the kind of HTML that comes from RSS feeds
+	- Rigel now strips HTML from subject lines when delivering in 
+	  text mode
+	- Rigel now requires HTML::Entites
+	- Rigel now can cache the subject lines of feed items and use
+	  them to exclude items as being seen as new
+	- Removed the use of WARN in the code
+	- Delivery mode is now a per feed option instead of a global 
+	  option
+	- Added two new macro's in the configuraiton file code, %{newline}
+	  and %{dashline:}
+	- Reworked the macro code to strip out any macro that was not
+	  recognized or contained a blank item
+	- The template "add" messages now include a list of all options 
+	  avaliable to be set, commented out by default
+	- Fixed an issue that if a configuration message had a blank line 
+	  in it, the parser would treat it as a "reset to default" command
+	  instead of just a blank line :)
+	- Changed delivery modes from text/html to text/raw/embedded, see
+	  the install file for details
+
 version 1.0b1
 -------------
 	- Inital Beta
