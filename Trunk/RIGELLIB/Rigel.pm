@@ -1047,10 +1047,17 @@ BODY
         my %config;
         my $siteurl;
         my $uid;
-        my ($AddFolder) = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" ) );
-        my ($DeleteFolder) = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" ) );
-        my ($ConfigFolder) = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" ) );
+        my ($AddFolder)     = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" ) );
+        my ($DeleteFolder)  = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" ) );
+        my ($ConfigFolder)  = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" ) );
         my ($LastModFolder) = join( '', $this->apply_template( undef, undef, 1, "%{dir:lastmod}" ) );
+	my $e;
+	my $mp              = new MIME::Parser;
+
+        # setup the message parser so we don't get any errors and we 
+        # automatically decode messages
+        $mp->ignore_errors(1);
+        $mp->extract_uuencode(1);
 
         $this->create_folder( $AddFolder );
         $this->create_folder( $DeleteFolder );
@@ -1061,8 +1068,14 @@ BODY
         @messages = $this->{imap}->messages();
 
         foreach $message (@messages) {
-            $feedconf = "";
-            $feedconf = __trim( $this->{imap}->bodypart_string( $message, 1 ) );
+            # Retreive the complete message and run it through the MIME parser
+            eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
+            my $error = ($@ || $mp->last_error);
+
+	    $feedconf = "";
+            $feedconf = __trim( get_mime_text_body( $e ) );
+            $mp->filer->purge;
+
             %config = $config_obj->parse_url_list_from_string( $feedconf );
 
             $siteurl = "";
