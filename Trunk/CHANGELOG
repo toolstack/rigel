@@ -25,6 +25,7 @@ version 1.0b2
 	  instead of just a blank line :)
 	- Changed delivery modes from text/html to text/raw/embedded, see
 	  the install file for details
+	- The add feed code now handles mime messages correctly
 
 version 1.0b1
 -------------
