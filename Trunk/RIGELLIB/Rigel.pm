@@ -363,8 +363,9 @@ package RIGELLIB::Rigel;
                 if (@search == 0) {
 		    if( $site_config->{'use-subjects'} ) {
                         # if the subject check is enabled, validate the current subject line
-                        # against the old subject lines
-                        if( $old_subject_glob !~ m/$subject/ ) {
+                        # against the old subject lines, make sure we disable special chacters
+			# in the match with \Q and \E
+                        if( $old_subject_glob !~ m/\Q$subject\E/ ) {
 			    push @append_items, $item;
 			}
 		    } else {
