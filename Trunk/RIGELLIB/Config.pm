@@ -36,7 +36,7 @@ package RIGELLIB::Config;
 
     our $this = undef;
 
-    our $VERSION = "V1 Post b1 Devlopment";
+    our $VERSION = "V1b2";
 
     # fallback config value(real default value)
     # this value may be overridden by config file and cmdline option.
