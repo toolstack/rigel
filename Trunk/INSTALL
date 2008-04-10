@@ -9,14 +9,15 @@ Requirements
 	In addition, the following Perl modules are required:
 
 		Crypt::CBC
+		Crypt::DES_PP
 		Data::Dumper
 		Digest::HMAC
 		Encode
 		Encode::Guess
-		Getopt::Long;
+		Getopt::Long
                 HTML::Entities
 		HTTP::Date
-		IO::Socket::SSL(required in case of using IMAP over SSL). 
+		IO::Socket::SSL (required in case of using IMAP over SSL)
 		Jcode 
 		LWP (LWP::UserAgent, LWP::Simple) 
 		MIME::Parser
