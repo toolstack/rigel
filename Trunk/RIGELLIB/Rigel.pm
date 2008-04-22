@@ -407,17 +407,21 @@ package RIGELLIB::Rigel;
             }
         }
 
-        # update all message
+        # Delete messages that were flagged, we didn't do it earlier as it would have
+	# messed up the above loop
         foreach my $MessageToDelete (@delete_mail) {
             $imap->delete_message( $MessageToDelete );
         }
 
+	# Expunge the folder to actually get rid of the messages we just deleted
         $imap->expunge( $folder );
 
+	# Now we actually append the new items to the folder
         for my $item (@append_items) {
             $this->send_item ($folder, $rss, $item);
         }
 
+	# Find out how many items we added and give the user some feedback about it
         my $ItemsUpdated = scalar( @append_items );
         if( $ItemsUpdated > 0 ) {
             print "\tAdded $ItemsUpdated articles.\n";
@@ -425,9 +429,17 @@ package RIGELLIB::Rigel;
 	    print "\tNo items found to add.\n";
 	}
 
-        $this->send_last_update ($rss, \@subject_lines);
+	# If for some reason we don't have any items from the feed, we want to keep
+	# the old list of subject lines, otherwise when we do the next update all items
+	# will be added back in to the IMAP folder which is probably not want we 
+	# want to happen
+	if( scalar( @subject_lines ) < 1 ) {
+            $this->send_last_update ($rss, \@old_subject_lines);
+        } else {
+            $this->send_last_update ($rss, \@subject_lines);
+        }
 
-        return;
+	return;
     }
 
 
