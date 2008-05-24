@@ -552,10 +552,10 @@ BODY
 
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
         $this->{imap}->select( $folder );
-        my $uid = $this->{imap}->append_string ($folder, $body);
+        my $uid = $this->{imap}->append_string( $folder, $body );
 
 	$this->{imap}->Uid(1);
-        $this->{imap}->see ( $uid );
+        $this->{imap}->see( $uid );
         $this->{imap}->Uid(0);
     }
 
