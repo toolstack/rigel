@@ -93,7 +93,8 @@ package RIGELLIB::Rigel;
                                           Port          => $this->{port},
                                           Password      => $this->{password},
                                           Peek          => 1,
-                                          Authmechanism => ($this->{'cram-md5'} ? "CRAM-MD5" : undef)
+                                          Authmechanism => ($this->{'cram-md5'} ? "CRAM-MD5" : undef),
+					  Ignoresizeerrors => 1
                                          );
 
         if( !$imap ) {
@@ -236,7 +237,7 @@ package RIGELLIB::Rigel;
 	    }
         }
 
-	if ($latest)  {
+	if( $latest ) {
             $headers = { 'If-Modified-Since' => HTTP::Date::time2str ($latest) };
             $site_config->{'last-updated'} = $latest;        
         }
@@ -948,7 +949,7 @@ BODY
                 
         foreach $message (@messages) {
             # Retreive the complete message and run it through the MIME parser
-            eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
+            eval { $e = $mp->parse_data( $this->{imap}->message_string( $message ) ); };
             my $error = ($@ || $mp->last_error);
 
             if ($error) {
