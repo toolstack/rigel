@@ -87,13 +87,12 @@ package RIGELLIB::Rigel;
             $this->{password} = $cipher->decrypt_hex($this->{password});
         }
         
-        my $imap = Mail::IMAPClient->new( Socket        => ( $ssl_sock ? $ssl_sock : undef ),
-                                          Server        => $this->{host},
-                                          User          => $this->{user},
-                                          Port          => $this->{port},
-                                          Password      => $this->{password},
-                                          Peek          => 1,
-                                          Authmechanism => ($this->{'cram-md5'} ? "CRAM-MD5" : undef),
+        my $imap = Mail::IMAPClient->new( Socket           => ( $ssl_sock ? $ssl_sock : undef ),
+                                          Server           => $this->{host},
+                                          User             => $this->{user},
+                                          Port             => $this->{port},
+                                          Password         => $this->{password},
+                                          Authmechanism    => ($this->{'cram-md5'} ? "CRAM-MD5" : undef),
 					  Ignoresizeerrors => 1
                                          );
 
@@ -553,11 +552,12 @@ BODY
 
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
         $this->{imap}->select( $folder );
-        my $uid = $this->{imap}->append_string( $folder, $body );
+        my $uid = $this->{imap}->append_string( $folder, $body, "Seen" );
 
-	$this->{imap}->Uid(1);
-        $this->{imap}->see( $uid );
-        $this->{imap}->Uid(0);
+        # As we cannot count on the above addpend_string to actually mark the
+	# messages as seen and $uid may or may not acutall contain the message
+	# make sure they're marked as read
+	MarkFolderAsRead( $this->{imap}, $folder );
     }
 
 
@@ -1108,7 +1108,7 @@ Content-Transfer-Encoding: 7bit
 User-Agent: Rigel version $VERSION
 BODY
 ;
-                $this->{imap}->append_string( $ConfigFolder, $headers . "\n" . $feedconf );
+                $this->{imap}->append_string( $ConfigFolder, $headers . "\n" . $feedconf, "Seen" );
                 $this->{imap}->delete_message( $message );
             }
         }
@@ -1116,11 +1116,11 @@ BODY
         # You can't change the folder during the above loop or the return
         # from messages() becomes invalid, so loop thorugh all the messages
         # in the config folder and mark them all as read
-        $this->{imap}->select( $ConfigFolder );
-        
-        foreach $message ($this->{imap}->messages()) {
-            $this->{imap}->see( $message );
-        }
+
+        # As we cannot count on the above addpend_string to actually mark the
+	# messages as seen and $uid may or may not acutall contain the message
+	# make sure they're marked as read
+	MarkFolderAsRead( $this->{imap}, $ConfigFolder );
 
         # Now expunge any deleted messages
         $this->{imap}->select( $AddFolder );
@@ -1154,13 +1154,15 @@ BODY
 ;
         my $i = 10 - $this->{imap}->message_count( $AddFolder );
         for ( ; $i != 0; $i-- ) {
-            $uid = $this->{imap}->append_string( $AddFolder, $template_message );
-            $this->{imap}->Uid(1);
-            $this->{imap}->see ( $uid );
-            $this->{imap}->Uid(0);
+            $uid = $this->{imap}->append_string( $AddFolder, $template_message, "Seen" );
         }
 
-        $this->{imap}->select( $DeleteFolder );
+        # As we cannot count on the above addpend_string to actually mark the
+	# messages as seen and $uid may or may not acutall contain the message
+	# make sure they're marked as read
+	MarkFolderAsRead( $this->{imap}, $AddFolder );
+
+	$this->{imap}->select( $DeleteFolder );
         @messages = $this->{imap}->messages();
 
         my $Subject;
@@ -1238,6 +1240,15 @@ BODY
         return $str;
     }
 
+    sub MarkFolderAsRead() {
+	my $imap = shift;
+	my $folder = shift;
+        my $message;
+
+	foreach $message ($imap->messages()) {
+            $imap->see( $message );
+        }
+    }
 }
 
 1;
