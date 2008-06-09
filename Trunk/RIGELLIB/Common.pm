@@ -19,19 +19,26 @@
 #     - Retreiving the RSS feed
 #     - Retreiving the username/password info if required
 #
-use strict;
-use RIGELLIB::Config;
-use RIGELLIB::UserAgent;
-use RIGELLIB::Unicode;
-use Data::Dumper;
 
 package RIGELLIB::Common;
 {
+    use strict;
+    use RIGELLIB::Config;
+    use RIGELLIB::UserAgent;
+    use RIGELLIB::Unicode;
+    use RIGELLIB::Debug;
+    use Data::Dumper;
+
     our $config = undef;
+    our $debug = undef;
 
     sub new {
         my $pkg_name = shift;
+
         $config = RIGELLIB::Config->new()->get_global_configall();
+
+	$debug = RIGELLIB::Debug->new( \%{$config} );
+
         bless {}, $pkg_name;
     }
 
@@ -42,9 +49,11 @@ package RIGELLIB::Common;
         my %header_hash = %{$headers};
         my $ua          = RIGELLIB::UserAgent->new();
 
-        print Data::Dumper::Dumper( $config->{'proxy'} ) if($config->{'debug'});
+        if( $debug->DebugEnabled() ) {
+            $debug->OutputDebug( "getrss_and_response Proxy Dump:\n" . Data::Dumper::Dumper( $config->{'proxy'} ) );
+        }
 
-        $ua->proxy(['http','ftp'], $config->{'proxy'}) if($config->{'proxy'});
+	$ua->proxy(['http','ftp'], $config->{'proxy'}) if($config->{'proxy'});
         my $request = HTTP::Request->new('GET');
         $request->url($uri);
 
@@ -56,7 +65,7 @@ package RIGELLIB::Common;
         # finally send request.
         my $response = $ua->request($request);
 
-        print "response code :" . $response->code . "\n" if ($config->{'debug'});
+        $debug->OutputDebug( "getrss_and_response response code :" . $response->code );
 
         my @rss_and_response = ();
 
