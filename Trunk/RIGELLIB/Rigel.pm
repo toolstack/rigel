@@ -28,25 +28,28 @@
 #
 
 require 5.008_000;
-use strict;
-use Mail::IMAPClient;
-use Mail::IMAPClient::BodyStructure;
-use XML::FeedPP;
-use HTTP::Date;
-use RIGELLIB::Unicode;
-use RIGELLIB::Config;
-use RIGELLIB::Common;
-use Data::Dumper;
-use Crypt::CBC;
-use MIME::Parser;
-use Unicode::Map8;
-use MIME::WordDecoder;
-use HTML::Entities;
-use Text::Unidecode;
 
 package RIGELLIB::Rigel;
 {
+    use strict;
+    use Mail::IMAPClient;
+    use Mail::IMAPClient::BodyStructure;
+    use XML::FeedPP;
+    use HTTP::Date;
+    use RIGELLIB::Unicode;
+    use RIGELLIB::Config;
+    use RIGELLIB::Common;
+    use RIGELLIB::Debug;
+    use Data::Dumper;
+    use Crypt::CBC;
+    use MIME::Parser;
+    use Unicode::Map8;
+    use MIME::WordDecoder;
+    use HTML::Entities;
+    use Text::Unidecode;
+
     our $VERSION       = undef;
+    our $debug	       = undef;
 
     # config init.
     our $config_obj    = undef;
@@ -60,6 +63,8 @@ package RIGELLIB::Rigel;
         $GLOBAL_CONFIG = $config_obj->get_global_configall();
         $SITE_CONFIG   = $config_obj->get_site_configall();
         $VERSION       = $config_obj->get_version();
+
+	$debug = RIGELLIB::Debug->new( \%{$GLOBAL_CONFIG} );
 
         bless $GLOBAL_CONFIG, $this;
     }
@@ -108,7 +113,7 @@ package RIGELLIB::Rigel;
         ( $this->{'management-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'management-folder'} );
         ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
 
-        if ($this->{debug}) {
+        if ($debug->DebugEnabled()) {
             $imap->Debug(1);
             $imap->Debug_fh();
         }

@@ -33,6 +33,7 @@ package RIGELLIB::Config;
     use Data::Dumper;
     use RIGELLIB::Common;
     use RIGELLIB::Unicode;
+    use RIGELLIB::Debug;
 
     our $this = undef;
 
@@ -54,6 +55,7 @@ package RIGELLIB::Config;
         'use-ssl'              => undef,
         'config-file'          => 'Rigel.conf',
         'VERSION'              => $VERSION,
+	'debug'                => 0,
     };
 
     our $DEFAULT_SITE_CONFIG = {
@@ -75,9 +77,10 @@ package RIGELLIB::Config;
     # opml parse result.
     our $opml_parse = undef;
 
+    our $debug = undef;
+
     sub new {
         my $pkg_name  = shift;
-
 	my @folder_name = ();
 
         # First, parse the commnad line in case the config file location is specified
@@ -88,6 +91,13 @@ package RIGELLIB::Config;
 
         # Now reparse the command line to override and config values set above
         &__parse_options();
+
+	$debug = RIGELLIB::Debug->new( \%{$DEFAULT_GLOBAL_CONFIG} );
+
+        if( $debug->DebugEnabled() ) {
+            $debug->OutputDebug( "Global Config Dump:\n" . Data::Dumper::Dumper( \%{$DEFAULT_GLOBAL_CONFIG} ) );
+            $debug->OutputDebug( "Site Config Dump:\n" . Data::Dumper::Dumper( \%{$DEFAULT_SITE_CONFIG} ) );
+        }
 
         $this = bless { 
             folder_array   => \@folder_name,
@@ -608,7 +618,9 @@ package RIGELLIB::Config;
         }
         @key_array = sort @key_array;
 
-        print Data::Dumper::Dumper( \@key_array ) if($DEFAULT_GLOBAL_CONFIG->{'debug'});
+        if( $debug->DebugEnabled() ) {
+            $debug->OutputDebug( "__sort_array_byfolder Array Dump:\n" . Data::Dumper::Dumper( \@key_array ) );
+        }
 
         foreach my $key_item (@key_array) {
             foreach my $param_item (@array) {

@@ -23,6 +23,7 @@ use POSIX qw(setsid);
 use RIGELLIB::Config;
 use RIGELLIB::Rigel;
 use RIGELLIB::Common;
+use RIGELLIB::Debug;
 use Data::Dumper;
 
 package main;
@@ -68,15 +69,13 @@ sub main {
     my %config = %{$config_obj->get_global_configall()};
     my $version = $config_obj->get_version();
     my @config_list = @{$config{'list'}};
+    my $debug = RIGELLIB::Debug->new( \%config );
 
     #    print version
     if ( $config{version} ) {
 	print  "Rigel $version\n";
         exit();
     }
-
-    print Data::Dumper::Dumper( \%config ) if ($config{'debug'});
-    print Data::Dumper::Dumper( $config_obj->get_site_configall() ) if ($config{'debug'});
 
     show_usage () if ($config{help});
 
