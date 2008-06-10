@@ -113,12 +113,12 @@ package RIGELLIB::Rigel;
         ( $this->{'management-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'management-folder'} );
         ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
 
-        if ($debug->DebugEnabled()) {
-#            $imap->Debug(1);
-#            $imap->Debug_fh();
+        if ($debug->DebugEnabled(3)) {
+            $imap->Debug(1);
+            $imap->Debug_fh();
         }
 
-        if ( $this->{'use-ssl'} ) {
+	if ( $this->{'use-ssl'} ) {
             $imap->State(1);    # connected
             $imap->login();     # if ssl enabled, login required because it is bypassed.
         }
