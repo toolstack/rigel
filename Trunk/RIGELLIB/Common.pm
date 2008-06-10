@@ -27,17 +27,16 @@ package RIGELLIB::Common;
     use RIGELLIB::UserAgent;
     use RIGELLIB::Unicode;
     use RIGELLIB::Debug;
-    use Data::Dumper;
 
-    our $config = undef;
+    our %config = undef;
     our $debug = undef;
 
     sub new {
         my $pkg_name = shift;
+	
+	(%config) = %{(shift)};
 
-        $config = RIGELLIB::Config->new()->get_global_configall();
-
-	$debug = RIGELLIB::Debug->new( \%{$config} );
+	$debug = RIGELLIB::Debug->new( \%config );
 
         bless {}, $pkg_name;
     }
@@ -47,11 +46,11 @@ package RIGELLIB::Common;
         my $uri         = shift;
         my $headers     = shift;
         my %header_hash = %{$headers};
-        my $ua          = RIGELLIB::UserAgent->new();
+        my $ua          = RIGELLIB::UserAgent->new( \%config );
 
-        $debug->OutputDebug( 2, "Proxy Dump = ", $config->{'proxy'} );
+        $debug->OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
 
-	$ua->proxy(['http','ftp'], $config->{'proxy'}) if($config->{'proxy'});
+	$ua->proxy(['http','ftp'], %config->{'proxy'}) if( %config->{'proxy'} );
         my $request = HTTP::Request->new('GET');
 
 	$debug->OutputDebug( 1, "uri = " . $uri );
@@ -121,8 +120,8 @@ package RIGELLIB::Common;
 
 	$prompt = "UserName :" unless(defined $prompt);
 
-        if ($isproxy && defined $config->{'proxy-user'}) {
-            return $config->{'proxy-user'};
+        if ($isproxy && defined %config->{'proxy-user'}) {
+            return %config->{'proxy-user'};
         }
 
         # prompt and get username
@@ -131,7 +130,7 @@ package RIGELLIB::Common;
         chomp($user);
         $user = undef unless length $user;
 
-        if (!defined $config->{'proxy-user'} && $isproxy) {
+        if (!defined %config->{'proxy-user'} && $isproxy) {
             # add username to @ARGV
             push @ARGV, "--proxy-user";
             push @ARGV, $user;
@@ -148,8 +147,8 @@ package RIGELLIB::Common;
 
 	$prompt = "Password: " unless(defined $prompt);
 
-        if ($isproxy && defined $config->{'proxy-pass'}) {
-            return $config->{'proxy-pass'};
+        if ($isproxy && defined %config->{'proxy-pass'}) {
+            return %config->{'proxy-pass'};
         }
 
         print $prompt;
@@ -179,7 +178,7 @@ package RIGELLIB::Common;
         chomp($password);
         $password = undef unless length $password;
 
-        if (!defined $config->{'proxy-pass'} && $isproxy) {
+        if (!defined %config->{'proxy-pass'} && $isproxy) {
             # add password to @ARGV
             push @ARGV, "--proxy-pass";
             push @ARGV, $password;
@@ -193,7 +192,7 @@ package RIGELLIB::Common;
     sub getProxyPass_ifEnabled {
         my $this = shift;
 
-        if ($config->{'proxy'} && $config->{'proxy-user'}) {
+        if( %config->{'proxy'} && %config->{'proxy-user'} ) {
             $this->getPass( 'proxy password: ', 1 );
         }
     }

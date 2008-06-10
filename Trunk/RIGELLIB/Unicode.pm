@@ -20,12 +20,13 @@
 #
 
 use strict;
-use Encode;
-use Encode::Guess qw/euc-jp shift-jis utf8 jis/;
-use Jcode;
 
 package RIGELLIB::Unicode;
 {
+    use Encode;
+    use Encode::Guess qw/euc-jp shift-jis utf8 jis/;
+    use Jcode;
+
     sub to_utf7 {
         my $s = shift;
 

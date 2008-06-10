@@ -305,7 +305,7 @@ package RIGELLIB::Config;
         }
 
         # get proxy pass if enabled
-        my $common = RIGELLIB::Common->new();
+        my $common = RIGELLIB::Common->new( \%{$DEFAULT_GLOBAL_CONFIG} );
         $common->getProxyPass_ifEnabled();
 
         # open output file. if output file exists, ask if overwrite it.
@@ -370,7 +370,7 @@ package RIGELLIB::Config;
             # print uris.
             foreach my $link (@{$config->{'url'}}) {
                 print "processing $link ....\n";
-                my $common = RIGELLIB::Common->new();
+                my $common = RIGELLIB::Common->new( \%{$DEFAULT_GLOBAL_CONFIG} );
                 my @rss_and_response = $common->getrss_and_response( $link, {} );
                 next if ( scalar(@rss_and_response) == 0 );
                 my $content = $rss_and_response[0];

@@ -22,11 +22,10 @@
 use strict;
 use RIGELLIB::Config;
 use RIGELLIB::Common;
-use Data::Dumper;
 
 package RIGELLIB::UserAgent;
 {
-    our $config = undef;
+    our %config = undef;
     our $common = undef;
 
     # extends LWP::UserAgent
@@ -35,12 +34,12 @@ package RIGELLIB::UserAgent;
 
     sub new {
         my $pkg_name = shift;
+        (%config) = %{(shift)};
         my $ua = LWP::UserAgent->new(@_);
 
-	$config = RIGELLIB::Config->new()->get_global_configall();
-        $common = RIGELLIB::Common->new();
+        $common = RIGELLIB::Common->new( \%config );
 
-	$ua->agent("Rigel/".$config->{'version'});
+	$ua->agent( "Rigel/" . %config->{'version'});
 
 	bless $ua, $pkg_name;
     }
@@ -56,14 +55,14 @@ package RIGELLIB::UserAgent;
 	my @abort_list = ();
 
         if( $isproxy ) {
-            if ( $config->{'proxy-user'} && $config->{'proxy-pass'} ) {
-                return ( $config->{'proxy-user'},
-                         $config->{'proxy-pass'}
+            if ( %config-5>{'proxy-user'} && %config->{'proxy-pass'} ) {
+                return ( %config->{'proxy-user'},
+                         %config->{'proxy-pass'}
                 );
             }
 
-	    if ( $config->{'proxy-user'})  {
-                return ( $config->{'proxy-user'},
+	    if ( %config->{'proxy-user'})  {
+                return ( %config->{'proxy-user'},
                          $common->getPass("Your proxy Password: ", 1)
                 );
             } else {
