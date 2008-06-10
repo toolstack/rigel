@@ -40,7 +40,6 @@ package RIGELLIB::Rigel;
     use RIGELLIB::Config;
     use RIGELLIB::Common;
     use RIGELLIB::Debug;
-    use Data::Dumper;
     use Crypt::CBC;
     use MIME::Parser;
     use Unicode::Map8;
@@ -55,6 +54,7 @@ package RIGELLIB::Rigel;
     our $config_obj    = undef;
     our $GLOBAL_CONFIG = undef;
     our $SITE_CONFIG   = undef;
+    our $common        = undef;
 
     sub new {
         my $this       = shift;
@@ -63,6 +63,8 @@ package RIGELLIB::Rigel;
         $GLOBAL_CONFIG = $config_obj->get_global_configall();
         $SITE_CONFIG   = $config_obj->get_site_configall();
         $VERSION       = $config_obj->get_version();
+
+	$common = RIGELLIB::Common->new( \%{$GLOBAL_CONFIG} );
 
 	$debug = RIGELLIB::Debug->new( \%{$GLOBAL_CONFIG} );
 
@@ -254,7 +256,6 @@ package RIGELLIB::Rigel;
             $site_config->{'last-updated'} = $latest;        
         }
 
-        my $common = RIGELLIB::Common->new();
         my @rss_and_response = $common->getrss_and_response( $link, $headers );
 
 	if( scalar(@rss_and_response) == 0 ) {

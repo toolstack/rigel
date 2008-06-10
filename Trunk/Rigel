@@ -91,7 +91,7 @@ sub main {
     #   prompt imap password (and proxy password if enabled)
     unless ($config{'password'}) {
 	print "You require authentication ...\n";
-        my $common = RIGELLIB::Common->new();
+        my $common = RIGELLIB::Common->new( \%config );
         $common->getProxyPass_ifEnabled();
         $RIGELLIB::Rigel::GLOBAL_CONFIG->{password} = $common->getPass('imap password: ');
     }
