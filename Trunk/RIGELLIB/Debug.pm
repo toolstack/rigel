@@ -35,8 +35,15 @@ package RIGELLIB::Debug;
     }
 
     sub DebugEnabled {
-        return $config{'debug'};
+	my $this = shift;
+	my $level = shift;
+
+	if( $config{'debug'} >= $level ) {
+	    return 1;
+	} else {
+	    return 0;
 	}
+    }
 
     sub OutputDebug {
 	my $this = shift;
