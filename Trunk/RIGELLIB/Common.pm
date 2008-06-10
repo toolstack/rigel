@@ -49,39 +49,37 @@ package RIGELLIB::Common;
         my %header_hash = %{$headers};
         my $ua          = RIGELLIB::UserAgent->new();
 
-        if( $debug->DebugEnabled() ) {
-            $debug->OutputDebug( "Proxy Dump = \n" . Data::Dumper::Dumper( $config->{'proxy'} ) );
-        }
+        $debug->OutputDebug( 2, "Proxy Dump = ", $config->{'proxy'} );
 
 	$ua->proxy(['http','ftp'], $config->{'proxy'}) if($config->{'proxy'});
         my $request = HTTP::Request->new('GET');
 
-	$debug->OutputDebug( "uri = " . $uri );
+	$debug->OutputDebug( 1, "uri = " . $uri );
         $request->url($uri);
 
         # set header if any.
         while (my ($key,$value) = each %header_hash) {
-	    $debug->OutputDebug( "Header[$key] = $value" );
+	    $debug->OutputDebug( 1, "Header[$key] = $value" );
 	    $request->header( $key => $value );
         }
 
         # finally send request.
         my $response = $ua->request($request);
 
-        $debug->OutputDebug( "response code :" . $response->code );
+        $debug->OutputDebug( 1, "response code :" . $response->code );
 
         my @rss_and_response = ();
 
         # Not Modified
         if ($response->code eq '304') {
-	    $debug->OutputDebug( "received 304 code from RSS Server" );
+	    $debug->OutputDebug( 1, "received 304 code from RSS Server" );
 
 	    return @rss_and_response;
         }
 
         # Connection Error.
         unless ($response->is_success) {
-	    $debug->OutputDebug( "connection error" );
+	    $debug->OutputDebug( 1, "connection error" );
 
 	    return @rss_and_response;
         }
@@ -106,8 +104,8 @@ package RIGELLIB::Common;
                         );
                     /eig;
  
-        $debug->OutputDebug( "content = $content" );
-	$debug->OutputDebug( "response = $response" );
+        $debug->OutputDebug( 2, "content = $content" );
+	$debug->OutputDebug( 2, "response = $response" );
 
 	push @rss_and_response, $content;
         push @rss_and_response, $response;

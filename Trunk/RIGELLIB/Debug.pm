@@ -23,6 +23,8 @@ use strict;
 
 package RIGELLIB::Debug;
 {
+    use Data::Dumper;
+
     our %config = undef;
 
     sub new {
@@ -34,6 +36,15 @@ package RIGELLIB::Debug;
 	bless {}, $pkg_name;
     }
 
+    #
+    # This function returns true/false depending upon if debugging is enabled
+    # at a given level.  Usage should be:
+    #
+    #     RIGELLIB::Debug->DebugEnabled( $level )
+    #
+    # Where:
+    #     $level is a value between 0 and 3.
+    #
     sub DebugEnabled {
 	my $this = shift;
 	my $level = shift;
@@ -45,21 +56,37 @@ package RIGELLIB::Debug;
 	}
     }
 
+    #
+    # This function outputs debug information if debugging is enabled
+    # at a given level.  Usage should be:
+    #
+    #     RIGELLIB::Debug->OutputDebug( $level, $string, $variable )
+    #
+    # Where:
+    #     $level is the desired output level to execute at
+    #     $string is the string to output (do not line terminate, it
+    #          will be added automatically)
+    #     $variable is a variable to pass to Data::Dumper
+    #
+    # The line output format will be:
+    #
+    #     [Calling function] [$string]
+    #     [$var dump if exists]
+    #
     sub OutputDebug {
 	my $this = shift;
+	my $level = shift;
         my $string = shift;
-	my $newline = shift;
+	my $var = shift;
 
-	if( $newline == undef ) { $newline = 1; }
-
-	if( $config{'debug'} ) {
+	if( $config{'debug'} >= $level ) {
 	    my $parent = ( caller(1) )[3];
-	    print $parent . ": " . $string;
+	    print $parent . ": " . $string . "\n";
 
-	    if( $newline ) {
-	        print "\n";
-	    }
-	}
+            if( defined( $var ) ) {
+    	        print Data::Dumper::Dumper( $var ) . "\n";
+    	    }
+        }
     }
 }
 
