@@ -114,8 +114,8 @@ package RIGELLIB::Rigel;
         ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
 
         if ($debug->DebugEnabled()) {
-            $imap->Debug(1);
-            $imap->Debug_fh();
+#            $imap->Debug(1);
+#            $imap->Debug_fh();
         }
 
         if ( $this->{'use-ssl'} ) {
@@ -214,6 +214,8 @@ package RIGELLIB::Rigel;
             my $e;
 	    my $subject_glob;
 
+	    $debug->OutputDebug( "Enabled subject caching" );
+
             # setup the message parser so we don't get any errors and we 
             # automatically decode messages
             $mp->ignore_errors(1);
@@ -232,11 +234,18 @@ package RIGELLIB::Rigel;
                 $mp->filer->purge;
             }
 
+    	    $debug->OutputDebug( "subject glob = $subject_glob" );
+
+
 	    # Now that we have the last updated subject list in a big string, time
 	    # to prase it in to an array.
 	    my $beyond_headers = 0;
 	    foreach my $subject ( split( '\n', $subject_glob ) ) {
-	        if( $beyond_headers == 1 ) { push @subject_lines, $subject; }
+	        if( $beyond_headers == 1 ) { 
+		    push @subject_lines, $subject;
+		    $debug->OutputDebug( "subject line = $subject" );
+		}
+
 	        if( $subject eq "" ) { $beyond_headers = 1; }
 	    }
         }
@@ -286,7 +295,7 @@ package RIGELLIB::Rigel;
         $rss->{'Rigel:message-id'}    = $message_id;
         $rss->{'Rigel:rss-link'}      = $link;
 
-        return ( $rss, @subject_lines );
+	return ( $rss, @subject_lines );
     }
 
 
