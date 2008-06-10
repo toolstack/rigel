@@ -214,7 +214,7 @@ package RIGELLIB::Rigel;
             my $e;
 	    my $subject_glob;
 
-	    $debug->OutputDebug( "Enabled subject caching" );
+	    $debug->OutputDebug( 1, "Enabled subject caching" );
 
             # setup the message parser so we don't get any errors and we 
             # automatically decode messages
@@ -234,8 +234,7 @@ package RIGELLIB::Rigel;
                 $mp->filer->purge;
             }
 
-    	    $debug->OutputDebug( "subject glob = $subject_glob" );
-
+    	    $debug->OutputDebug( 1, "subject glob = $subject_glob" );
 
 	    # Now that we have the last updated subject list in a big string, time
 	    # to prase it in to an array.
@@ -243,7 +242,7 @@ package RIGELLIB::Rigel;
 	    foreach my $subject ( split( '\n', $subject_glob ) ) {
 	        if( $beyond_headers == 1 ) { 
 		    push @subject_lines, $subject;
-		    $debug->OutputDebug( "subject line = $subject" );
+		    $debug->OutputDebug( 1, "subject line = $subject" );
 		}
 
 	        if( $subject eq "" ) { $beyond_headers = 1; }
@@ -311,12 +310,15 @@ package RIGELLIB::Rigel;
 	my @old_subject_lines = @{$subjects};
 	my $old_subject_glob = "\n";
 
+        # Re-globify the old subject lines for easier searching later if we 
+	# have any
 	if( $subjects ) {
 	    foreach my $old_subject ( @old_subject_lines ) {
 	        $old_subject_glob = $old_subject_glob . $old_subject . "\n";
 	    }
 	}
 
+	$debug->OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
         my $type = $this->{site_config}->{type};
 
         if ($type eq "channel") {
@@ -332,7 +334,8 @@ package RIGELLIB::Rigel;
 
         my ($folder) = $this->apply_template ($rss, undef, 1, $this->{site_config}->{folder});
         $folder = $this->get_real_folder_name ($folder, $this->{'directory_separator'});
-        $this->select ($folder);
+        $debug->OutputDebug( 1, "IMAP folder to use = $folder" );
+	$this->select ($folder);
 
         my @append_items;
         my @delete_mail;
@@ -345,13 +348,16 @@ package RIGELLIB::Rigel;
 	    # strip any newlines so we can store it in the IMAP message properly
 	    $subject = $this->rss_txt_convert( $item->title() );
 	    $subject =~ s/\n//g;
+	    $debug->OutputDebug( 2, "RSS Item Subject = $subject" );
 	    push @subject_lines, $subject;
 
             # Retreive the date from the item or feed for future work.
             my $rss_date = $this->get_date ($rss, $item);
+	    $debug->OutputDebug( 2, "RSS Item date = $rss_date" );
 
             # Convert the above date to a unix time code
             my $rss_time = HTTP::Date::str2time( $rss_date );
+	    $debug->OutputDebug( 2, "RSS Item unxi timestamp = $rss_time" );
 
             # if expire enabled, get lastest-modified time of rss.
             if ($this->{site_config}->{expire} > 0) {
@@ -363,10 +369,13 @@ package RIGELLIB::Rigel;
 
             # Check to see if the rss item is older than the last update, in otherwords, the user
             # deleted it so we shouldn't add it back in.
+	    $debug->OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
+	    $debug->OutputDebug( 2, "Or is '$rss_date' = '' ?" );
             if ( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" ) {
                 # message id is "rss url@host" AND x-rss-aggregator field is "Rigel"
                 # and not deleted.
-                my @search = $imap->search ("NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"");
+                $debug->OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
+		my @search = $imap->search ("NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"");
 
                 if ($this->is_error()) {
                     print "WARNING: $@\n";
@@ -380,21 +389,27 @@ package RIGELLIB::Rigel;
                         # against the old subject lines, make sure we disable special chacters
 			# in the match with \Q and \E
                         if( $old_subject_glob !~ m/\Q$subject\E/ ) {
+  			    $debug->OutputDebug( 2, "Subject not found in glob, adding item!" );
 			    push @append_items, $item;
 			}
 		    } else {
+			$debug->OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
 		        push @append_items, $item;
 		    }
 
                 } else {
-                    next unless ($rss_date); # date filed is not found, we ignore it.
+                    next unless ($rss_date); # date field is not found, we ignore it.
+
+ 	            $debug->OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
-                    my $latest = $this->get_latest_date (\@search);
+                    my ( $latest, $lmsg ) = $this->get_latest_date (\@search);
+		    $debug->OutputDebug( 2, "latest date = $latest" );
 
                     # if rss date is newer, delete search result and add rss items.
                     # by this, duplicate message is replaced with lastest one.
                     if ( $rss_time > $latest ) {
+			$debug->OutputDebug( 2, "updating items!" );
                         push @delete_mail, @search;
                         push @append_items, $item;
                     }

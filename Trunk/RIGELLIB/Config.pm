@@ -94,10 +94,8 @@ package RIGELLIB::Config;
 
 	$debug = RIGELLIB::Debug->new( \%{$DEFAULT_GLOBAL_CONFIG} );
 
-        if( $debug->DebugEnabled() ) {
-            $debug->OutputDebug( "Global Config Dump:\n" . Data::Dumper::Dumper( \%{$DEFAULT_GLOBAL_CONFIG} ) );
-            $debug->OutputDebug( "Site Config Dump:\n" . Data::Dumper::Dumper( \%{$DEFAULT_SITE_CONFIG} ) );
-        }
+        $debug->OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
+        $debug->OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
 
         $this = bless { 
             folder_array   => \@folder_name,
@@ -618,9 +616,7 @@ package RIGELLIB::Config;
         }
         @key_array = sort @key_array;
 
-        if( $debug->DebugEnabled() ) {
-            $debug->OutputDebug( "__sort_array_byfolder Array Dump:\n" . Data::Dumper::Dumper( \@key_array ) );
-        }
+        $debug->OutputDebug( 2, "Array Dump:", \@key_array );
 
         foreach my $key_item (@key_array) {
             foreach my $param_item (@array) {
