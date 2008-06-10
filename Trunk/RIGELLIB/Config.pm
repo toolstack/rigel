@@ -30,7 +30,6 @@ package RIGELLIB::Config;
     use XML::Parser::Expat;
     use XML::FeedPP;
     use Getopt::Long;
-    use Data::Dumper;
     use RIGELLIB::Common;
     use RIGELLIB::Unicode;
     use RIGELLIB::Debug;
@@ -465,14 +464,18 @@ package RIGELLIB::Config;
         my %parse_result = &__parse_conffile( $DEFAULT_GLOBAL_CONFIG->{'config-file'} );
 
         # override config value for the site definition
-        while(my ($key,$value) = each %parse_result) {
-            $DEFAULT_SITE_CONFIG->{$key} = $value;
-        }
-        
+	while( my ($key, $value) = each %$DEFAULT_SITE_CONFIG ) {
+	    if( defined( $parse_result{$key} ) ) {
+		$DEFAULT_SITE_CONFIG->{$key} = $parse_result{$key};
+		}
+	}
+
         # override config vaules for the global config
-        while(my ($key,$value) = each %parse_result) {
-            $DEFAULT_GLOBAL_CONFIG->{$key} = $value;
-        }
+	while( my ($key, $value) = each %$DEFAULT_GLOBAL_CONFIG ) {
+	    if( defined( $parse_result{$key} ) ) {
+		$DEFAULT_GLOBAL_CONFIG->{$key} = $parse_result{$key};
+		}
+	}
     }
 
 
