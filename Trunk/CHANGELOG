@@ -1,6 +1,31 @@
 Rigel change log:
 ================
 
+version 1.0b3
+-------------
+	- removed redundent config file loads
+	- removed data::dumper from all .pm files except debug.pm
+	- Fixed config file parsing to apply settings to the approrpriate
+	  site or global config variables only
+	- possible bug fix with checking the time stamp on a search where no 
+	  messages exist
+	- Added debugging library and support
+	- It turns out that you cannot count on UID's being returned form 
+	  append_string() when adding messages to the IMAP server, nor can
+	  you count on the flag's variable in append_string() actually 
+	  working so this update loops through all messages in the 
+	  configuration and last update folders whenever a change is made 
+	  and marks all messages as seen.
+	- also removed the peek setting in the imap server connection code
+	  as some servers take this to mean to never update the seen status
+	  no matter what the function being preformed, incudeing a see() call
+	- added Ignoresizeerrors to the IMAP connect to support mail servers
+	  like Exchange 2007
+	- added code to check the validity of the subject lines being 
+	  replaced in the last update so if an error occured after the
+	  connetion to the RSS feed was made and no subjects were actually
+	  returned the old list of subjects will be used
+
 version 1.0b2
 -------------
 	- Second Beta

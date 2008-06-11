@@ -10,7 +10,7 @@ Requirements
 
 		Crypt::CBC
 		Crypt::DES_PP
-		Data::Dumper
+		Data::Dumper (for debugging only)
 		Digest::HMAC
 		Encode
 		Encode::Guess
