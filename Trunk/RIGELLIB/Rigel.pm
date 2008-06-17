@@ -168,11 +168,13 @@ package RIGELLIB::Rigel;
             $this->{site_config} = $site_config;
 
             for my $url (@{$site_config->{url}}) {
-                my ( $rss, @subject_lines ) = $this->get_rss ($url, $site_config);
+                my ( $rss, @subject_lines, $ttl ) = $this->get_rss ($url, $site_config);
 
                 next unless ($rss);
 
-                $this->send ($rss, $site_config, \@subject_lines);
+		$debug->OutputDebug( 1, "TTL = $ttl" );
+
+                $this->send ($rss, $site_config, \@subject_lines, $ttl);
                 $this->expire ($rss);
             }
         }
@@ -267,29 +269,37 @@ package RIGELLIB::Rigel;
 
 	if( scalar(@rss_and_response) == 0 ) {
 	    print "\tNot modified, no update required.\n";
-            return;
+            return ( undef, undef, undef );
 	}
 
         my $content = $rss_and_response[0];
         my $response = $rss_and_response[1];
         my $rss = undef;
+	my $ttl = 0;
 
         # Do some rudimentary checks/fixes on the feed before parsing it
         $content = __fix_feed( $content );
+
+	# As FeedPP doesn't understand TTL values in the feed, check to see 
+	# if one exists and get it for later use
+	if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i) {
+		$ttl = $1;
+		$debug->OutputDebug( 1, "Feed has TTL! Set to:" . $ttl )
+        }
 
         # Parse the feed
         eval { $rss = XML::FeedPP->new($content); };
 
         if ($this->is_error()) {
             print "\tFeed error, content will not be created.\n";
-            return ( undef, @subject_lines );
+            return ( undef, @subject_lines, $ttl );
         }
 
 	if( $rss ) {
             print "\tModified, updating IMAP items.\n";
         } else { 
             print "\tUnabled to retreive feed, not updating.\n";
-            return ( undef, @subject_lines );
+            return ( undef, @subject_lines, $ttl );
         }
 
 	# Now that we've verifyed that we have a feed to process, let's
@@ -305,7 +315,7 @@ package RIGELLIB::Rigel;
         $rss->{'Rigel:message-id'}    = $message_id;
         $rss->{'Rigel:rss-link'}      = $link;
 
-	return ( $rss, @subject_lines );
+	return ( $rss, @subject_lines, $ttl );
     }
 
 
@@ -314,6 +324,7 @@ package RIGELLIB::Rigel;
         my $rss         = shift;
         my $site_config = shift;
 	my $subjects    = shift;
+	my $ttl         = shift;
         my $imap        = $this->{imap};
 
         my @items;
@@ -368,7 +379,7 @@ package RIGELLIB::Rigel;
 
             # Convert the above date to a unix time code
             my $rss_time = HTTP::Date::str2time( $rss_date );
-	    $debug->OutputDebug( 2, "RSS Item unxi timestamp = $rss_time" );
+	    $debug->OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
 
             # if expire enabled, get lastest-modified time of rss.
             if ($this->{site_config}->{expire} > 0) {
@@ -474,9 +485,9 @@ package RIGELLIB::Rigel;
 	# will be added back in to the IMAP folder which is probably not want we 
 	# want to happen
 	if( scalar( @subject_lines ) < 1 ) {
-            $this->send_last_update ($rss, \@old_subject_lines);
+            $this->send_last_update ($rss, \@old_subject_lines, $ttl);
         } else {
-            $this->send_last_update ($rss, \@subject_lines);
+            $this->send_last_update ($rss, \@subject_lines, $ttl);
         }
 
 	return;
@@ -555,6 +566,7 @@ package RIGELLIB::Rigel;
         my $this          = shift;
         my $rss           = shift;
 	my $subject_lines = shift;
+	my $ttl           = shift;
 
         my $message_id    = $rss->{'Rigel:message-id'};
         my $date          = $rss->{'Rigel:last-modified'};
@@ -575,10 +587,12 @@ X-RSS-Link: $link
 X-RSS-Aggregator: Rigel-checker
 X-RSS-Aggregate-Date: $a_date;
 X-RSS-Last-Modified: $date
+X-RSS-TTL: $ttl
 
 Link: $link
 Last-Modified: $date
 Aggregate-Date: $a_date
+TTL: $ttl
 
 BODY
 ;
