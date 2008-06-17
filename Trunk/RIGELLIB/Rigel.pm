@@ -195,6 +195,7 @@ package RIGELLIB::Rigel;
         $imap->select( $folder );
         my $message_id = sprintf ('%s@%s', $link, $this->{host});
         my @search = $imap->search ("HEADER message-id \"$message_id\"" );
+	$debug->OutputDebug( 2, "HEADER message-id \"$message_id\"" );
 
         if ($this->is_error()) {
             print "WARNING: $@\n";
@@ -203,8 +204,10 @@ package RIGELLIB::Rigel;
 	my $latest = undef;
 	my $lmsg = undef;
 	( $latest, $lmsg ) = $this->get_latest_date (\@search);
+	$debug->OutputDebug( 2, "Message search: ", \@search );
+	$debug->OutputDebug( 2, "Latest message: $lmsg" );
 
-        # If this site is going to check subject lines against the last
+	# If this site is going to check subject lines against the last
 	# update we need to retreive them from the IMAP message that was
 	# the last update.
         my @subject_lines = undef;
@@ -223,18 +226,22 @@ package RIGELLIB::Rigel;
             $mp->ignore_errors(1);
             $mp->extract_uuencode(1);
 
-            eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
+	    if( $lmsg ) {
+	        eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
 
-            my $error = ($@ || $mp->last_error);
+                my $error = ($@ || $mp->last_error);
 
-            if ($error) {
+                if ($error) {
+                    $subject_glob = "";
+                } else {
+                    # get_mime_text_body will retrevie all the plain text peices of the
+                    # message and return it as one string.
+                    $subject_glob = __trim( get_mime_text_body( $e ) );
+                    $mp->filer->purge;
+                }
+	    } else {
                 $subject_glob = "";
-            } else {
-                # get_mime_text_body will retrevie all the plain text peices of the
-                # message and return it as one string.
-                $subject_glob = __trim( get_mime_text_body( $e ) );
-                $mp->filer->purge;
-            }
+	    }
 
     	    $debug->OutputDebug( 1, "subject glob = $subject_glob" );
 
@@ -263,12 +270,6 @@ package RIGELLIB::Rigel;
             return;
 	}
 
-        foreach my $MessageToDelete (@search ) {
-            $imap->delete_message ($MessageToDelete); # delete other messages;
-        }
-
-        $imap->expunge();
-
         my $content = $rss_and_response[0];
         my $response = $rss_and_response[1];
         my $rss = undef;
@@ -281,14 +282,23 @@ package RIGELLIB::Rigel;
 
         if ($this->is_error()) {
             print "\tFeed error, content will not be created.\n";
-            return undef;
+            return ( undef, @subject_lines );
         }
 
 	if( $rss ) {
             print "\tModified, updating IMAP items.\n";
         } else { 
             print "\tUnabled to retreive feed, not updating.\n";
+            return ( undef, @subject_lines );
         }
+
+	# Now that we've verifyed that we have a feed to process, let's
+	# delete the last update info from the IMAP server
+        foreach my $MessageToDelete (@search ) {
+            $imap->delete_message ($MessageToDelete); # delete other messages;
+        }
+
+        $imap->expunge();
 
         # copy session information
         $rss->{'Rigel:last-modified'} = HTTP::Date::time2str ($response->last_modified);
