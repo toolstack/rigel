@@ -42,13 +42,24 @@ package RIGELLIB::Common;
     }
 
     sub getrss_and_response {
-        my $this        = shift;
-        my $uri         = shift;
-        my $headers     = shift;
-        my %header_hash = %{$headers};
-        my $ua          = RIGELLIB::UserAgent->new( \%config );
+        my $this             = shift;
+        my $uri              = shift;
+        my $headers          = shift;
+	my $rss_ttl          = shift;
+        my %header_hash      = %{$headers};
+        my $ua               = RIGELLIB::UserAgent->new( \%config );
+        my @rss_and_response = ();
 
         $debug->OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
+
+        # Check to see if we should update based upon the RSS TTL value
+	my $ctime = time();
+        $debug->OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
+	if( $rss_ttl > $ctime ) {
+	    # Not time to update, return with appropriate code
+	    $debug->OutputDebug( 1, "RSS TTL has not expired yet, no update needed." );
+            return @rss_and_response;
+	}
 
 	$ua->proxy(['http','ftp'], %config->{'proxy'}) if( %config->{'proxy'} );
         my $request = HTTP::Request->new('GET');
@@ -67,11 +78,9 @@ package RIGELLIB::Common;
 
         $debug->OutputDebug( 1, "response code :" . $response->code );
 
-        my @rss_and_response = ();
-
         # Not Modified
         if ($response->code eq '304') {
-	    $debug->OutputDebug( 1, "received 304 code from RSS Server" );
+	    $debug->OutputDebug( 1, "received 304 code from RSS Server, not modified" );
 
 	    return @rss_and_response;
         }
