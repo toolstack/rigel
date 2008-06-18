@@ -29,22 +29,20 @@ Requirements
 		XML::FeedPP
 		XML::Parser 
 		XML::Parser::Expat
-		XML::RSS 
 
 	Note that XML::FeedPP and MAIL::IMAPClient must be up to the current 
-	versions (0.34 and 3.05 and this time).  
-
-	XML::FeedPP 0.34 also has an issue with some date formats as provided 
-	by some feeds, this will be fixed in the next release of FeedPP.
+	versions (0.35 and 3.06 and this time), previous versions had bugs
+	which caused Rigel to fail.  
 
 	You also need an IMAP server, Rigel should work with just about any 
 	IMAP server, however it has only been verified at this time with 
-	Microsoft Exchange 2003. 
+	Microsoft Exchange 2003/2007. 
 
 	Rigel has only been tested on Linux at this time but it should run on
 	just about any *nix variant that support Perl and the above modules.
 	Rigel has not yet been test on Windows and it is unlikely to work at
-	this time.
+	this time as several of the above modules either need a complier or 
+	just won't compile on Windows at this time.
 
 Installation
 ------------
