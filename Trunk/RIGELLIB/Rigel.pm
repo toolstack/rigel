@@ -168,13 +168,11 @@ package RIGELLIB::Rigel;
             $this->{site_config} = $site_config;
 
             for my $url (@{$site_config->{url}}) {
-                my ( $rss, @subject_lines, $ttl ) = $this->get_rss ($url, $site_config);
+                my ( $rss, $ttl, @subject_lines ) = $this->get_rss ($url, $site_config);
 
                 next unless ($rss);
 
-		$debug->OutputDebug( 1, "TTL = $ttl" );
-
-                $this->send ($rss, $site_config, \@subject_lines, $ttl);
+                $this->send ($rss, $site_config, $ttl, \@subject_lines);
                 $this->expire ($rss);
             }
         }
@@ -208,6 +206,20 @@ package RIGELLIB::Rigel;
 	( $latest, $lmsg ) = $this->get_latest_date (\@search);
 	$debug->OutputDebug( 2, "Message search: ", \@search );
 	$debug->OutputDebug( 2, "Latest message: $lmsg" );
+
+	# First, let's see if any TTL has been idenfitifed for this feed
+	my $rss_ttl = 0;
+
+	if( $lmsg ) {
+	    $rss_ttl = $imap->get_header( $lmsg, "X-RSS-TTL" );
+	    $debug->OutputDebug( 1, "Cached TTL = $rss_ttl" );
+
+            # The RSS TTL is expressed in minutes, and the latest is expressed
+	    # in seconds, so take the latest and add the ttl in seconds to it
+	    # for use later in get_rss_and_response
+	    $rss_ttl = $latest + ( $rss_ttl * 60 );
+	    $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
+	}
 
 	# If this site is going to check subject lines against the last
 	# update we need to retreive them from the IMAP message that was
@@ -265,7 +277,7 @@ package RIGELLIB::Rigel;
             $site_config->{'last-updated'} = $latest;        
         }
 
-        my @rss_and_response = $common->getrss_and_response( $link, $headers );
+        my @rss_and_response = $common->getrss_and_response( $link, $headers, $rss_ttl );
 
 	if( scalar(@rss_and_response) == 0 ) {
 	    print "\tNot modified, no update required.\n";
@@ -284,7 +296,7 @@ package RIGELLIB::Rigel;
 	# if one exists and get it for later use
 	if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i) {
 		$ttl = $1;
-		$debug->OutputDebug( 1, "Feed has TTL! Set to:" . $ttl )
+		$debug->OutputDebug( 1, "Feed has TTL! Set to: " . $ttl )
         }
 
         # Parse the feed
@@ -292,14 +304,14 @@ package RIGELLIB::Rigel;
 
         if ($this->is_error()) {
             print "\tFeed error, content will not be created.\n";
-            return ( undef, @subject_lines, $ttl );
+            return ( undef, $ttl, @subject_lines );
         }
 
 	if( $rss ) {
             print "\tModified, updating IMAP items.\n";
         } else { 
             print "\tUnabled to retreive feed, not updating.\n";
-            return ( undef, @subject_lines, $ttl );
+            return ( undef, $ttl, @subject_lines );
         }
 
 	# Now that we've verifyed that we have a feed to process, let's
@@ -315,7 +327,7 @@ package RIGELLIB::Rigel;
         $rss->{'Rigel:message-id'}    = $message_id;
         $rss->{'Rigel:rss-link'}      = $link;
 
-	return ( $rss, @subject_lines, $ttl );
+	return ( $rss, $ttl, @subject_lines );
     }
 
 
@@ -323,8 +335,8 @@ package RIGELLIB::Rigel;
         my $this        = shift;
         my $rss         = shift;
         my $site_config = shift;
-	my $subjects    = shift;
 	my $ttl         = shift;
+	my $subjects    = shift;
         my $imap        = $this->{imap};
 
         my @items;
@@ -485,9 +497,9 @@ package RIGELLIB::Rigel;
 	# will be added back in to the IMAP folder which is probably not want we 
 	# want to happen
 	if( scalar( @subject_lines ) < 1 ) {
-            $this->send_last_update ($rss, \@old_subject_lines, $ttl);
+            $this->send_last_update ($rss, $ttl, \@old_subject_lines);
         } else {
-            $this->send_last_update ($rss, \@subject_lines, $ttl);
+            $this->send_last_update ($rss, $ttl, \@subject_lines);
         }
 
 	return;
@@ -565,8 +577,8 @@ package RIGELLIB::Rigel;
     sub send_last_update {
         my $this          = shift;
         my $rss           = shift;
-	my $subject_lines = shift;
 	my $ttl           = shift;
+	my $subject_lines = shift;
 
         my $message_id    = $rss->{'Rigel:message-id'};
         my $date          = $rss->{'Rigel:last-modified'};
