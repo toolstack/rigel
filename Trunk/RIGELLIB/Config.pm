@@ -71,6 +71,7 @@ package RIGELLIB::Config;
         'last-update'   => undef,
 	'use-subjects'  => undef,
 	'last-subjects' => undef,
+	'force-ttl'     => -1,
     };
 
     # opml parse result.
