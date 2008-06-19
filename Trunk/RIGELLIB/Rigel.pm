@@ -210,7 +210,7 @@ package RIGELLIB::Rigel;
 	# First, let's see if any TTL has been idenfitifed for this feed
 	my $rss_ttl = 0;
 
-	if( $lmsg ) {
+	if( $lmsg && ( $site_config->{'force-ttl'} == -1 ) ) {
 	    $rss_ttl = $imap->get_header( $lmsg, "X-RSS-TTL" );
 	    $debug->OutputDebug( 1, "Cached TTL = $rss_ttl" );
 
@@ -219,7 +219,41 @@ package RIGELLIB::Rigel;
 	    # for use later in get_rss_and_response
 	    $rss_ttl = $latest + ( $rss_ttl * 60 );
 	    $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
-	}
+	} else {
+            # if there was no chaced status message, then this is really the first
+	    # update and we should leave the rss_ttl value to 0 so a site update
+	    # is done, otherwise we can use the force-ttl value to set a new epoch
+	    if( $lmsg ) {
+		$rss_ttl = $latest + ( $site_config->{'force-ttl'} * 60 );
+            }
+	    $debug->OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
+    	    $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
+        }
+
+	if( $latest ) {
+            $headers = { 'If-Modified-Since' => HTTP::Date::time2str ($latest) };
+            $site_config->{'last-updated'} = $latest;        
+        }
+
+        # Check to see if we should update based upon the RSS TTL value
+	my $ctime = time();
+	my @rss_and_response;
+
+        $debug->OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
+	if( $rss_ttl > $ctime ) {
+	    # Not time to update
+	    print "\tTTL not yet expired, no update required.\n";
+            return ( undef, undef, undef );
+	} else {
+	    # We're good to go, get the update
+	    @rss_and_response = $common->getrss_and_response( $link, $headers, $rss_ttl );
+
+	    # If we didn't actually get an update from the feed, just return undef's
+	    if( scalar(@rss_and_response) == 0 ) {
+	        print "\tFeed not modified, no update required.\n";
+	        return ( undef, undef, undef );
+	    }
+        }
 
 	# If this site is going to check subject lines against the last
 	# update we need to retreive them from the IMAP message that was
@@ -271,18 +305,6 @@ package RIGELLIB::Rigel;
 	        if( $subject eq "" ) { $beyond_headers = 1; }
 	    }
         }
-
-	if( $latest ) {
-            $headers = { 'If-Modified-Since' => HTTP::Date::time2str ($latest) };
-            $site_config->{'last-updated'} = $latest;        
-        }
-
-        my @rss_and_response = $common->getrss_and_response( $link, $headers, $rss_ttl );
-
-	if( scalar(@rss_and_response) == 0 ) {
-	    print "\tNot modified, no update required.\n";
-            return ( undef, undef, undef );
-	}
 
         my $content = $rss_and_response[0];
         my $response = $rss_and_response[1];
@@ -1216,6 +1238,7 @@ http://template
 #last-update = undef
 #use-subjects = undef
 #last-subjects = undef
+#force-ttl = -1
 BODY
 ;
         my $i = 10 - $this->{imap}->message_count( $AddFolder );
