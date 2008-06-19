@@ -52,15 +52,6 @@ package RIGELLIB::Common;
 
         $debug->OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
 
-        # Check to see if we should update based upon the RSS TTL value
-	my $ctime = time();
-        $debug->OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
-	if( $rss_ttl > $ctime ) {
-	    # Not time to update, return with appropriate code
-	    $debug->OutputDebug( 1, "RSS TTL has not expired yet, no update needed." );
-            return @rss_and_response;
-	}
-
 	$ua->proxy(['http','ftp'], %config->{'proxy'}) if( %config->{'proxy'} );
         my $request = HTTP::Request->new('GET');
 
