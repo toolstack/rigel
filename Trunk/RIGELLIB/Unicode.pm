@@ -30,8 +30,8 @@ package RIGELLIB::Unicode;
     sub to_utf7 {
         my $s = shift;
 
-	# set utf8 flag
-	utf8::decode ($s); 
+        # set utf8 flag
+        utf8::decode ($s); 
 
         $s = Encode::encode ("UTF-7", $s);
 
@@ -39,7 +39,7 @@ package RIGELLIB::Unicode;
         $s =~ s/&/&\-/g;
         $s =~ s/\+([^+\-]+)?\-/&$1\-/g;
 
-	return $s;
+        return $s;
     }
 
 
@@ -63,14 +63,14 @@ package RIGELLIB::Unicode;
         my $string     = shift;
         my $fromenc    = lc(shift);
 
-	my $return_str = undef;
+        my $return_str = undef;
         my $utf8       = undef;
 
         # if we can, MIME encode with UTF-8. unless we can, use iso-2022-jp.
         if( $fromenc ) {
             $utf8 = Encode::from_to( $string, $fromenc, 'utf8');
 
-	    eval {
+            eval {
                 $return_str = Jcode->new ( $utf8 )->MIME_Header;
             };
 

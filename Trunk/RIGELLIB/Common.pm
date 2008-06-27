@@ -33,10 +33,10 @@ package RIGELLIB::Common;
 
     sub new {
         my $pkg_name = shift;
-	
-	(%config) = %{(shift)};
 
-	$debug = RIGELLIB::Debug->new( \%config );
+        (%config) = %{(shift)};
+
+        $debug = RIGELLIB::Debug->new( \%config );
 
         bless {}, $pkg_name;
     }
@@ -45,23 +45,23 @@ package RIGELLIB::Common;
         my $this             = shift;
         my $uri              = shift;
         my $headers          = shift;
-	my $rss_ttl          = shift;
+        my $rss_ttl          = shift;
         my %header_hash      = %{$headers};
         my $ua               = RIGELLIB::UserAgent->new( \%config );
         my @rss_and_response = ();
 
         $debug->OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
 
-	$ua->proxy(['http','ftp'], %config->{'proxy'}) if( %config->{'proxy'} );
+        $ua->proxy(['http','ftp'], %config->{'proxy'}) if( %config->{'proxy'} );
         my $request = HTTP::Request->new('GET');
 
-	$debug->OutputDebug( 1, "uri = " . $uri );
+        $debug->OutputDebug( 1, "uri = " . $uri );
         $request->url($uri);
 
         # set header if any.
         while (my ($key,$value) = each %header_hash) {
-	    $debug->OutputDebug( 1, "Header[$key] = $value" );
-	    $request->header( $key => $value );
+            $debug->OutputDebug( 1, "Header[$key] = $value" );
+            $request->header( $key => $value );
         }
 
         # finally send request.
@@ -71,16 +71,16 @@ package RIGELLIB::Common;
 
         # Not Modified
         if ($response->code eq '304') {
-	    $debug->OutputDebug( 1, "received 304 code from RSS Server, not modified" );
+            $debug->OutputDebug( 1, "received 304 code from RSS Server, not modified" );
 
-	    return @rss_and_response;
+            return @rss_and_response;
         }
 
         # Connection Error.
         unless ($response->is_success) {
-	    $debug->OutputDebug( 1, "connection error" );
+            $debug->OutputDebug( 1, "connection error" );
 
-	    return @rss_and_response;
+            return @rss_and_response;
         }
 
         # RSS Get Succeeded.
@@ -95,7 +95,7 @@ package RIGELLIB::Common;
         $content =~ s/<\?xml.*?\?>/<\?xml version="1.0" encoding="utf-8"\?>/;
         # convert HTML Numeric reference to UTF-8 Character
         $content =~ s/\&#(x)?([a-f0-9]{1,5});/
- 			my $tmpstr = ($1)
+                         my $tmpstr = ($1)
                                    ? pack( "H*", sprintf( "%08s", "$2" ) )
                                    : pack( "N*", $2 );
                         Encode::encode( "UTF-8",
@@ -104,9 +104,9 @@ package RIGELLIB::Common;
                     /eig;
  
         $debug->OutputDebug( 2, "content = $content" );
-	$debug->OutputDebug( 2, "response = $response" );
+        $debug->OutputDebug( 2, "response = $response" );
 
-	push @rss_and_response, $content;
+        push @rss_and_response, $content;
         push @rss_and_response, $response;
 
         return @rss_and_response;
@@ -118,7 +118,7 @@ package RIGELLIB::Common;
         my $prompt  = shift;
         my $isproxy = shift;
 
-	$prompt = "UserName :" unless(defined $prompt);
+        $prompt = "UserName :" unless(defined $prompt);
 
         if ($isproxy && defined %config->{'proxy-user'}) {
             return %config->{'proxy-user'};
@@ -145,7 +145,7 @@ package RIGELLIB::Common;
         my $prompt  = shift;
         my $isproxy = shift;
 
-	$prompt = "Password: " unless(defined $prompt);
+        $prompt = "Password: " unless(defined $prompt);
 
         if ($isproxy && defined %config->{'proxy-pass'}) {
             return %config->{'proxy-pass'};

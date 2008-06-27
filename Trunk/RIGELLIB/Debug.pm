@@ -29,11 +29,11 @@ package RIGELLIB::Debug;
 
     sub new {
         my $pkg_name = shift;
-	my (%conf) = %{(shift)};
+        my (%conf) = %{(shift)};
 
-	%config = %conf;
+        %config = %conf;
 
-	bless {}, $pkg_name;
+        bless {}, $pkg_name;
     }
 
     #
@@ -46,14 +46,14 @@ package RIGELLIB::Debug;
     #     $level is a value between 0 and 3.
     #
     sub DebugEnabled {
-	my $this = shift;
-	my $level = shift;
+        my $this = shift;
+        my $level = shift;
 
-	if( $config{'debug'} >= $level ) {
-	    return 1;
-	} else {
-	    return 0;
-	}
+        if( $config{'debug'} >= $level ) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     #
@@ -74,18 +74,18 @@ package RIGELLIB::Debug;
     #     [$var dump if exists]
     #
     sub OutputDebug {
-	my $this = shift;
-	my $level = shift;
+        my $this = shift;
+        my $level = shift;
         my $string = shift;
-	my $var = shift;
+        my $var = shift;
 
-	if( $config{'debug'} >= $level ) {
-	    my $parent = ( caller(1) )[3];
-	    print $parent . ": " . $string . "\n";
+        if( $config{'debug'} >= $level ) {
+            my $parent = ( caller(1) )[3];
+            print $parent . ": " . $string . "\n";
 
             if( defined( $var ) ) {
-    	        print Data::Dumper::Dumper( $var ) . "\n";
-    	    }
+                print Data::Dumper::Dumper( $var ) . "\n";
+            }
         }
     }
 }

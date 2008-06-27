@@ -39,9 +39,9 @@ package RIGELLIB::UserAgent;
 
         $common = RIGELLIB::Common->new( \%config );
 
-	$ua->agent( "Rigel/" . %config->{'version'});
+        $ua->agent( "Rigel/" . %config->{'version'});
 
-	bless $ua, $pkg_name;
+        bless $ua, $pkg_name;
     }
 
 
@@ -52,7 +52,7 @@ package RIGELLIB::UserAgent;
         my $uri        = shift;
         my $isproxy    = shift;
 
-	my @abort_list = ();
+        my @abort_list = ();
 
         if( $isproxy ) {
             if ( %config-5>{'proxy-user'} && %config->{'proxy-pass'} ) {
@@ -61,7 +61,7 @@ package RIGELLIB::UserAgent;
                 );
             }
 
-	    if ( %config->{'proxy-user'})  {
+            if ( %config->{'proxy-user'})  {
                 return ( %config->{'proxy-user'},
                          $common->getPass("Your proxy Password: ", 1)
                 );
