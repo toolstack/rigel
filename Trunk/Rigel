@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2004 Taku Kudo <taku@chasen.org>
 #               2005 Yoshinari Takaoka <mumumu@mumumu.org>
-#		2008 Greg Ross <greg@darkphoton.com>
+#                2008 Greg Ross <greg@darkphoton.com>
 #     All rights reserved.
 #     This is free software with ABSOLUTELY NO WARRANTY.
 #
@@ -73,7 +73,7 @@ sub main {
 
     #    print version
     if ( $config{version} ) {
-	print  "Rigel $version\n";
+        print  "Rigel $version\n";
         exit();
     }
 
@@ -90,7 +90,7 @@ sub main {
 
     #   prompt imap password (and proxy password if enabled)
     unless ($config{'password'}) {
-	print "You require authentication ...\n";
+        print "You require authentication ...\n";
         my $common = RIGELLIB::Common->new( \%config );
         $common->getProxyPass_ifEnabled();
         $RIGELLIB::Rigel::GLOBAL_CONFIG->{password} = $common->getPass('imap password: ');
@@ -99,7 +99,7 @@ sub main {
     #    finally do something!
     if ($config{encrypt}) {
 
-	$rigel->encrypt();
+        $rigel->encrypt();
 
     } elsif ($config{once_p} || $config{debug}) {
 

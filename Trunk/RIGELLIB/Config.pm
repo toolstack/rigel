@@ -54,7 +54,7 @@ package RIGELLIB::Config;
         'use-ssl'              => undef,
         'config-file'          => 'Rigel.conf',
         'VERSION'              => $VERSION,
-	'debug'                => 0,
+        'debug'                => 0,
     };
 
     our $DEFAULT_SITE_CONFIG = {
@@ -69,9 +69,9 @@ package RIGELLIB::Config;
         'expire-folder' => undef,
         'sync'          => undef,
         'last-update'   => undef,
-	'use-subjects'  => undef,
-	'last-subjects' => undef,
-	'force-ttl'     => -1,
+        'use-subjects'  => undef,
+        'last-subjects' => undef,
+        'force-ttl'     => -1,
     };
 
     # opml parse result.
@@ -81,7 +81,7 @@ package RIGELLIB::Config;
 
     sub new {
         my $pkg_name  = shift;
-	my @folder_name = ();
+        my @folder_name = ();
 
         # First, parse the commnad line in case the config file location is specified
         &__parse_options();
@@ -92,7 +92,7 @@ package RIGELLIB::Config;
         # Now reparse the command line to override and config values set above
         &__parse_options();
 
-	$debug = RIGELLIB::Debug->new( \%{$DEFAULT_GLOBAL_CONFIG} );
+        $debug = RIGELLIB::Debug->new( \%{$DEFAULT_GLOBAL_CONFIG} );
 
         $debug->OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
         $debug->OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
@@ -109,7 +109,7 @@ package RIGELLIB::Config;
         my $expat          = shift;
         my $element_name   = shift;
 
-	my $attributes     = &__array_to_hash( @_ );
+        my $attributes     = &__array_to_hash( @_ );
         my @folder_array   = @{$this->{folder_array}};
         my $current_folder = join (".", @folder_array);
 
@@ -119,14 +119,14 @@ package RIGELLIB::Config;
             push @folder_array, $attributes->{'text'}  if ( $attributes->{'text'} );
             push @folder_array, $attributes->{'title'} if ( $attributes->{'title'} );
 
-	    $this->{folder_array} = \@folder_array;
+            $this->{folder_array} = \@folder_array;
             $this->{outline_empty} = 0;
 
             my $current_folder = join (".", @folder_array);
 
-	    $opml_parse->{$current_folder} = [];
+            $opml_parse->{$current_folder} = [];
 
-	    return;
+            return;
         }
 
         if ( 'outline' eq $element_name && $attributes->{htmlUrl} ) {
@@ -143,7 +143,7 @@ package RIGELLIB::Config;
         my $expat = shift;
         my $element_name = shift;
 
-	my @folder_array = @{$this->{folder_array}};
+        my @folder_array = @{$this->{folder_array}};
 
         # if outline end tag
         if ( 'outline' eq $element_name && $this->{outline_empty} == 0 ) {
@@ -162,18 +162,18 @@ package RIGELLIB::Config;
         my $this = shift;
         my $filename = shift;
 
-	my $output_file = $this->get_global_conf('outfile');
+        my $output_file = $this->get_global_conf('outfile');
 
         # parameter check.
         unless ( defined $filename ) {
             print "import : you should spefify opml filename after [-I|--import] option.\n";
         }
 
-	unless( defined $output_file ) {
+        unless( defined $output_file ) {
             print "import : you should spefify output filename after [-O] option.\n";
         }
 
-	if( !defined $filename || !defined $output_file ) {
+        if( !defined $filename || !defined $output_file ) {
             print "Usage: ./Rigel [-I|--import] [opml filename] -O [site filename].\n";
             exit();
         }
@@ -196,7 +196,7 @@ package RIGELLIB::Config;
         # parse opml file.
         eval{ $parser->parsefile( $filename ); };
 
-	if ($@) {
+        if ($@) {
             print "import process failed : $@";
             exit();
         }
@@ -213,7 +213,7 @@ package RIGELLIB::Config;
         my $this = shift;
         my @filenames =  shift;
 
-	my %config = %{$DEFAULT_SITE_CONFIG};
+        my %config = %{$DEFAULT_SITE_CONFIG};
         my @config_list;
 
         for my $filename (@filenames) {
@@ -252,7 +252,7 @@ package RIGELLIB::Config;
         my $this = shift;
         my $feedconf = shift;
 
-	my %config = %{$DEFAULT_SITE_CONFIG};
+        my %config = %{$DEFAULT_SITE_CONFIG};
         my @config_list;
 
         foreach (split("\n", $feedconf)) {
@@ -264,7 +264,7 @@ package RIGELLIB::Config;
             } elsif (/^\#/) {
                 # It's a comment line, so don't do anything :)
             } elsif (/^\s*$/) {
-		# It's a blank link, so don't do anything :)
+                # It's a blank link, so don't do anything :)
             } elsif (/^([^=]+)\s*=\s*(.*)\s*/) {
                 my $key   = &__trim( lc( $1 ) );
                 my $value = &__trim( $2 );
@@ -289,18 +289,18 @@ package RIGELLIB::Config;
         my $this        = shift;
         my @filenames   = shift;
 
-	my $output_file = $this->get_global_conf('outfile');
+        my $output_file = $this->get_global_conf('outfile');
 
         # parameter check.
         if ( !@filenames || !defined $filenames[0] ) {
             print "export : you should spefify site filename after [-E|--export] option.\n";
         } 
         
-	unless( defined $output_file ) {
+        unless( defined $output_file ) {
             print "export : you should spefify output file with [-O] option.\n";
         }
         
-	if ( !defined $filenames[0] || !defined $output_file ) {
+        if ( !defined $filenames[0] || !defined $output_file ) {
             print "Usage: ./Rigel [-E|--export] [site filename] -O [opml filename].\n";
             exit();
         }
@@ -465,25 +465,25 @@ package RIGELLIB::Config;
         my %parse_result = &__parse_conffile( $DEFAULT_GLOBAL_CONFIG->{'config-file'} );
 
         # override config value for the site definition
-	while( my ($key, $value) = each %$DEFAULT_SITE_CONFIG ) {
-	    if( defined( $parse_result{$key} ) ) {
-		$DEFAULT_SITE_CONFIG->{$key} = $parse_result{$key};
-		}
-	}
+        while( my ($key, $value) = each %$DEFAULT_SITE_CONFIG ) {
+            if( defined( $parse_result{$key} ) ) {
+                $DEFAULT_SITE_CONFIG->{$key} = $parse_result{$key};
+                }
+        }
 
         # override config vaules for the global config
-	while( my ($key, $value) = each %$DEFAULT_GLOBAL_CONFIG ) {
-	    if( defined( $parse_result{$key} ) ) {
-		$DEFAULT_GLOBAL_CONFIG->{$key} = $parse_result{$key};
-		}
-	}
+        while( my ($key, $value) = each %$DEFAULT_GLOBAL_CONFIG ) {
+            if( defined( $parse_result{$key} ) ) {
+                $DEFAULT_GLOBAL_CONFIG->{$key} = $parse_result{$key};
+                }
+        }
     }
 
 
     sub __parse_conffile {
         my $filename   = shift;
 
-	my %return_hash = ();
+        my %return_hash = ();
         
         open (CONFFILE, $filename) or die "$filename:Could not open configfile:$!\n";
 
@@ -533,7 +533,7 @@ package RIGELLIB::Config;
             push @getopthold_argv, $item;
         }
 
-	$DEFAULT_GLOBAL_CONFIG->{list} = \@getopthold_argv;
+        $DEFAULT_GLOBAL_CONFIG->{list} = \@getopthold_argv;
 
         # restore ARGV.
         @ARGV = @ARGV_TMP;
@@ -670,7 +670,7 @@ package RIGELLIB::Config;
 
         open OUTFILE, ">$output_file" or die "could not open output file:$!";
 
-	return (*OUTFILE{IO});
+        return (*OUTFILE{IO});
     }
 }
 

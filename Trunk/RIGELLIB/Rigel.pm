@@ -48,7 +48,7 @@ package RIGELLIB::Rigel;
     use Text::Unidecode;
 
     our $VERSION       = undef;
-    our $debug	       = undef;
+    our $debug         = undef;
 
     # config init.
     our $config_obj    = undef;
@@ -64,9 +64,9 @@ package RIGELLIB::Rigel;
         $SITE_CONFIG   = $config_obj->get_site_configall();
         $VERSION       = $config_obj->get_version();
 
-	$common = RIGELLIB::Common->new( \%{$GLOBAL_CONFIG} );
+        $common = RIGELLIB::Common->new( \%{$GLOBAL_CONFIG} );
 
-	$debug = RIGELLIB::Debug->new( \%{$GLOBAL_CONFIG} );
+        $debug = RIGELLIB::Debug->new( \%{$GLOBAL_CONFIG} );
 
         bless $GLOBAL_CONFIG, $this;
     }
@@ -100,7 +100,7 @@ package RIGELLIB::Rigel;
                                           Port             => $this->{port},
                                           Password         => $this->{password},
                                           Authmechanism    => ($this->{'cram-md5'} ? "CRAM-MD5" : undef),
-					  Ignoresizeerrors => 1
+                                          Ignoresizeerrors => 1
                                          );
 
         if( !$imap ) {
@@ -109,9 +109,9 @@ package RIGELLIB::Rigel;
 
         $this->{'directory_separator'} = $imap->separator();
 
-	# Now that we have the directory seperator, update the management
-	# folder value and last modified folder value with the proper template 
-	# values
+        # Now that we have the directory seperator, update the management
+        # folder value and last modified folder value with the proper template 
+        # values
         ( $this->{'management-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'management-folder'} );
         ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
 
@@ -120,7 +120,7 @@ package RIGELLIB::Rigel;
             $imap->Debug_fh();
         }
 
-	if ( $this->{'use-ssl'} ) {
+        if ( $this->{'use-ssl'} ) {
             $imap->State(1);    # connected
             $imap->login();     # if ssl enabled, login required because it is bypassed.
         }
@@ -195,87 +195,87 @@ package RIGELLIB::Rigel;
         $imap->select( $folder );
         my $message_id = sprintf ('%s@%s', $link, $this->{host});
         my @search = $imap->search ("HEADER message-id \"$message_id\"" );
-	$debug->OutputDebug( 2, "HEADER message-id \"$message_id\"" );
+        $debug->OutputDebug( 2, "HEADER message-id \"$message_id\"" );
 
         if ($this->is_error()) {
             print "WARNING: $@\n";
         }
 
-	my $latest = undef;
-	my $lmsg = undef;
-	( $latest, $lmsg ) = $this->get_latest_date (\@search);
-	$debug->OutputDebug( 2, "Message search: ", \@search );
-	$debug->OutputDebug( 2, "Latest message: $lmsg" );
+        my $latest = undef;
+        my $lmsg = undef;
+        ( $latest, $lmsg ) = $this->get_latest_date (\@search);
+        $debug->OutputDebug( 2, "Message search: ", \@search );
+        $debug->OutputDebug( 2, "Latest message: $lmsg" );
 
-	# First, let's see if any TTL has been idenfitifed for this feed
-	my $rss_ttl = 0;
+        # First, let's see if any TTL has been idenfitifed for this feed
+        my $rss_ttl = 0;
 
-	if( $lmsg && ( $site_config->{'force-ttl'} == -1 ) ) {
-	    $rss_ttl = $imap->get_header( $lmsg, "X-RSS-TTL" );
-	    $debug->OutputDebug( 1, "Cached TTL = $rss_ttl" );
+        if( $lmsg && ( $site_config->{'force-ttl'} == -1 ) ) {
+            $rss_ttl = $imap->get_header( $lmsg, "X-RSS-TTL" );
+            $debug->OutputDebug( 1, "Cached TTL = $rss_ttl" );
 
             # The RSS TTL is expressed in minutes, and the latest is expressed
-	    # in seconds, so take the latest and add the ttl in seconds to it
-	    # for use later in get_rss_and_response
-	    $rss_ttl = $latest + ( $rss_ttl * 60 );
-	    $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
-	} else {
+            # in seconds, so take the latest and add the ttl in seconds to it
+            # for use later in get_rss_and_response
+            $rss_ttl = $latest + ( $rss_ttl * 60 );
+            $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
+        } else {
             # if there was no chaced status message, then this is really the first
-	    # update and we should leave the rss_ttl value to 0 so a site update
-	    # is done, otherwise we can use the force-ttl value to set a new epoch
-	    if( $lmsg ) {
-		$rss_ttl = $latest + ( $site_config->{'force-ttl'} * 60 );
+            # update and we should leave the rss_ttl value to 0 so a site update
+            # is done, otherwise we can use the force-ttl value to set a new epoch
+            if( $lmsg ) {
+                $rss_ttl = $latest + ( $site_config->{'force-ttl'} * 60 );
             }
-	    $debug->OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
-    	    $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
+            $debug->OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
+            $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str($rss_ttl) );
         }
 
-	if( $latest ) {
+        if( $latest ) {
             $headers = { 'If-Modified-Since' => HTTP::Date::time2str ($latest) };
             $site_config->{'last-updated'} = $latest;        
         }
 
         # Check to see if we should update based upon the RSS TTL value
-	my $ctime = time();
-	my @rss_and_response;
+        my $ctime = time();
+        my @rss_and_response;
 
         $debug->OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
-	if( $rss_ttl > $ctime ) {
-	    # Not time to update
-	    print "\tTTL not yet expired, no update required.\n";
+        if( $rss_ttl > $ctime ) {
+            # Not time to update
+            print "\tTTL not yet expired, no update required.\n";
             return ( undef, undef, undef );
-	} else {
-	    # We're good to go, get the update
-	    @rss_and_response = $common->getrss_and_response( $link, $headers, $rss_ttl );
+        } else {
+            # We're good to go, get the update
+            @rss_and_response = $common->getrss_and_response( $link, $headers, $rss_ttl );
 
-	    # If we didn't actually get an update from the feed, just return undef's
-	    if( scalar(@rss_and_response) == 0 ) {
-	        print "\tFeed not modified, no update required.\n";
-	        return ( undef, undef, undef );
-	    }
+            # If we didn't actually get an update from the feed, just return undef's
+            if( scalar(@rss_and_response) == 0 ) {
+                print "\tFeed not modified, no update required.\n";
+                return ( undef, undef, undef );
+            }
         }
 
-	# If this site is going to check subject lines against the last
-	# update we need to retreive them from the IMAP message that was
-	# the last update.
+        # If this site is going to check subject lines against the last
+        # update we need to retreive them from the IMAP message that was
+        # the last update.
         my @subject_lines = undef;
 
         if( $site_config->{'use-subjects'} ) {
             # We're going to need a mime parser to retreive the subject list
-	    # from the last update data
-	    my $mp       = new MIME::Parser;
+            # from the last update data
+            my $mp       = new MIME::Parser;
             my $e;
-	    my $subject_glob;
+            my $subject_glob;
 
-	    $debug->OutputDebug( 1, "Enabled subject caching" );
+            $debug->OutputDebug( 1, "Enabled subject caching" );
 
             # setup the message parser so we don't get any errors and we 
             # automatically decode messages
             $mp->ignore_errors(1);
             $mp->extract_uuencode(1);
 
-	    if( $lmsg ) {
-	        eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
+            if( $lmsg ) {
+                eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
 
                 my $error = ($@ || $mp->last_error);
 
@@ -287,38 +287,38 @@ package RIGELLIB::Rigel;
                     $subject_glob = __trim( get_mime_text_body( $e ) );
                     $mp->filer->purge;
                 }
-	    } else {
+            } else {
                 $subject_glob = "";
-	    }
+            }
 
-    	    $debug->OutputDebug( 1, "subject glob = $subject_glob" );
+            $debug->OutputDebug( 1, "subject glob = $subject_glob" );
 
-	    # Now that we have the last updated subject list in a big string, time
-	    # to prase it in to an array.
-	    my $beyond_headers = 0;
-	    foreach my $subject ( split( '\n', $subject_glob ) ) {
-	        if( $beyond_headers == 1 ) { 
-		    push @subject_lines, $subject;
-		    $debug->OutputDebug( 1, "subject line = $subject" );
-		}
+            # Now that we have the last updated subject list in a big string, time
+            # to prase it in to an array.
+            my $beyond_headers = 0;
+            foreach my $subject ( split( '\n', $subject_glob ) ) {
+                if( $beyond_headers == 1 ) { 
+                    push @subject_lines, $subject;
+                    $debug->OutputDebug( 1, "subject line = $subject" );
+                }
 
-	        if( $subject eq "" ) { $beyond_headers = 1; }
-	    }
+                if( $subject eq "" ) { $beyond_headers = 1; }
+            }
         }
 
         my $content = $rss_and_response[0];
         my $response = $rss_and_response[1];
         my $rss = undef;
-	my $ttl = 0;
+        my $ttl = 0;
 
         # Do some rudimentary checks/fixes on the feed before parsing it
         $content = __fix_feed( $content );
 
-	# As FeedPP doesn't understand TTL values in the feed, check to see 
-	# if one exists and get it for later use
-	if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i) {
-		$ttl = $1;
-		$debug->OutputDebug( 1, "Feed has TTL! Set to: " . $ttl )
+        # As FeedPP doesn't understand TTL values in the feed, check to see 
+        # if one exists and get it for later use
+        if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i) {
+            $ttl = $1;
+            $debug->OutputDebug( 1, "Feed has TTL! Set to: " . $ttl )
         }
 
         # Parse the feed
@@ -329,15 +329,15 @@ package RIGELLIB::Rigel;
             return ( undef, $ttl, @subject_lines );
         }
 
-	if( $rss ) {
+        if( $rss ) {
             print "\tModified, updating IMAP items.\n";
         } else { 
             print "\tUnabled to retreive feed, not updating.\n";
             return ( undef, $ttl, @subject_lines );
         }
 
-	# Now that we've verifyed that we have a feed to process, let's
-	# delete the last update info from the IMAP server
+        # Now that we've verifyed that we have a feed to process, let's
+        # delete the last update info from the IMAP server
         foreach my $MessageToDelete (@search ) {
             $imap->delete_message ($MessageToDelete); # delete other messages;
         }
@@ -349,7 +349,7 @@ package RIGELLIB::Rigel;
         $rss->{'Rigel:message-id'}    = $message_id;
         $rss->{'Rigel:rss-link'}      = $link;
 
-	return ( $rss, $ttl, @subject_lines );
+        return ( $rss, $ttl, @subject_lines );
     }
 
 
@@ -357,24 +357,24 @@ package RIGELLIB::Rigel;
         my $this        = shift;
         my $rss         = shift;
         my $site_config = shift;
-	my $ttl         = shift;
-	my $subjects    = shift;
+        my $ttl         = shift;
+        my $subjects    = shift;
         my $imap        = $this->{imap};
 
         my @items;
-	my @subject_lines;
-	my @old_subject_lines = @{$subjects};
-	my $old_subject_glob = "\n";
+        my @subject_lines;
+        my @old_subject_lines = @{$subjects};
+        my $old_subject_glob = "\n";
 
         # Re-globify the old subject lines for easier searching later if we 
-	# have any
-	if( $subjects ) {
-	    foreach my $old_subject ( @old_subject_lines ) {
-	        $old_subject_glob = $old_subject_glob . $old_subject . "\n";
-	    }
-	}
+        # have any
+        if( $subjects ) {
+            foreach my $old_subject ( @old_subject_lines ) {
+                $old_subject_glob = $old_subject_glob . $old_subject . "\n";
+            }
+        }
 
-	$debug->OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
+        $debug->OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
         my $type = $this->{site_config}->{type};
 
         if ($type eq "channel") {
@@ -391,29 +391,29 @@ package RIGELLIB::Rigel;
         my ($folder) = $this->apply_template ($rss, undef, 1, $this->{site_config}->{folder});
         $folder = $this->get_real_folder_name ($folder, $this->{'directory_separator'});
         $debug->OutputDebug( 1, "IMAP folder to use = $folder" );
-	$this->select ($folder);
+        $this->select ($folder);
 
         my @append_items;
         my @delete_mail;
-	my $subject;
+        my $subject;
 
         for my $item (@items) {
             my $message_id  = $this->gen_message_id ($rss, $item);
 
             # Get the subject line and add it to our cache for later, make sure we
-	    # strip any newlines so we can store it in the IMAP message properly
-	    $subject = $this->rss_txt_convert( $item->title() );
-	    $subject =~ s/\n//g;
-	    $debug->OutputDebug( 2, "RSS Item Subject = $subject" );
-	    push @subject_lines, $subject;
+            # strip any newlines so we can store it in the IMAP message properly
+            $subject = $this->rss_txt_convert( $item->title() );
+            $subject =~ s/\n//g;
+            $debug->OutputDebug( 2, "RSS Item Subject = $subject" );
+            push @subject_lines, $subject;
 
             # Retreive the date from the item or feed for future work.
             my $rss_date = $this->get_date ($rss, $item);
-	    $debug->OutputDebug( 2, "RSS Item date = $rss_date" );
+            $debug->OutputDebug( 2, "RSS Item date = $rss_date" );
 
             # Convert the above date to a unix time code
             my $rss_time = HTTP::Date::str2time( $rss_date );
-	    $debug->OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
+            $debug->OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
 
             # if expire enabled, get lastest-modified time of rss.
             if ($this->{site_config}->{expire} > 0) {
@@ -425,13 +425,13 @@ package RIGELLIB::Rigel;
 
             # Check to see if the rss item is older than the last update, in otherwords, the user
             # deleted it so we shouldn't add it back in.
-	    $debug->OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
-	    $debug->OutputDebug( 2, "Or is '$rss_date' = '' ?" );
+            $debug->OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
+            $debug->OutputDebug( 2, "Or is '$rss_date' = '' ?" );
             if ( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" ) {
                 # message id is "rss url@host" AND x-rss-aggregator field is "Rigel"
                 # and not deleted.
                 $debug->OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
-		my @search = $imap->search ("NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"");
+                my @search = $imap->search ("NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"");
 
                 if ($this->is_error()) {
                     print "WARNING: $@\n";
@@ -440,32 +440,32 @@ package RIGELLIB::Rigel;
 
                 # if message not found, append it.
                 if (@search == 0) {
-		    if( $site_config->{'use-subjects'} ) {
+                    if( $site_config->{'use-subjects'} ) {
                         # if the subject check is enabled, validate the current subject line
                         # against the old subject lines, make sure we disable special chacters
-			# in the match with \Q and \E
+                        # in the match with \Q and \E
                         if( $old_subject_glob !~ m/\Q$subject\E/ ) {
-  			    $debug->OutputDebug( 2, "Subject not found in glob, adding item!" );
-			    push @append_items, $item;
-			}
-		    } else {
-			$debug->OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
-		        push @append_items, $item;
-		    }
+                            $debug->OutputDebug( 2, "Subject not found in glob, adding item!" );
+                            push @append_items, $item;
+                        }
+                    } else {
+                        $debug->OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
+                        push @append_items, $item;
+                    }
 
                 } else {
                     next unless ($rss_date); # date field is not found, we ignore it.
 
- 	            $debug->OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
+                    $debug->OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
                     my ( $latest, $lmsg ) = $this->get_latest_date (\@search);
-		    $debug->OutputDebug( 2, "latest date = $latest" );
+                    $debug->OutputDebug( 2, "latest date = $latest" );
 
                     # if rss date is newer, delete search result and add rss items.
                     # by this, duplicate message is replaced with lastest one.
                     if ( $rss_time > $latest ) {
-			$debug->OutputDebug( 2, "updating items!" );
+                        $debug->OutputDebug( 2, "updating items!" );
                         push @delete_mail, @search;
                         push @append_items, $item;
                     }
@@ -493,38 +493,38 @@ package RIGELLIB::Rigel;
         }
 
         # Delete messages that were flagged, we didn't do it earlier as it would have
-	# messed up the above loop
+        # messed up the above loop
         foreach my $MessageToDelete (@delete_mail) {
             $imap->delete_message( $MessageToDelete );
         }
 
-	# Expunge the folder to actually get rid of the messages we just deleted
+        # Expunge the folder to actually get rid of the messages we just deleted
         $imap->expunge( $folder );
 
-	# Now we actually append the new items to the folder
+        # Now we actually append the new items to the folder
         for my $item (@append_items) {
             $this->send_item ($folder, $rss, $item);
         }
 
-	# Find out how many items we added and give the user some feedback about it
+        # Find out how many items we added and give the user some feedback about it
         my $ItemsUpdated = scalar( @append_items );
         if( $ItemsUpdated > 0 ) {
             print "\tAdded $ItemsUpdated articles.\n";
         } else {
-	    print "\tNo items found to add.\n";
-	}
+            print "\tNo items found to add.\n";
+        }
 
-	# If for some reason we don't have any items from the feed, we want to keep
-	# the old list of subject lines, otherwise when we do the next update all items
-	# will be added back in to the IMAP folder which is probably not want we 
-	# want to happen
-	if( scalar( @subject_lines ) < 1 ) {
+        # If for some reason we don't have any items from the feed, we want to keep
+        # the old list of subject lines, otherwise when we do the next update all items
+        # will be added back in to the IMAP folder which is probably not want we 
+        # want to happen
+        if( scalar( @subject_lines ) < 1 ) {
             $this->send_last_update ($rss, $ttl, \@old_subject_lines);
         } else {
             $this->send_last_update ($rss, $ttl, \@subject_lines);
         }
 
-	return;
+        return;
     }
 
 
@@ -573,8 +573,8 @@ package RIGELLIB::Rigel;
         my $list   = shift;
         my $header = shift || 'date';
 
-	my $imap   = $this->{imap};
-	my $lmsg   = undef;
+        my $imap   = $this->{imap};
+        my $lmsg   = undef;
         my $latest = -1;
 
         for my $msg (@{$list}) {
@@ -582,15 +582,15 @@ package RIGELLIB::Rigel;
             next unless ($date);
             $date = HTTP::Date::str2time ($date);
             if ($date > $latest) {
-	        $latest = $date;
-		$lmsg = $msg;
-	    }
+                $latest = $date;
+                $lmsg = $msg;
+            }
         }
 
         if ($latest == -1) {
-	    $latest = undef; 
-	    $lmsg = undef;
-	} 
+            $latest = undef; 
+            $lmsg = undef;
+        } 
 
         return ( $latest, $lmsg);
     }
@@ -599,8 +599,8 @@ package RIGELLIB::Rigel;
     sub send_last_update {
         my $this          = shift;
         my $rss           = shift;
-	my $ttl           = shift;
-	my $subject_lines = shift;
+        my $ttl           = shift;
+        my $subject_lines = shift;
 
         my $message_id    = $rss->{'Rigel:message-id'};
         my $date          = $rss->{'Rigel:last-modified'};
@@ -630,22 +630,22 @@ TTL: $ttl
 
 BODY
 ;
-	my $subject;
+        my $subject;
 
-	# Add the subject lines from the update so we can skip
-	# these articles if required on the next update
-	foreach $subject (@{$subject_lines}) {
-		$body = $body . $subject . "\n";
-	}
+        # Add the subject lines from the update so we can skip
+        # these articles if required on the next update
+        foreach $subject (@{$subject_lines}) {
+            $body = $body . $subject . "\n";
+        }
 
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
         $this->{imap}->select( $folder );
         my $uid = $this->{imap}->append_string( $folder, $body, "Seen" );
 
         # As we cannot count on the above addpend_string to actually mark the
-	# messages as seen and $uid may or may not acutall contain the message
-	# make sure they're marked as read
-	MarkFolderAsRead( $this->{imap}, $folder );
+        # messages as seen and $uid may or may not acutall contain the message
+        # make sure they're marked as read
+        MarkFolderAsRead( $this->{imap}, $folder );
     }
 
 
@@ -657,19 +657,19 @@ BODY
 
         my $headers = $this->get_headers($rss, $item);
 
-	my $body = "";
+        my $body = "";
 
-	if( $this->{site_config}->{'delivery-mode'} eq 'embedded' ) {
-	    $body = $this->get_embedded_body( $rss, $item );
-	} elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
+        if( $this->{site_config}->{'delivery-mode'} eq 'embedded' ) {
+            $body = $this->get_embedded_body( $rss, $item );
+        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
             $body = $this->get_text_body( $rss, $item );
-	} else {
-	    $body = $this->get_raw_body( $rss, $item );
-	}
+        } else {
+            $body = $this->get_raw_body( $rss, $item );
+        }
 
-	my $message = ($headers . $body);
+        my $message = ($headers . $body);
 
-	utf8::encode($message);  # uft8 flag off.
+        utf8::encode($message);  # uft8 flag off.
 
         $this->{imap}->append_string($folder, $message);
     }
@@ -906,10 +906,10 @@ BODY
         # hex and decimal representation.
         $string = HTML::Entities::decode_entities( $result );
 
-	# Now that we have a Unicode string, we need to convert it
-	# back to ASCII so nothing breaks when we do something like
-	# save it to an IMAP message
-	$string = Text::Unidecode::unidecode( $string );
+        # Now that we have a Unicode string, we need to convert it
+        # back to ASCII so nothing breaks when we do something like
+        # save it to an IMAP message
+        $string = Text::Unidecode::unidecode( $string );
 
         return $string;
     }
@@ -1108,7 +1108,7 @@ BODY
             $cnf{'item:dc:creator'}   = $item->author();
 
             $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
-	}
+        }
 
         $cnf{host}            = $this->{host};
         $cnf{user}            = $this->{user};
@@ -1117,7 +1117,7 @@ BODY
         $cnf{'dir:sep'}       = $this->{'directory_separator'};
         $cnf{'dir:manage'}    = $this->{'management-folder'};
         $cnf{'dir:lastmod'}   = $this->{'last-modified-folder'};
-	$cnf{'newline'}       = "\n";
+        $cnf{'newline'}       = "\n";
 
         my @result;
         for my $from (@from) {
@@ -1129,7 +1129,7 @@ BODY
                     $from =~ s/$key2/$cnf{$key}/eg;
                 }
 
-		$from =~ s/%{.*}//g;
+                $from =~ s/%{.*}//g;
             }
 
             push @result, $from;
@@ -1152,8 +1152,8 @@ BODY
         my ($DeleteFolder)  = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" ) );
         my ($ConfigFolder)  = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" ) );
         my ($LastModFolder) = join( '', $this->apply_template( undef, undef, 1, "%{dir:lastmod}" ) );
-	my $e;
-	my $mp              = new MIME::Parser;
+        my $e;
+        my $mp              = new MIME::Parser;
 
         # setup the message parser so we don't get any errors and we 
         # automatically decode messages
@@ -1173,7 +1173,7 @@ BODY
             eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
             my $error = ($@ || $mp->last_error);
 
-	    $feedconf = "";
+            $feedconf = "";
             $feedconf = __trim( get_mime_text_body( $e ) );
             $mp->filer->purge;
 
@@ -1184,7 +1184,7 @@ BODY
                 $siteurl = $siteurl . $site;
             }
 
-	    $siteurl = __trim( $siteurl );
+            $siteurl = __trim( $siteurl );
 
             if ($siteurl ne "http://template") {
                 my $headers =<<"BODY"
@@ -1206,9 +1206,9 @@ BODY
         # in the config folder and mark them all as read
 
         # As we cannot count on the above addpend_string to actually mark the
-	# messages as seen and $uid may or may not acutall contain the message
-	# make sure they're marked as read
-	MarkFolderAsRead( $this->{imap}, $ConfigFolder );
+        # messages as seen and $uid may or may not acutall contain the message
+        # make sure they're marked as read
+        MarkFolderAsRead( $this->{imap}, $ConfigFolder );
 
         # Now expunge any deleted messages
         $this->{imap}->select( $AddFolder );
@@ -1247,11 +1247,11 @@ BODY
         }
 
         # As we cannot count on the above addpend_string to actually mark the
-	# messages as seen and $uid may or may not acutall contain the message
-	# make sure they're marked as read
-	MarkFolderAsRead( $this->{imap}, $AddFolder );
+        # messages as seen and $uid may or may not acutall contain the message
+        # make sure they're marked as read
+        MarkFolderAsRead( $this->{imap}, $AddFolder );
 
-	$this->{imap}->select( $DeleteFolder );
+        $this->{imap}->select( $DeleteFolder );
         @messages = $this->{imap}->messages();
 
         my $Subject;
@@ -1330,11 +1330,11 @@ BODY
     }
 
     sub MarkFolderAsRead() {
-	my $imap = shift;
-	my $folder = shift;
+        my $imap = shift;
+        my $folder = shift;
         my $message;
 
-	foreach $message ($imap->messages()) {
+        foreach $message ($imap->messages()) {
             $imap->see( $message );
         }
     }
