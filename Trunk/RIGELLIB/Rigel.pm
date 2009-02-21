@@ -1289,6 +1289,12 @@ BODY
         # First, strip any spaces from feed
         $fixed = __trim( $content );
 
+	# Some feeds seem to have some crap charaters in them (either at the begining or the end)
+	# which need to get stripped out, so build a has that contains the ASCII values of all the
+	# characters we want to keep (\r, \n, a-Z, etc.).  Then run a regex to process the change.
+	my %CharatersToKeep = map {$_=>1} (9,10,13,32..127);
+	$fixed =~ s/(.)/$CharatersToKeep{ord($1)} ? $1 : ' '/eg;
+		
         # if the opening xml tag is missing, add it
         $count = 0;
         while ($fixed =~ /\<\?xml/gi) { $count++ }
