@@ -48,7 +48,7 @@ package RIGELLIB::Config;
         'directory-separator'  => '.',
         'interval'             => 60,
         'management-folder'    => 'RSS Management',
-        'last-modified-folder' => '%{dir:manage}%{dir:sep}Last Upate Info',
+        'last-modified-folder' => '%{dir:manage}%{dir:sep}Last Update Info',
         'prefix'               => undef,     # if you use courier, set this to "INBOX"
         'cram-md5'             => undef,
         'use-ssl'              => undef,
