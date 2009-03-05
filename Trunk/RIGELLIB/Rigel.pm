@@ -192,7 +192,10 @@ package RIGELLIB::Rigel;
         # start site processing....
         print "processing $link...\n";
 
+        $folder = $this->get_real_folder_name( $folder, $folder );
+	$debug->OutputDebug( 2, "last update folder: $folder" );
         $imap->select( $folder );
+
         my $message_id = sprintf ('%s@%s', $link, $this->{host});
         my @search = $imap->search ("HEADER message-id \"$message_id\"" );
         $debug->OutputDebug( 2, "HEADER message-id \"$message_id\"" );
@@ -639,6 +642,8 @@ BODY
         }
 
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
+		$folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
+	$debug->OutputDebug( 2, "last update folder: $folder" );
         $this->{imap}->select( $folder );
         my $uid = $this->{imap}->append_string( $folder, $body, "Seen" );
 
@@ -1031,6 +1036,8 @@ BODY
         $mp->ignore_errors(1);
         $mp->extract_uuencode(1);
 
+		$folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
+	$debug->OutputDebug( 2, "config folder: $folder" );
         $this->{imap}->select( $folder );
 
         @messages = $this->{imap}->messages();
@@ -1160,10 +1167,22 @@ BODY
         $mp->ignore_errors(1);
         $mp->extract_uuencode(1);
 
+		$AddFolder = $this->get_real_folder_name( $AddFolder, $this->{'directory_separator'} );
+		$debug->OutputDebug( 2, "Add folder: $AddFolder" );
         $this->create_folder( $AddFolder );
+		
+		$DeleteFolder = $this->get_real_folder_name( $DeleteFolder, $this->{'directory_separator'} );
+		$debug->OutputDebug( 2, "Delete folder: $DeleteFolder" );
         $this->create_folder( $DeleteFolder );
+		
+		$ConfigFolder = $this->get_real_folder_name( $ConfigFolder, $this->{'directory_separator'} );
+		$debug->OutputDebug( 2, "Config folder: $ConfigFolder" );
         $this->create_folder( $ConfigFolder );
+		
+		$LastModFolder = $this->get_real_folder_name( $LastModFolder, $this->{'directory_separator'} );
+		$debug->OutputDebug( 2, "last update folder: $LastModFolder" );
         $this->create_folder( $LastModFolder );
+		
 
         $this->{imap}->select( $AddFolder );
         @messages = $this->{imap}->messages();
