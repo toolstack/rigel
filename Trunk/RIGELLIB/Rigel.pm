@@ -192,7 +192,7 @@ package RIGELLIB::Rigel;
         # start site processing....
         print "processing $link...\n";
 
-        $folder = $this->get_real_folder_name( $folder, $folder );
+		$folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
 	$debug->OutputDebug( 2, "last update folder: $folder" );
         $imap->select( $folder );
 
