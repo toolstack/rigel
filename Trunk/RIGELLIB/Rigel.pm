@@ -1111,8 +1111,7 @@ BODY
             $cnf{'item:link'}         = $item->link();
             $cnf{'item:title'}        = $item->title();
             $cnf{'item:dc:date'}      = $item->pubDate();
-			# FeedPP breaks when an ATOM feed calls this function.
-			#            $cnf{'item:dc:subject'}   = $item->category();  
+			$cnf{'item:dc:subject'}   = $item->category();  
             $cnf{'item:dc:creator'}   = $item->author();
 
             $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
