@@ -31,7 +31,7 @@ Requirements
                 XML::Parser::Expat
 
         Note that XML::FeedPP and MAIL::IMAPClient must be up to the current 
-        versions (0.35 and 3.06 and this time), previous versions had bugs
+        versions (0.38 and 3.06 and this time), previous versions had bugs
         which caused Rigel to fail.  
 
         You also need an IMAP server, Rigel should work with just about any 
