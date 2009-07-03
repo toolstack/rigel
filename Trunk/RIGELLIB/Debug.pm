@@ -81,7 +81,7 @@ package RIGELLIB::Debug;
 
         if( $config{'debug'} >= $level ) {
             my $parent = ( caller(1) )[3];
-            print $parent . ": " . $string . "\n";
+            print "[" . localtime() . "] " . $parent . ": " . $string . "\n";
 
             if( defined( $var ) ) {
                 print Data::Dumper::Dumper( $var ) . "\n";
