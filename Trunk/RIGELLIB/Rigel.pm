@@ -192,8 +192,8 @@ package RIGELLIB::Rigel;
         # start site processing....
         print "processing $link...\n";
 
-		$folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-	$debug->OutputDebug( 2, "last update folder: $folder" );
+        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "last update folder: $folder" );
         $imap->select( $folder );
 
         my $message_id = sprintf ('%s@%s', $link, $this->{host});
@@ -315,13 +315,15 @@ package RIGELLIB::Rigel;
         my $ttl = 0;
 
         # Do some rudimentary checks/fixes on the feed before parsing it
+        $debug->OutputDebug( 1, "Fix feed for common errors..." );
         $content = __fix_feed( $content );
+        $debug->OutputDebug( 1, "Fix feed complete." );
 
         # As FeedPP doesn't understand TTL values in the feed, check to see 
         # if one exists and get it for later use
         if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i) {
             $ttl = $1;
-            $debug->OutputDebug( 1, "Feed has TTL! Set to: " . $ttl )
+            $debug->OutputDebug( 1, "Feed has TTL! Set to: " . $ttl );
         }
 
         # Parse the feed
@@ -342,9 +344,11 @@ package RIGELLIB::Rigel;
         # Now that we've verifyed that we have a feed to process, let's
         # delete the last update info from the IMAP server
         foreach my $MessageToDelete (@search ) {
+            $debug->OutputDebug( 2, "Delete meesage: " . $MessageToDelete );
             $imap->delete_message ($MessageToDelete); # delete other messages;
         }
 
+        $debug->OutputDebug( 2, "Expunge the mailbox!" );
         $imap->expunge();
 
         # copy session information
@@ -642,8 +646,8 @@ BODY
         }
 
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
-		$folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-	$debug->OutputDebug( 2, "last update folder: $folder" );
+        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "last update folder: $folder" );
         $this->{imap}->select( $folder );
         my $uid = $this->{imap}->append_string( $folder, $body, "Seen" );
 
@@ -1036,8 +1040,8 @@ BODY
         $mp->ignore_errors(1);
         $mp->extract_uuencode(1);
 
-		$folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-	$debug->OutputDebug( 2, "config folder: $folder" );
+        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "config folder: $folder" );
         $this->{imap}->select( $folder );
 
         @messages = $this->{imap}->messages();
@@ -1111,7 +1115,7 @@ BODY
             $cnf{'item:link'}         = $item->link();
             $cnf{'item:title'}        = $item->title();
             $cnf{'item:dc:date'}      = $item->pubDate();
-			$cnf{'item:dc:subject'}   = $item->category();  
+            $cnf{'item:dc:subject'}   = $item->category();  
             $cnf{'item:dc:creator'}   = $item->author();
 
             $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
@@ -1167,23 +1171,22 @@ BODY
         $mp->ignore_errors(1);
         $mp->extract_uuencode(1);
 
-		$AddFolder = $this->get_real_folder_name( $AddFolder, $this->{'directory_separator'} );
-		$debug->OutputDebug( 2, "Add folder: $AddFolder" );
+        $AddFolder = $this->get_real_folder_name( $AddFolder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "Add folder: $AddFolder" );
         $this->create_folder( $AddFolder );
-		
-		$DeleteFolder = $this->get_real_folder_name( $DeleteFolder, $this->{'directory_separator'} );
-		$debug->OutputDebug( 2, "Delete folder: $DeleteFolder" );
+        
+        $DeleteFolder = $this->get_real_folder_name( $DeleteFolder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "Delete folder: $DeleteFolder" );
         $this->create_folder( $DeleteFolder );
-		
-		$ConfigFolder = $this->get_real_folder_name( $ConfigFolder, $this->{'directory_separator'} );
-		$debug->OutputDebug( 2, "Config folder: $ConfigFolder" );
+        
+        $ConfigFolder = $this->get_real_folder_name( $ConfigFolder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "Config folder: $ConfigFolder" );
         $this->create_folder( $ConfigFolder );
-		
-		$LastModFolder = $this->get_real_folder_name( $LastModFolder, $this->{'directory_separator'} );
-		$debug->OutputDebug( 2, "last update folder: $LastModFolder" );
+        
+        $LastModFolder = $this->get_real_folder_name( $LastModFolder, $this->{'directory_separator'} );
+        $debug->OutputDebug( 2, "last update folder: $LastModFolder" );
         $this->create_folder( $LastModFolder );
-		
-
+        
         $this->{imap}->select( $AddFolder );
         @messages = $this->{imap}->messages();
 
@@ -1308,21 +1311,28 @@ BODY
         # First, strip any spaces from feed
         $fixed = __trim( $content );
 
-	# Some feeds seem to have some crap charaters in them (either at the begining or the end)
-	# which need to get stripped out, so build a has that contains the ASCII values of all the
-	# characters we want to keep (\r, \n, a-Z, etc.).  Then run a regex to process the change.
-	my %CharatersToKeep = map {$_=>1} (9,10,13,32..127);
-	$fixed =~ s/(.)/$CharatersToKeep{ord($1)} ? $1 : ' '/eg;
-		
+        # Some feeds seem to have some crap charaters in them (either at the begining or the end)
+        # which need to get stripped out, so build a hash that contains the ASCII values of all the
+        # characters we want to keep (\r, \n, a-Z, etc.).  Then run a regex to process the change.
+        $debug->OutputDebug( 2, "Remove unwanted characters..." );
+        #    my %CharatersToKeep = map {$_=>1} (9,10,13,32..127);
+        #    $fixed =~ s/(.)/$CharatersToKeep{ord($1)} ? $1 : ' '/eg;
+        $fixed =~ s/[^[:ascii:]]/ /eg;
+        $debug->OutputDebug( 2, "Finished." );
+        
         # if the opening xml tag is missing, add it
         $count = 0;
+        $debug->OutputDebug( 2, "Add missing XML tag..." );
+
         while ($fixed =~ /\<\?xml/gi) { $count++ }
+
         if ( $count == 0  ) {
             $fixed = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . $fixed;
         }
 
         # Make sure we don't have duplicate closing channel tags
         $count = 0;
+        $debug->OutputDebug( 2, "Remove duplicate closing channel tags..." );
         while ($fixed =~ /\<\/channel\>/gi) { $count++ }
             if ( $count > 1  ) {
                 for( my $i = 1; $i < $count; $i++ ) {
@@ -1332,6 +1342,7 @@ BODY
 
         # Make sure we don't have duplicate closing rss tags
         $count = 0;
+        $debug->OutputDebug( 2, "Remove duplicate closing rss tags..." );
         while ($fixed =~ /\<\/rss\>/gi) { $count++ }
             if ( $count > 1  ) {
                 for( my $i = 1; $i < $count; $i++ ) {
