@@ -14,8 +14,10 @@ Requirements
                 Digest::HMAC
                 Encode
                 Encode::Guess
+                File::Basename
                 Getopt::Long
                 HTML::Entities
+                HTML::FormatText::WithLinks::AndTables
                 HTTP::Date
                 IO::Socket::SSL (required in case of using IMAP over SSL)
                 Jcode 
@@ -25,6 +27,7 @@ Requirements
                 Mail::IMAPClient 
                 Mail::IMAPClient::BodyStructure
                 Text::Unidecode
+                HTML::TreeBuilder
                 Unicode::Map8
                 XML::FeedPP
                 XML::Parser 
@@ -185,6 +188,18 @@ Delivery mode
                         the article points to).  As this is an external link
                         you have to be connected to the Internet to see the
                         content in this mode.
+                - mhtmllink
+                        Retreive the webpage in the rss link and convert it 
+                        to a mime HTML mail message with all css and images
+                        embedded in the message.  This allows for offline 
+                        reading, but can generate very large messages.
+                - htmllink 
+                        Retrive the webpage in the rss link and create an 
+                        HTML message from it.  This allows for offline 
+                        reading, but no css or images will be available.
+                - textlink 
+                        Retreive the webpage in the rss link and create a 
+                        text message from it.
 
         You can configure delivery mode by setting "delivery-mode" value in 
         Rigel.conf, and can override its value with command line option "-d". 
