@@ -672,7 +672,7 @@ BODY
         } elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
             $message .= "\r\n" . $this->get_text_body( $rss, $item );
         } elsif ( $this->{site_config}->{'delivery-mode'} eq 'mhtmllink' ) {
-Ä           # As the MIME headers are generated in the MHTML generators, we don't need to add the blank line between the message
+            # As the MIME headers are generated in the MHTML generators, we don't need to add the blank line between the message
             # headers and the message body as it is included in the return from get_mhtml_body();
             $message .= $this->get_mhtml_body( $rss, $item );
         } elsif ( $this->{site_config}->{'delivery-mode'} eq 'htmllink' ) {
@@ -1291,20 +1291,77 @@ User-Agent: Rigel version $VERSION
 
 http://template
 
+# See end of message for macro definitions
+#
+# Specify the deilivery folder:
 #folder = RSS%{dir:sep}%{channel:title}
+#
+# Specify how to deliver every RSS feed: items/channel
 #type = items
+#
+# Destination mail address, the "To:" header will be set to this value
 #to = 
+#
+# Subject line for the messages 
 #subject = %{item:title}
+#
+# Source mail address, the "From:" header will be set to this value
 #from = 
+#
+# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink, textlink
 #delivery-mode = html
-#expire-unseen = undef
+#
+# Delete item which are "N" days old: -1 = disabled 
 #expire = -1
+#
+# Should RIGEL expire messages that have not yet been read?: yes/no
+#expire-unseen = no
+#
+# Folder to move expired mail to: undef = delete mail
 #expire-folder = undef
-#sync = undef
-#last-update = undef
-#use-subjects = undef
-#last-subjects = undef
+#
+# Specify if Rigel syncs mail in folder with RSS items: yes/no
+#sync = no
+#
+# Use subject line based tracking: yes/no
+#use-subjects = no
+#
+# Define a user set time to live for a feed: -1 = disabled, 0 = ignore TTLs, >0 TTL in minutes
 #force-ttl = -1
+#
+###############################################################################
+#   Some of the values can use macros to substitute run time values, these
+#   macros are as follows:
+#
+#   %{channel:dc:date}                 The channel date
+#   %{channel:description}             The channel description
+#   %{channel:link}                    The channel URL
+#   %{channel:title}                   The channel title
+#   %{dashline:channel:title}          A line of "-"'s equal to the length
+#                                      of the channel title
+#   %{dashline:item:title}             A line of "-"'s equal to the length
+#                                      of the item title
+#   %{dir:lastmod}                     The last modified folder
+#   %{dir:manage}                      The management folder
+#   %{dir:sep}                         The character used to seperate folder
+#                                      names on the IMAP server
+#   %{host}                            The IMAP server name
+#   %{item:dc:creator}                 The item author
+#   %{item:dc:date}                    The item date
+#   %{item:dc:subject}                 The item subject
+#   %{item:description}                The item description
+#   %{item:link}                       The item URL
+#   %{item:title}                      The item title
+#   %{last-modified}                   The time the feed was last updated
+#   %{newline}                         The newline character
+#   %{rss-link}                        The URL of the feed
+#   %{user}                            The IMAP user name 
+#
+#   Note that not all items may be available at all times, ie. during folder 
+#   creation only the channel items are available as the item information has
+#   not yet been proceeded.  Items not available or not recognized will be 
+#   replaced with blanks.
+###############################################################################
 BODY
 ;
         my $i = 10 - $this->{imap}->message_count( $AddFolder );
