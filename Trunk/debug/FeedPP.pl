@@ -23,7 +23,7 @@ use XML::FeedPP;
 use HTTP::Date;
 
 # Edit this line to ponit to the feed you want to check
-my $source = 'http://feeds.theinquirer.net/feed/vnunet/the_INQUIRER';
+my $source = 'http://thesteampunkhome.blogspot.com/feeds/posts/default';
 
 my $feed;
 
@@ -39,5 +39,6 @@ foreach my $item ( $feed->get_item() ) {
        print "URL: ", $item->link(), "\n";
        print "Title: ", $item->title(), "\n";
        print "Date: ", $item->pubDate(), "\n";
+       print "Category: ", $item->category(), "\n";
 }
 
