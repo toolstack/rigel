@@ -40,6 +40,7 @@ package RIGELLIB::Rigel;
     use RIGELLIB::Config;
     use RIGELLIB::Common;
     use RIGELLIB::Debug;
+    use RIGELLIB::MHTML;
     use Crypt::CBC;
     use MIME::Parser;
     use Unicode::Map8;
@@ -664,19 +665,23 @@ BODY
         my $rss         = shift;
         my $item        = shift;
 
-        my $headers = $this->get_headers( $rss, $item );
-
-        my $body = "";
+        my $message = $this->get_headers( $rss, $item );
 
         if( $this->{site_config}->{'delivery-mode'} eq 'embedded' ) {
-            $body = $this->get_embedded_body( $rss, $item );
+            $message .= "\r\n" . $this->get_embedded_body( $rss, $item );
         } elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
-            $body = $this->get_text_body( $rss, $item );
+            $message .= "\r\n" . $this->get_text_body( $rss, $item );
+        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'mhtmllink' ) {
+Ä           # As the MIME headers are generated in the MHTML generators, we don't need to add the blank line between the message
+            # headers and the message body as it is included in the return from get_mhtml_body();
+            $message .= $this->get_mhtml_body( $rss, $item );
+        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'htmllink' ) {
+            $message .= "\r\n" . $this->get_html_body( $rss, $item );
+        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'textlink' ) {
+            $message .= "\r\n" . $this->get_texthtml_body( $rss, $item );
         } else {
-            $body = $this->get_raw_body( $rss, $item );
+            $message .= "\r\n" . $this->get_raw_body( $rss, $item );
         }
-
-        my $message = ($headers . $body);
 
         utf8::encode($message);  # uft8 flag off.
 
@@ -701,7 +706,7 @@ BODY
 
         my $mime_type;
 
-        if( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
+        if( $this->{site_config}->{'delivery-mode'} eq 'text' or $this->{site_config}->{'delivery-mode'} eq 'textlink') {
             $mime_type = 'text/plain';
 
             # Since we're delivering in plain text, make sure that
@@ -726,10 +731,6 @@ BODY
 From: $m_from
 Subject: $m_subject
 To: $m_to
-MIME-Version: 1.0
-Content-Type: $mime_type; charset="UTF-8"
-Content-Transfer-Encoding: 8bit
-Content-Base: $link
 Message-Id: $message_id
 Date: $date
 User-Agent: Rigel version $VERSION
@@ -739,9 +740,20 @@ X-RSS-Item-Link: $link
 X-RSS-Aggregator: Rigel
 X-RSS-Aggregate-Date: $a_date
 X-RSS-Last-Modified: $l_date;
-
 BODY
 ;
+
+        # If we're going to deliver in MHTML mode, then the mime headers will be construted by the MHTML library.
+        if( $this->{site_config}->{'delivery-mode'} ne 'MHTML' ) 
+            {
+            my $return_headers .=<<"BODY"
+MIME-Version: 1.0
+Content-Type: $mime_type; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+Content-Base: $link
+BODY
+;
+            }
 
         return $return_headers;
     }
@@ -770,8 +782,13 @@ BODY
 
         my $return_text_body = $subject . "\n";
 
-        $return_text_body .= "-" x length( $subject ) . "\n";
-        $return_text_body .= "$desc\n" if ($desc);
+        # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
+        if( $subject ne $desc )
+            {
+            $return_text_body .= "-" x length( $subject ) . "\n";
+            $return_text_body .= "$desc\n" if ($desc);
+            }
+            
         $return_text_body .= "\n$link";
 
         return $return_text_body;
@@ -791,15 +808,16 @@ BODY
 
         my $link = $item->link();
 
-        my $return_body =<<"BODY"
-$subject
-<hr>
-$desc
-<hr>
-$link
-BODY
-;
+        my $return_body = $subject . "\r\n<hr>\r\n";
 
+        # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
+        if( $subject ne $desc )
+            {
+            $return_body = $return_body . $desc ."\r\n<hr>\r\n";
+            }
+
+        $return_body = $return_body . "<hr>\r\n" . $link . "\r\n";
+            
         return $return_body;
     }
 
@@ -848,7 +866,31 @@ BODY
         return $return_body;
     }
 
+    sub get_mhtml_body {
+        my $this       = shift;
+        my $rss        = shift;
+        my $item       = shift;
 
+        return RIGELLIB::MHTML->GetMHTML( $item->link() );
+    }
+    
+
+    sub get_html_body {
+        my $this       = shift;
+        my $rss        = shift;
+        my $item       = shift;
+
+        return RIGELLIB::MHTML->GetHTML( $item->link() );
+    }
+
+    sub get_texthtml_body {
+        my $this       = shift;
+        my $rss        = shift;
+        my $item       = shift;
+
+        return RIGELLIB::MHTML->GetTEXT( $item->link() );
+    }
+    
     sub rss_txt_convert {
         my $this = shift;
         my $string = shift;
@@ -1218,6 +1260,8 @@ Content-Transfer-Encoding: 7bit
 User-Agent: Rigel version $VERSION
 BODY
 ;
+                print "Adding feed: " . $siteurl . "\r\n";
+
                 $this->{imap}->append_string( $ConfigFolder, $headers . "\n" . $feedconf, "Seen" );
                 $this->{imap}->delete_message( $message );
             }
@@ -1290,6 +1334,7 @@ BODY
 
         $this->{imap}->select( $LastModFolder );
         foreach $Subject (@FeedsToDelete) {
+            print "Deleting feed: " . $Subject . "\r\n";
             $message_id = sprintf ('%s@%s', $Subject, $this->{host});
             @search = $this->{imap}->search ("UNDELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel-checker\"");
 
