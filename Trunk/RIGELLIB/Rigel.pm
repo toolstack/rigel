@@ -482,7 +482,8 @@ package RIGELLIB::Rigel;
         }
 
         # delete items, if sync functionality is enabled
-        if ($this->{site_config}->{'sync'}) {
+        if( $this->{site_config}->{'sync'} eq "yes" ) {
+            $debug->OutputDebug( 2, "Sync mode enabled for this feed." );
             my %found = ();
             for my $item (@items) {
                 $found{$item->link()} = 1;
@@ -542,17 +543,25 @@ package RIGELLIB::Rigel;
         my $expire = $this->{site_config}->{expire} || -1;
         my $imap   = $this->{imap};
 
-        return if ($expire <= 0);
+        if ($expire <= 0)
+            {
+            $debug->OutputDebug( 2, "Expire disabled for this feed." );            
+            return;
+            }
 
         my ($folder, $expire_folder) = $this->apply_template ($rss, undef, 1, $this->{site_config}->{folder}, $this->{site_config}->{'expire-folder'});
         $folder        = $this->get_real_folder_name ($folder, $this->{'directory_separator'});
         $expire_folder = $this->get_real_folder_name ($expire_folder, $this->{'directory_separator'}); 
 
+        $debug->OutputDebug( 2, "RSS Folder:" . $folder );
+        $debug->OutputDebug( 2, "Expire Folder:" . $expire_folder );
+        
         my $key = Mail::IMAPClient->Rfc2060_date (time() - $expire * 60 * 60 * 24);
 
         my $query = (defined $this->{site_config}->{'expire-unseen'}) ? "SENTBEFORE $key" : "SEEN SENTBEFORE $key";
         $query .= " HEADER x-rss-aggregator \"Rigel\"";
-
+        $debug->OutputDebug( 2, "Expire query:" . $query );
+        
         $this->select ($folder);
         my @search = $imap->search ($query);
 
