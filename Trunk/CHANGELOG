@@ -1,9 +1,10 @@
 Rigel change log:
 ================
 
-version 1.0b?
+version 1.0b5
 -------------
-
+        - Fixed critical bug where sync mode was forced on for all feeds
+		
 version 1.0b4
 -------------
         - Added support for TTL's in RSS Feeds
