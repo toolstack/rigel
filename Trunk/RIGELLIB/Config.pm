@@ -72,7 +72,9 @@ package RIGELLIB::Config;
         'use-subjects'  => 'yes',
         'last-subjects' => undef,
         'force-ttl'     => -1,
-        'desc'			=> "",
+        'desc'          => "",
+        'crop-start'    => "",
+        'crop-end'      => "",
     };
 
     # opml parse result.
@@ -258,7 +260,7 @@ package RIGELLIB::Config;
         my @config_list;
 
         $config{'desc'} = $feeddesc;
-		
+        
         foreach (split("\n", $feedconf)) {
             chomp;
             s/\s*$//;
@@ -280,6 +282,7 @@ package RIGELLIB::Config;
 
                 next if ($key =~ /(expire-unseen|sync)/ && $2 =~ /^(no|0)$/i);
                 $config{$key} = RIGELLIB::Unicode::to_utf8 ($value);
+                $debug->OutputDebug( 2, "config{$key} = $value\r\n" );
             } else {
                 print "WARNING: parse error $_\n";
             }

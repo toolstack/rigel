@@ -673,25 +673,44 @@ BODY
         my $folder      = shift;
         my $rss         = shift;
         my $item        = shift;
+        my $headers     = "";
+        my $body        = "";
+        
+        my $headers = $this->get_headers( $rss, $item );
 
-        my $message = $this->get_headers( $rss, $item );
+        if( $this->{site_config}->{'delivery-mode'} eq 'embedded' ) 
+            {
+            $body = RIGELLIB::MHTML->CropBody( $this->get_embedded_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            } 
+        elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) 
+            {
+            $body = RIGELLIB::MHTML->CropBody( $this->get_text_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            } 
+        elsif ( $this->{site_config}->{'delivery-mode'} eq 'mhtmllink' ) 
+            {
+            # The MHTML code returns both headers and the body in a single string, we need to split them up
+            # Also, since the cropping of the original HTML message could make a significant difference
+            # to the resulting MHTML file size, let the MHTML library do the cropping for us instead of call
+            # CropBody later.
+            my $tempheaders = "";
+            ( $tempheaders, $body ) = split( /\r\n\r\n/, $this->get_mhtml_body( $rss, $item, $this->{site_config} ), 2 );
+            $headers .= $tempheaders;
+            } 
+        elsif ( $this->{site_config}->{'delivery-mode'} eq 'htmllink' ) 
+            {
+            $body = RIGELLIB::MHTML->CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            }
+        elsif ( $this->{site_config}->{'delivery-mode'} eq 'textlink' ) 
+            {
+            $body = RIGELLIB::MHTML->CropBody( $this->get_texthtml_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            } 
+        else 
+            {
+            $body = RIGELLIB::MHTML->CropBody( $this->get_raw_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            }
 
-        if( $this->{site_config}->{'delivery-mode'} eq 'embedded' ) {
-            $message .= "\r\n" . $this->get_embedded_body( $rss, $item );
-        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'text' ) {
-            $message .= "\r\n" . $this->get_text_body( $rss, $item );
-        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'mhtmllink' ) {
-            # As the MIME headers are generated in the MHTML generators, we don't need to add the blank line between the message
-            # headers and the message body as it is included in the return from get_mhtml_body();
-            $message .= $this->get_mhtml_body( $rss, $item );
-        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'htmllink' ) {
-            $message .= "\r\n" . $this->get_html_body( $rss, $item );
-        } elsif ( $this->{site_config}->{'delivery-mode'} eq 'textlink' ) {
-            $message .= "\r\n" . $this->get_texthtml_body( $rss, $item );
-        } else {
-            $message .= "\r\n" . $this->get_raw_body( $rss, $item );
-        }
-
+        my $message = $headers . "\r\n" . $body;
+        
         utf8::encode($message);  # uft8 flag off.
 
         $this->{imap}->append_string($folder, $message);
@@ -753,9 +772,9 @@ BODY
 ;
 
         # If we're going to deliver in MHTML mode, then the mime headers will be construted by the MHTML library.
-        if( $this->{site_config}->{'delivery-mode'} ne 'MHTML' ) 
+        if( $this->{site_config}->{'delivery-mode'} ne 'mhtmllink' ) 
             {
-            my $return_headers .=<<"BODY"
+            $return_headers .=<<"BODY"
 MIME-Version: 1.0
 Content-Type: $mime_type; charset="UTF-8"
 Content-Transfer-Encoding: 8bit
@@ -876,13 +895,13 @@ BODY
     }
 
     sub get_mhtml_body {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
+        my $this        = shift;
+        my $rss         = shift;
+        my $item        = shift;
+        my $site_config = shift;
 
-        return RIGELLIB::MHTML->GetMHTML( $item->link() );
+        return RIGELLIB::MHTML->GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
     }
-    
 
     sub get_html_body {
         my $this       = shift;
@@ -1323,6 +1342,12 @@ http://template
 # Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink or
 # textlink
 #delivery-mode = $site_config->{'delivery-mode'}
+#
+# Cropping of the source file: these are regular expressions that match content
+# in the body of the rss item or the linked item depending on the delivery mode.
+#
+#crop-start =
+#crop-end =
 #
 # Delete item which are "N" days old: -1 = disabled 
 #expire = $site_config->{'expire'}
