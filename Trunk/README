@@ -1,4 +1,4 @@
-Rigel V1.0b3 (June 10, 2008)
+Rigel V1.0b4 (July 13, 2009)
 ============================
 
 Welcome to Rigel, an RSS to IMAP gateway
@@ -9,6 +9,8 @@ Welcome to Rigel, an RSS to IMAP gateway
         Some of Rigels features include:
                 * RSS 0.9, 1.0, 2.0, Atom 0.3 support. 
                 * text/html, text/plain mail format support. 
+                * You can tell Rigel to retrive the full content and add it
+                  to the message instead of the content from thr RSS feed.
                 * You can unify unread RSS article management via IMAP. This 
                   is useful in case of using multiple client. 
                 * IMAP over SSL support 
@@ -23,6 +25,9 @@ Welcome to Rigel, an RSS to IMAP gateway
 
 News
 ----
+        July 13/2009
+                - Fouth (and final?) beta release, three new message modes add,
+                  hence the beta instead of 1.0
         June 10/2008
                 - Third (and final?) beta release
 
