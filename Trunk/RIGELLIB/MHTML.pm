@@ -52,7 +52,7 @@ package RIGELLIB::MHTML;
     #     $url is the web site to retreive
     #
     sub GetMHTML {
-        my ( $this, $sitename ) = @_;
+        my ( $this, $sitename, $crop_start, $crop_end ) = @_;
         my $result = "";
     
         # Define the content id for the starting mime part
@@ -87,7 +87,11 @@ package RIGELLIB::MHTML;
         $result .= "Content-Transfer-Encoding: 8bit\r\n";
         $result .= "Content-Type: text/html; name=\"index.html\"\r\n";
         $result .= "\r\n";
+
         my $sitebody = __get_http_body( $sitename );
+
+        $sitebody = $this->CropBody( $sitebody, $crop_start, $crop_end );
+
         $result .= $sitebody;
         $result .= "\r\n";
 
@@ -169,9 +173,32 @@ package RIGELLIB::MHTML;
     sub GetTEXT {
         my ( $this, $url ) = @_;
 
-        my $text = HTML::FormatText::WithLinks::AndTables->convert( __get_http_body( $url ) );    
+        my $text = HTML::FormatText::WithLinks::AndTables->convert( __get_http_body( $url ) );
+        
+        return $text;
     }
     
+    sub CropBody {
+        my ( $this, $sitebody, $crop_start, $crop_end ) = @_;
+        my $junk = "";
+        
+        if( $crop_start ne "" )
+            {
+            ( $junk, $sitebody ) = split( /$crop_start/, $sitebody, 2 );
+            
+            # Failsafe, if we didn't match anything, then we should make sure to return the original
+            # value.
+            if( $sitebody eq "" ) { $sitebody = $junk; }
+            }
+
+        if( $crop_end ne "" )
+            {
+            ( $sitebody, $junk ) = split( /$crop_end/, $sitebody, 2 );
+            }
+
+        return $sitebody;
+    }
+
     #
     # This function returns the absolute URL give a relative url and a base url
     #

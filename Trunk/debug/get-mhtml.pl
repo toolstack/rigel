@@ -27,9 +27,11 @@ use RIGELLIB::MHTML;
 use RIGELLIB::Rigel;
 
 my $url = "http://www.askmen.com/daily/jokes/2008_aug/aug29.html";
+my $crop_start = "<div class=\"fun_stuff\">";
+my $crop_end = "<div class=\"more_fun\">";
 
 # print out the MIME HTML output
-#print RIGELLIB::MHTML->GetMHTML( $url );
+#print RIGELLIB::MHTML->GetMHTML( $url, $crop_start, $crop_end );
 
 # print out the HTML output
 #print RIGELLIB::MHTML->GetHTML( $url );
