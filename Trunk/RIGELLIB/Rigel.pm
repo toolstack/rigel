@@ -191,7 +191,7 @@ package RIGELLIB::Rigel;
         my $headers     = {};
 
         # start site processing....
-        print "processing $link...\n";
+        print "processing '$site_config->{'desc'}'...\n";
 
         $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
         $debug->OutputDebug( 2, "last update folder: $folder" );
@@ -1070,6 +1070,7 @@ BODY
 
         my $message;
         my $feedconf;
+        my $feeddesc;
         my $e;
         my @messages;
         my @config_list;
@@ -1099,11 +1100,12 @@ BODY
                 # get_mime_text_body will retrevie all the plain text peices of the
                 # message and return it as one string.
                 $feedconf = __trim( get_mime_text_body( $e ) );
+                $feeddesc = $this->{imap}->subject( $message );
                 $mp->filer->purge;
             }
 
             # parse the configuration options in to a configuration object
-            %config = $config_obj->parse_url_list_from_string( $feedconf );
+            %config = $config_obj->parse_url_list_from_string( $feedconf, $feeddesc );
             push @config_list, { %config };
         }
         
@@ -1284,7 +1286,7 @@ BODY
         # Now fill in any extra template messages we need
         my $template_message =<<"BODY"
 From: Rigel@
-Subject: http://template
+Subject: Template feed
 MIME-Version: 1.0
 Content-Type: text/plain;
 Content-Transfer-Encoding: 7bit

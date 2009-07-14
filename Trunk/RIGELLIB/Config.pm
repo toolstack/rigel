@@ -72,6 +72,7 @@ package RIGELLIB::Config;
         'use-subjects'  => 'yes',
         'last-subjects' => undef,
         'force-ttl'     => -1,
+        'desc'			=> "",
     };
 
     # opml parse result.
@@ -251,10 +252,13 @@ package RIGELLIB::Config;
     sub parse_url_list_from_string() {
         my $this = shift;
         my $feedconf = shift;
+        my $feeddesc = shift;
 
         my %config = %{$DEFAULT_SITE_CONFIG};
         my @config_list;
 
+        $config{'desc'} = $feeddesc;
+		
         foreach (split("\n", $feedconf)) {
             chomp;
             s/\s*$//;
