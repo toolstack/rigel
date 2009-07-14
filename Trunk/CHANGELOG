@@ -1,6 +1,18 @@
 Rigel change log:
 ================
 
+version 1.0b4
+-------------
+        - Added support for TTL's in RSS Feeds
+        - Added code to clean feeds of high ascii characters
+        - Fixed issue with Courier IMAP
+        - Added date/time to debug output
+        - Added support for mhtmllink, htmllink and textlink message types
+        - Updated "Template" add message to be more user friendly
+        - Enabled "use subjects" by default
+        - Updated the "Processing..." line to use the configuration message
+          subject line instead of the rss url
+
 version 1.0b3
 -------------
         - removed redundent config file loads
