@@ -160,7 +160,7 @@ package RIGELLIB::Rigel;
         $this->connect ();
 
         # Next, check to see if there are any Add/Delete's to process
-        $this->process_change_requests();                
+        $this->process_change_requests();
 
         # Finally, load the feeds from the server
         my $site_config_list = $this->get_feeds_from_imap();
@@ -1194,6 +1194,7 @@ BODY
     sub process_change_requests() {
         my $this = shift;
 
+        my $site_config = RIGELLIB::Config->get_site_configall();
         my @messages;
         my $message;
         my $feedconf;
@@ -1294,40 +1295,42 @@ http://template
 # See end of message for macro definitions
 #
 # Specify the deilivery folder:
-#folder = RSS%{dir:sep}%{channel:title}
+#folder = $site_config->{'folder'}
 #
 # Specify how to deliver every RSS feed: items/channel
-#type = items
+#type = $site_config->{'type'}
 #
 # Destination mail address, the "To:" header will be set to this value
-#to = 
+#to = $site_config->{'to'}
 #
 # Subject line for the messages 
-#subject = %{item:title}
+#subject = $site_config->{'subject'}
 #
 # Source mail address, the "From:" header will be set to this value
-#from = 
+#from = $site_config->{'from'}
 #
-# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink, textlink
-#delivery-mode = html
+# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink or
+# textlink
+#delivery-mode = $site_config->{'delivery-mode'}
 #
 # Delete item which are "N" days old: -1 = disabled 
-#expire = -1
+#expire = $site_config->{'expire'}
 #
 # Should RIGEL expire messages that have not yet been read?: yes/no
-#expire-unseen = no
+#expire-unseen = $site_config->{'expire-unseen'}
 #
 # Folder to move expired mail to: undef = delete mail
-#expire-folder = undef
+#expire-folder = $site_config->{'expire-folder'}
 #
 # Specify if Rigel syncs mail in folder with RSS items: yes/no
-#sync = no
+#sync = $site_config->{'sync'}
 #
 # Use subject line based tracking: yes/no
-#use-subjects = no
+#use-subjects = $site_config->{'use-subjects'}
 #
-# Define a user set time to live for a feed: -1 = disabled, 0 = ignore TTLs, >0 TTL in minutes
-#force-ttl = -1
+# Define a user set time to live for a feed: -1 = disabled, 0 = ignore TTLs or
+# >0 TTL in minutes
+#force-ttl = $site_config->{'force-ttl'}
 #
 ###############################################################################
 #   Some of the values can use macros to substitute run time values, these
