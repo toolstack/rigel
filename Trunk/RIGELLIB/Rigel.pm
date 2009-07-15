@@ -404,8 +404,26 @@ package RIGELLIB::Rigel;
         my @append_items;
         my @delete_mail;
         my $subject;
+        my $item;
+        my $start;
+        my $increment;
+        my $end;
 
-        for my $item (@items) {
+        if( $this->{site_config}->{'article-order'} != 1 )
+            {
+            $start = @items - 1;
+            $increment = -1;
+            $end = -1;
+            }
+        else
+            {
+            $start = 0;
+            $increment = 1;
+            $end = @items;
+            }
+    
+        for( my $i = $start; $i != $end; $i = $i + $increment ) {
+            $item = $items[$i];
             my $message_id  = $this->gen_message_id ($rss, $item);
 
             # Get the subject line and add it to our cache for later, make sure we
@@ -1348,6 +1366,10 @@ http://template
 #
 #crop-start =
 #crop-end =
+#
+# The order articles come in from the feed: 1 = oldest to newest, 
+# -1 = newest to oldest
+#article-order = $site_config->{'article-order'}
 #
 # Delete item which are "N" days old: -1 = disabled 
 #expire = $site_config->{'expire'}
