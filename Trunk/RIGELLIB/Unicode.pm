@@ -85,8 +85,17 @@ package RIGELLIB::Unicode;
             };
 
             if($@) {
-                return Encode::encode( 'MIME-Header',$string );
+                my $result = Encode::encode( 'MIME-Header',$string );
+                # Encode::encode splits very long lines up with a newline+space combiniation
+                # so let's get ride of them as that breaks most MUA's
+                $result =~ s/\n //g;
+
+                return $result;
             } else {
+                # Jcode->MIME_header splits very long lines up with a newline+space combiniation
+                # so let's get ride of them as that breaks most MUA's
+                $return_str =~ s/\n //g;
+
                 return ($return_str) ? $return_str : $string;
             }
         }
