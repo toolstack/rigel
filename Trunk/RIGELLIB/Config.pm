@@ -75,6 +75,7 @@ package RIGELLIB::Config;
         'desc'          => "",
         'crop-start'    => "",
         'crop-end'      => "",
+        'article-order' => 1,
     };
 
     # opml parse result.
