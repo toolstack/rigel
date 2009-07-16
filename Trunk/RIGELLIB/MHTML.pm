@@ -29,7 +29,6 @@ package RIGELLIB::MHTML;
     use File::Basename;
     use MIME::Base64;
     use MIME::Types;
-    use HTML::FormatText::WithLinks::AndTables;
 
     our %config = undef;
 
@@ -170,14 +169,6 @@ package RIGELLIB::MHTML;
         return __get_http_body( $url );
     }
 
-    sub GetTEXT {
-        my ( $this, $url ) = @_;
-
-        my $text = HTML::FormatText::WithLinks::AndTables->convert( __get_http_body( $url ) );
-        
-        return $text;
-    }
-    
     sub CropBody {
         my ( $this, $sitebody, $crop_start, $crop_end ) = @_;
         my $junk = "";
