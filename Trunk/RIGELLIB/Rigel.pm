@@ -1348,7 +1348,7 @@ http://template
 
 # See end of message for macro definitions
 #
-# Specify the deilivery folder:
+# Specify the delivery folder:
 #folder = $site_config->{'folder'}
 #
 # Specify how to deliver every RSS feed: items/channel
