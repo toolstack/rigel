@@ -1286,6 +1286,8 @@ BODY
             eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
             my $error = ($@ || $mp->last_error);
 
+            my $feeddesc = $this->{imap}->subject( $message );
+            
             $feedconf = "";
             $feedconf = __trim( get_mime_text_body( $e ) );
             $mp->filer->purge;
@@ -1299,10 +1301,12 @@ BODY
 
             $siteurl = __trim( $siteurl );
 
+            if( $feeddesc eq "" ) { $feeddesc = $siteurl; }
+            
             if ($siteurl ne "http://template") {
                 my $headers =<<"BODY"
 From: Rigel@
-Subject: $siteurl
+Subject: $feeddesc
 MIME-Version: 1.0
 Content-Type: text/plain;
 Content-Transfer-Encoding: 7bit
