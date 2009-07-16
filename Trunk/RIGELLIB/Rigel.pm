@@ -47,6 +47,7 @@ package RIGELLIB::Rigel;
     use MIME::WordDecoder;
     use HTML::Entities;
     use Text::Unidecode;
+    use HTML::FormatText::WithLinks::AndTables;
 
     our $VERSION       = undef;
     our $debug         = undef;
@@ -720,8 +721,15 @@ BODY
             }
         elsif ( $this->{site_config}->{'delivery-mode'} eq 'textlink' ) 
             {
-            $body = RIGELLIB::MHTML->CropBody( $this->get_texthtml_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
-            } 
+            $body = RIGELLIB::MHTML->CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
+            }
+        elsif ( $this->{site_config}->{'delivery-mode'} eq 'thtmllink' ) 
+            {
+            $body = $this->get_html_body( $rss, $item );
+            $body = RIGELLIB::MHTML->CropBody( $body, $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
+            }
         else 
             {
             $body = RIGELLIB::MHTML->CropBody( $this->get_raw_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
@@ -752,7 +760,9 @@ BODY
 
         my $mime_type;
 
-        if( $this->{site_config}->{'delivery-mode'} eq 'text' or $this->{site_config}->{'delivery-mode'} eq 'textlink') {
+        if( $this->{site_config}->{'delivery-mode'} eq 'text' 
+                or $this->{site_config}->{'delivery-mode'} eq 'textlink'
+                or $this->{site_config}->{'delivery-mode'} eq 'thtmllink') {
             $mime_type = 'text/plain';
 
             # Since we're delivering in plain text, make sure that
@@ -929,14 +939,6 @@ BODY
         return RIGELLIB::MHTML->GetHTML( $item->link() );
     }
 
-    sub get_texthtml_body {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
-
-        return RIGELLIB::MHTML->GetTEXT( $item->link() );
-    }
-    
     sub rss_txt_convert {
         my $this = shift;
         my $string = shift;
@@ -1361,8 +1363,8 @@ http://template
 # Source mail address, the "From:" header will be set to this value
 #from = $site_config->{'from'}
 #
-# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink or
-# textlink
+# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink 
+# textlink or thtmllink
 #delivery-mode = $site_config->{'delivery-mode'}
 #
 # Cropping of the source file: these are regular expressions that match content
