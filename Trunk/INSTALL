@@ -18,16 +18,18 @@ Requirements
                 Getopt::Long
                 HTML::Entities
                 HTML::FormatText::WithLinks::AndTables
+                HTML::TreeBuilder
                 HTTP::Date
                 IO::Socket::SSL (required in case of using IMAP over SSL)
                 Jcode 
                 LWP (LWP::UserAgent, LWP::Simple) 
+                MIME::Base64
                 MIME::Parser
+                MIME::Types
                 MIME::WordDecoder
                 Mail::IMAPClient 
                 Mail::IMAPClient::BodyStructure
                 Text::Unidecode
-                HTML::TreeBuilder
                 Unicode::Map8
                 XML::FeedPP
                 XML::Parser 

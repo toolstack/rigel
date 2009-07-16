@@ -3,11 +3,16 @@ Rigel change log:
 
 version 1.0b?
 -------------
-
+        - Added cropping mode
+        - Fixed bug in mime encoder that split long lines when it shouldn't have
+        - Added feed direction setting
+        - Fixed bug in the add new feed code that dropped the subject line on new
+          feeds
+        - Added thtmllink mode
 version 1.0b5
 -------------
         - Fixed critical bug where sync mode was forced on for all feeds
-		
+        
 version 1.0b4
 -------------
         - Added support for TTL's in RSS Feeds
