@@ -13,9 +13,9 @@
 
 #
 # This is a test script to make sure that the MHTML library
-# can properly read a link and parse it.  If there are any issues 
-# receiving articles in mhtmllink, htmllink or text link mode 
-# simply set the URL and uncomment to code you want to run 
+# can properly read a link and parse it.  If there are any issues
+# receiving articles in mhtmllink, htmllink or text link mode
+# simply set the URL and uncomment to code you want to run
 # to test the appropriate mode.
 #
 use strict;

@@ -21,7 +21,7 @@
 #
 
 package RIGELLIB::Common;
-{
+    {
     use strict;
     use RIGELLIB::Config;
     use RIGELLIB::UserAgent;
@@ -31,7 +31,8 @@ package RIGELLIB::Common;
     our %config = undef;
     our $debug = undef;
 
-    sub new {
+    sub new
+        {
         my $pkg_name = shift;
 
         (%config) = %{(shift)};
@@ -39,9 +40,10 @@ package RIGELLIB::Common;
         $debug = RIGELLIB::Debug->new( \%config );
 
         bless {}, $pkg_name;
-    }
+        }
 
-    sub getrss_and_response {
+    sub getrss_and_response
+        {
         my $this             = shift;
         my $uri              = shift;
         my $headers          = shift;
@@ -52,57 +54,67 @@ package RIGELLIB::Common;
 
         $debug->OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
 
-        $ua->proxy(['http','ftp'], %config->{'proxy'}) if( %config->{'proxy'} );
-        my $request = HTTP::Request->new('GET');
+        if( %config->{'proxy'} )
+            {
+            $ua->proxy( ['http','ftp'], %config->{'proxy'} );
+            }
+
+        my $request = HTTP::Request->new( 'GET' );
 
         $debug->OutputDebug( 1, "uri = " . $uri );
-        $request->url($uri);
+        $request->url( $uri );
 
         # set header if any.
-        while (my ($key,$value) = each %header_hash) {
+        while( my ($key,$value) = each %header_hash )
+            {
             $debug->OutputDebug( 1, "Header[$key] = $value" );
             $request->header( $key => $value );
-        }
+            }
 
         # finally send request.
-        my $response = $ua->request($request);
+        my $response = $ua->request( $request );
 
         $debug->OutputDebug( 1, "response code :" . $response->code );
 
         # Not Modified
-        if ($response->code eq '304') {
+        if( $response->code eq '304' )
+            {
             $debug->OutputDebug( 1, "received 304 code from RSS Server, not modified" );
 
             return @rss_and_response;
-        }
+            }
 
         # Connection Error.
-        unless ($response->is_success) {
+        unless( $response->is_success )
+            {
             $debug->OutputDebug( 1, "connection error" );
 
             return @rss_and_response;
-        }
+            }
 
         # RSS Get Succeeded.
         my $content = $response->content;
-        my $header = substr ($content, 0, 100);
+        my $header = substr( $content, 0, 100 );
 
         # force all contents to UTF-8
-        if ($header =~ /encoding="([^<>]*?)"/i) {
-            $content = RIGELLIB::Unicode::to_utf8($content,$1);
-        }
+        if( $header =~ /encoding="([^<>]*?)"/i )
+            {
+            $content = RIGELLIB::Unicode::to_utf8( $content, $1 );
+            }
 
+        # Replace the opening xml tag if it does not have the version/encoding in it
         $content =~ s/<\?xml.*?\?>/<\?xml version="1.0" encoding="utf-8"\?>/;
+
         # convert HTML Numeric reference to UTF-8 Character
         $content =~ s/\&#(x)?([a-f0-9]{1,5});/
-                         my $tmpstr = ($1)
-                                   ? pack( "H*", sprintf( "%08s", "$2" ) )
-                                   : pack( "N*", $2 );
+                        my $tmpstr = ($1)
+                            ? pack( "H*", sprintf( "%08s", "$2" ) )
+                            : pack( "N*", $2 );
                         Encode::encode( "UTF-8",
                             Encode::decode( "UTF-32BE", $tmpstr )
                         );
                     /eig;
- 
+
         $debug->OutputDebug( 2, "content = $content" );
         $debug->OutputDebug( 2, "response = $response" );
 
@@ -110,92 +122,112 @@ package RIGELLIB::Common;
         push @rss_and_response, $response;
 
         return @rss_and_response;
-    }
+        }
 
-
-    sub getUser {
+    sub getUser
+        {
         my $this    = shift;
         my $prompt  = shift;
         my $isproxy = shift;
 
-        $prompt = "UserName :" unless(defined $prompt);
+        if( !defined( $prompt ) )
+            {
+            $prompt = "UserName: ";
+            }
 
-        if ($isproxy && defined %config->{'proxy-user'}) {
+        if( $isproxy && defined %config->{'proxy-user'} )
+            {
             return %config->{'proxy-user'};
-        }
+            }
 
         # prompt and get username
         print $prompt;
         my $user = <STDIN>;
-        chomp($user);
+        chomp( $user );
         $user = undef unless length $user;
 
-        if (!defined %config->{'proxy-user'} && $isproxy) {
+        if( !defined %config->{'proxy-user'} && $isproxy )
+            {
             # add username to @ARGV
             push @ARGV, "--proxy-user";
             push @ARGV, $user;
-        }
+            }
 
         return $user;
-    }
+        }
 
-
-    sub getPass {
+    sub getPass
+        {
         my $this    = shift;
         my $prompt  = shift;
         my $isproxy = shift;
 
-        $prompt = "Password: " unless(defined $prompt);
+        if( !defined( $prompt ) )
+            {
+            $prompt = "Password: ";
+            }
 
-        if ($isproxy && defined %config->{'proxy-pass'}) {
+        if( $isproxy && defined %config->{'proxy-pass'} )
+            {
             return %config->{'proxy-pass'};
-        }
+            }
 
         print $prompt;
         my $password = undef;
-        if( $^O =~ /Win32/ ) {
+        if( $^O =~ /Win32/ )
+            {
             eval 'use Term::Getch';
-            if( $@ ) {
+            if( $@ )
+                {
                 print "Term::Getch is not installed, can not continue!\n";
                 die;
-            } else {
+                }
+            else
+                {
                 my @c = ();
                 my $tmp;
-                do {
+                do
+                    {
                     $tmp = getch();
                     push @c, $tmp if $tmp and $tmp =~ /\w/;
-                } while not $tmp or $tmp ne "\r";
-                $password = join('' => @c);
-            }
-            print "\n";
+                    } while not $tmp or $tmp ne "\r";
 
-        } else {
-            system("stty -echo");
+                $password = join( '' => @c );
+                }
+
+            print "\n";
+            }
+        else
+            {
+            system( "stty -echo" );
             $password = <STDIN>;
-            system("stty echo");
+            system( "stty echo" );
             print "\n";  # because we disabled echo
-        }
-        chomp($password);
+            }
+
+        chomp( $password );
         $password = undef unless length $password;
 
-        if (!defined %config->{'proxy-pass'} && $isproxy) {
+        if( !defined %config->{'proxy-pass'} && $isproxy )
+            {
             # add password to @ARGV
             push @ARGV, "--proxy-pass";
             push @ARGV, $password;
-        }
+            }
 
         return $password;
-    }
-
+        }
 
     # wrapper of proxy password getter
-    sub getProxyPass_ifEnabled {
+    sub getProxyPass_ifEnabled
+        {
         my $this = shift;
 
-        if( %config->{'proxy'} && %config->{'proxy-user'} ) {
+        if( %config->{'proxy'} && %config->{'proxy-user'} )
+            {
             $this->getPass( 'proxy password: ', 1 );
+            }
         }
     }
-}
 
 1;

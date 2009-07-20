@@ -29,8 +29,8 @@ use Data::Dumper;
 package main;
 
 sub show_usage
-        {
-        print <<"EOS"
+    {
+    print <<"EOS"
 
 Usage: Rigel [options]
 
@@ -44,7 +44,7 @@ Usage: Rigel [options]
                            use "FOLDER" as the last-modified-folder
 -c,  --cram-md5            use cram-md5 authentication
 -o,  --once                run once and exit
--n,  --nodaemon            run as a foreground process 
+-n,  --nodaemon            run as a foreground process
 -i,  --interval=MIN        run at MIN intervals [30]
      --proxy=HOST          use HOST as a http proxy
      --proxy-user=USER     use proxy username
@@ -58,93 +58,97 @@ Usage: Rigel [options]
 -v   --version             version info.
 
 EOS
-;     
-        exit();
-        }
+;
+    exit();
+    }
 
 sub main
-        {
-        $| = 1;
-        select( STDERR );
-        $| = 1;
-        select( STDOUT );
-        
-        my $config_obj  = RIGELLIB::Config->new();
-        my $rigel       = new RIGELLIB::Rigel( $config_obj );
-        my %config      = %{$config_obj->get_global_configall()};
-        my $version     = $config_obj->get_version();
-        my @config_list = @{$config {'list'}};
-        my $debug       = RIGELLIB::Debug->new( \%config );
+    {
+    $| = 1;
+    select( STDERR );
+    $| = 1;
+    select( STDOUT );
 
-        #    print version
-        if( $config {version} )
-                {
-                print "Rigel $version\n";
-                exit();
-                }
+    my $config_obj  = RIGELLIB::Config->new();
+    my $rigel       = new RIGELLIB::Rigel( $config_obj );
+    my %config      = %{$config_obj->get_global_configall()};
+    my $version     = $config_obj->get_version();
+    my @config_list = @{$config{'list'}};
+    my $debug       = RIGELLIB::Debug->new( \%config );
 
-        if ( $config{help} )
-                {
-                show_usage();
-                }
+    #    print version
+    if( $config {version} )
+            {
+            print "Rigel $version\n";
+            exit();
+            }
 
-        #   Welcome message.
-        print "* Welcome to Rigel $version!\n";
+    if ( $config{help} )
+            {
+            show_usage();
+            }
 
-        #    import, export process.
-        #    option import accepts one filename
-        #    execute and exit.
-        if( $config{import} )
-                {
-                $config_obj->import_file( $config_list[0] );
-                $config_obj->export_file( @config_list );
-                }
+    #   Welcome message.
+    print "* Welcome to Rigel $version!\n";
 
-        #   prompt imap password (and proxy password if enabled)
-        unless( $config{'password'} )
-                {
-                print "You require authentication ...\n";
-                my $common = RIGELLIB::Common->new( \%config );
-                $common->getProxyPass_ifEnabled();
-                $RIGELLIB::Rigel::GLOBAL_CONFIG->{password} = $common->getPass( 'imap password: ' );
-                }
+    #    import, export process.
+    #    option import accepts one filename
+    #    execute and exit.
+    if( $config{import} )
+            {
+            $config_obj->import_file( $config_list[0] );
+            $config_obj->export_file( @config_list );
+            }
 
-        #    finally do something!
-        if( $config{encrypt} )
-                {
-                $rigel->encrypt();
-                }
-        elsif( $config{once_p} || $config{debug} )
-                {
-                $rigel->run();
-                }
-        else
-                {
-                # invoke once to check whether given parameters are OK
-                $rigel->connect_test();
+    #   prompt imap password (and proxy password if enabled)
+    unless( $config{'password'} )
+            {
+            print "You require authentication ...\n";
+            my $common = RIGELLIB::Common->new( \%config );
+            $common->getProxyPass_ifEnabled();
+            $RIGELLIB::Rigel::GLOBAL_CONFIG->{password} = $common->getPass( 'IMAP password: ' );
+            }
 
-                unless( defined $config{nodaemon} )
-                        {
-                        print "Starting Rigel background daemon...\n";
-                        print "Update interval: $config{interval} minutes\n";
+    #   finally do something!
+    if( $config{encrypt} )
+            {
+            #   Encrypt a password and print it out so it can be stored
+            #   in the config file for later use.
+            $rigel->encrypt();
+            }
+    elsif( $config{once_p} || $config{debug} )
+            {
+            #   We're only going to run once if that's all there is to do or
+            #   if we're in debug mode.
+            $rigel->run();
+            }
+    else
+            {
+            #   Invoke once to check whether given parameters are OK
+            $rigel->connect_test();
 
-                        if( fork() )
-                                {
-                                exit();
-                                }
-                        setsid() if ( $^O !~ /Win32/ );
-                        umask( 022 );
-                        open( STDIN, '/dev/null' ) or die;
-                        open( STDOUT, '>>/dev/null' ) or die;
-                        open( STDERR, '>>/dev/null' ) or die;
-                        }
+            unless( defined $config{nodaemon} )
+                    {
+                    print "Starting Rigel background daemon...\r\n";
+                    print "Update interval: $config{interval} minutes\r\n";
 
-                while( 1 )
-                        {
-                        eval { $rigel->run(); };
-                        sleep $config{interval} * 60;
-                        }
-                }
-        }
+                    if( fork() )
+                            {
+                            exit();
+                            }
+                    setsid() if ( $^O !~ /Win32/ );
+                    umask( 022 );
+                    open( STDIN, '/dev/null' ) or die;
+                    open( STDOUT, '>>/dev/null' ) or die;
+                    open( STDERR, '>>/dev/null' ) or die;
+                    }
+
+            while( 1 )
+                    {
+                    eval { $rigel->run(); };
+                    sleep $config{interval} * 60;
+                    }
+            }
+    }
 
 main();
