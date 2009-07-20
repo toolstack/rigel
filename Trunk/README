@@ -7,18 +7,18 @@ Welcome to Rigel, an RSS to IMAP gateway
         transfer RSS feeds to an IMAP account of the users choosing.
 
         Some of Rigels features include:
-                * RSS 0.9, 1.0, 2.0, Atom 0.3 support. 
-                * text/html, text/plain mail format support. 
+                * RSS 0.9, 1.0, 2.0, Atom 0.3 support.
+                * text/html, text/plain mail format support.
                 * You can tell Rigel to retrive the full content and add it
                   to the message instead of the content from thr RSS feed.
-                * You can unify unread RSS article management via IMAP. This 
-                  is useful in case of using multiple client. 
-                * IMAP over SSL support 
-                * Connect via proxy, proxy authentication support. 
-                * Generate IMAP Folder dynamically from every RSS title, and 
-                  so on. 
-                * Automatically delete expired article. 
-                * By executing in channel mode, it can work as simple Antenna. 
+                * You can unify unread RSS article management via IMAP. This
+                  is useful in case of using multiple client.
+                * IMAP over SSL support
+                * Connect via proxy, proxy authentication support.
+                * Generate IMAP Folder dynamically from every RSS title, and
+                  so on.
+                * Automatically delete expired article.
+                * By executing in channel mode, it can work as simple Antenna.
                 * Reduce needless traffic by using If-Modified-Since header.
 
         Rigel = [R]SS [I]MAP [G]ateway in p[E]r[L]
@@ -26,7 +26,7 @@ Welcome to Rigel, an RSS to IMAP gateway
 News
 ----
         July 14/2009
-		        - Fifth (and final?) beta release to fix critical bug in b4
+                - Fifth (and final?) beta release to fix critical bug in b4
         July 13/2009
                 - Fouth (and final?) beta release, three new message modes add,
                   hence the beta instead of 1.0
@@ -36,7 +36,7 @@ News
         April 3/2008
                 - Second beta released
 
-        March 14/2008 
+        March 14/2008
                 - First beta for Rigel
 
 Where to download and get support
@@ -46,8 +46,8 @@ Where to download and get support
 
 Acknowledgement
 ---------------
-        Rigel is a fork from rss2imap, their code, while apparently no 
-        longer maintained, is still the core of Rigel, please visit 
+        Rigel is a fork from rss2imap, their code, while apparently no
+        longer maintained, is still the core of Rigel, please visit
         their sourceforge page for more information.
 
 Soapbox

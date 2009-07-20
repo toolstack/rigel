@@ -22,19 +22,20 @@
 use strict;
 
 package RIGELLIB::Debug;
-{
+    {
     use Data::Dumper;
 
     our %config = undef;
 
-    sub new {
+    sub new
+        {
         my $pkg_name = shift;
         my (%conf) = %{(shift)};
 
         %config = %conf;
 
         bless {}, $pkg_name;
-    }
+        }
 
     #
     # This function returns true/false depending upon if debugging is enabled
@@ -45,16 +46,20 @@ package RIGELLIB::Debug;
     # Where:
     #     $level is a value between 0 and 3.
     #
-    sub DebugEnabled {
+    sub DebugEnabled
+        {
         my $this = shift;
         my $level = shift;
 
-        if( $config{'debug'} >= $level ) {
+        if( $config{'debug'} >= $level )
+            {
             return 1;
-        } else {
+            }
+        else
+            {
             return 0;
+            }
         }
-    }
 
     #
     # This function outputs debug information if debugging is enabled
@@ -73,21 +78,24 @@ package RIGELLIB::Debug;
     #     [Calling function] [$string]
     #     [$var dump if exists]
     #
-    sub OutputDebug {
+    sub OutputDebug
+        {
         my $this = shift;
         my $level = shift;
         my $string = shift;
         my $var = shift;
 
-        if( $config{'debug'} >= $level ) {
+        if( $config{'debug'} >= $level )
+            {
             my $parent = ( caller(1) )[3];
             print "[" . localtime() . "] " . $parent . ": " . $string . "\n";
 
-            if( defined( $var ) ) {
+            if( defined( $var ) )
+                {
                 print Data::Dumper::Dumper( $var ) . "\n";
+                }
             }
         }
     }
-}
 
 1;

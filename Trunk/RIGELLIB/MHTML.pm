@@ -23,7 +23,7 @@
 use strict;
 
 package RIGELLIB::MHTML;
-{
+    {
     use LWP::UserAgent;
     use HTML::TreeBuilder;
     use File::Basename;
@@ -32,17 +32,18 @@ package RIGELLIB::MHTML;
 
     our %config = undef;
 
-    sub new {
-        my $pkg_name = shift;
-        my (%conf) = %{(shift)};
+    sub new
+        {
+        my $pkg_name     = shift;
+        my (%conf)         = %{(shift)};
 
         %config = %conf;
 
         bless {}, $pkg_name;
-    }
+        }
 
     #
-    # This function returns a character string that represents the web page 
+    # This function returns a character string that represents the web page
     # as an MHTML file
     #
     #     RIGELLIB::MHTML->GetMHTML(  $url )
@@ -50,14 +51,15 @@ package RIGELLIB::MHTML;
     # Where:
     #     $url is the web site to retreive
     #
-    sub GetMHTML {
+    sub GetMHTML
+        {
         my ( $this, $sitename, $crop_start, $crop_end ) = @_;
         my $result = "";
-    
+
         # Define the content id for the starting mime part
         my $StartEntry = "<index.html@" . $sitename . ">";
 
-        # Create a cleaned up sitename for use in the content id for the first page        
+        # Create a cleaned up sitename for use in the content id for the first page
         $StartEntry =~ s/http:\/\///ig;
         $StartEntry =~ s/\//\./ig;
 
@@ -66,7 +68,7 @@ package RIGELLIB::MHTML;
 
         for( $i = 0; $i < 15; $i++ )
             {
-            $boundry .= int(rand(9));
+            $boundry .= int( rand( 9 ) );
             }
 
         $result .= "MIME-Version: 1.0\r\n";
@@ -96,14 +98,14 @@ package RIGELLIB::MHTML;
 
         my $mimetypes = MIME::Types->new;
         my $tree = HTML::TreeBuilder->new;
-        $tree->parse($sitebody);
+        $tree->parse( $sitebody );
 
         # Find all the style sheet objects we want to retreive
         my @styles = $tree->find( 'link' );
         my $style = "";
 
         foreach $style (@styles)
-            { 
+            {
             if( $style->attr( 'rel') eq "stylesheet" )
                 {
                 my $filename = basename $style->attr( 'href' );
@@ -126,7 +128,7 @@ package RIGELLIB::MHTML;
         my $img = "";
 
         foreach $img (@imgs)
-            { 
+            {
             my $filename = basename $img->attr( 'src' );
             my $filemimetype = $mimetypes->mimeTypeOf( $filename );
 
@@ -140,22 +142,21 @@ package RIGELLIB::MHTML;
 
             $result .= "Content-Type: " . $filemimetype . "; name=\"" . $filename . "\"\r\n";
             $result .= "\r\n";
-            
+
             my $itembody = __get_http_body( __abs_url( $img->attr( 'src' ), $sitename) );
             $result .= encode_base64( $itembody );
 
             $result .= "\r\n";
-
             }
 
         # The last boundry entry is pre and post pended with "--"
         $result .= $boundry . "--\r\n";
-        
+
         return $result;
-    }
+        }
 
     #
-    # This function returns a character string that represents the web page 
+    # This function returns a character string that represents the web page
     # as an MHTML file
     #
     #     RIGELLIB::MHTML->GetHTML(  $url )
@@ -163,20 +164,22 @@ package RIGELLIB::MHTML;
     # Where:
     #     $url is the web site to retreive
     #
-    sub GetHTML {
+    sub GetHTML
+        {
         my ( $this, $url ) = @_;
 
         return __get_http_body( $url );
-    }
+        }
 
-    sub CropBody {
+    sub CropBody
+        {
         my ( $this, $sitebody, $crop_start, $crop_end ) = @_;
         my $junk = "";
-        
+
         if( $crop_start ne "" )
             {
             ( $junk, $sitebody ) = split( /$crop_start/, $sitebody, 2 );
-            
+
             # Failsafe, if we didn't match anything, then we should make sure to return the original
             # value.
             if( $sitebody eq "" ) { $sitebody = $junk; }
@@ -188,7 +191,7 @@ package RIGELLIB::MHTML;
             }
 
         return $sitebody;
-    }
+        }
 
     #
     # This function returns the absolute URL give a relative url and a base url
@@ -199,10 +202,14 @@ package RIGELLIB::MHTML;
     #     $RelativeURL is the relative url
     #     $BaseURL is the base url
     #
-    sub __abs_url {
+    sub __abs_url
+        {
         my ( $relative, $base ) = @_;
 
-        return $relative if $relative =~ m{ \A http:// }ix;
+        if( $relative =~ m{ \A http:// }ix )
+            {
+            return $relative;
+            }
 
         my ( $host, $hostrelative_abs ) = $base =~ m{
             \A
@@ -225,18 +232,19 @@ package RIGELLIB::MHTML;
         1 while $abs_url =~ s{ / (?!\.\.) [^/]+ / \.\. (?=/|\z) }{}x;
 
         return "http://$abs_url";
-    }
+        }
 
     #
-    # This function returns a character string that represents the web page 
-    # body, it follows redirects as required. 
+    # This function returns a character string that represents the web page
+    # body, it follows redirects as required.
     #
     #     RIGELLIB::MHTML->__get_http_body(  $url  )
     #
     # Where:
     #     $url is the web site to retreive
     #
-    sub __get_http_body {
+    sub __get_http_body
+        {
         my ( $url ) = @_;
 
         my $ua = LWP::UserAgent->new( requests_redirectable => [ 'GET', 'HEAD', 'POST' ] );
@@ -244,8 +252,8 @@ package RIGELLIB::MHTML;
         my $res = $ua->request( $req );
 
         return $res->content();
+        }
     }
 
-}
 
 1;
