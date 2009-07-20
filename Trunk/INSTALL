@@ -44,9 +44,12 @@ Requirements
 
         Rigel has only been tested on Linux at this time but it should run on
         just about any *nix variant that support Perl and the above modules.
-        Rigel has not yet been test on Windows and it is unlikely to work at
-        this time as several of the above modules either need a complier or
-        just won't compile on Windows at this time.
+
+        Rigel has been test on Windows and it works with ActiveState Perl 5.10,
+        however not all functionality has been test and ActiveState's pacakge
+        manager does not inlcude all of the required packages.  Install what
+		you can from ActiveState's package manager and then use cpan to install
+		the rest.
 
 Installation
 ------------
