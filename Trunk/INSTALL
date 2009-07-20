@@ -30,7 +30,6 @@ Requirements
                 Mail::IMAPClient 
                 Mail::IMAPClient::BodyStructure
                 Text::Unidecode
-                Unicode::Map8
                 XML::FeedPP
                 XML::Parser 
                 XML::Parser::Expat

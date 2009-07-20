@@ -43,7 +43,6 @@ package RIGELLIB::Rigel;
     use RIGELLIB::MHTML;
     use Crypt::CBC;
     use MIME::Parser;
-    use Unicode::Map8;
     use MIME::WordDecoder;
     use HTML::Entities;
     use Text::Unidecode;
@@ -192,7 +191,7 @@ package RIGELLIB::Rigel;
         my $headers     = {};
 
         # start site processing....
-        print "processing '$site_config->{'desc'}'...\n";
+        print "\r\nprocessing '$site_config->{'desc'}'...\n";
 
         $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
         $debug->OutputDebug( 2, "last update folder: $folder" );
@@ -1165,7 +1164,6 @@ BODY
 
         my $text;
         my $wd;
-        my $map = Unicode::Map8->new('ASCII') or die "Cannot create character map\n";
 
         if (my @parts = $ent->parts) {
             return get_mime_text_body($_) for @parts;
@@ -1179,7 +1177,7 @@ BODY
 
                 $wd = supported MIME::WordDecoder "ISO-8859-1" unless $wd;
 
-                return $text .  $map->to8($map->to16($wd->decode($body->as_string||'')));
+                return $text .  RIGELLIB::Unicode::to_utf8($wd->decode($body->as_string||''));
             }
         }
     }
