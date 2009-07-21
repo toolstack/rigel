@@ -75,7 +75,7 @@ package RIGELLIB::Debug;
     #
     # The line output format will be:
     #
-    #     [Calling function] [$string]
+    #     [Date/Time][Calling function] [$string]
     #     [$var dump if exists]
     #
     sub OutputDebug

@@ -73,6 +73,11 @@ package RIGELLIB::Rigel;
         bless $GLOBAL_CONFIG, $this;
         }
 
+    #
+    # This function connects to the IMAP server and stores the connection handle
+    #
+    #     RIGELLIB::Rigel->connect()
+    #
     sub connect
         {
         my $this     = shift;
@@ -148,6 +153,11 @@ package RIGELLIB::Rigel;
         die "$@ $this->{user}\@$this->{host}\n" unless ($imap);
         }
 
+    #
+    # This function test that the connection to the IMAP server can be made
+    #
+    #     RIGELLIB::Rigel->connect_test()
+    #
     sub connect_test
         {
         my $this = shift;
@@ -156,6 +166,12 @@ package RIGELLIB::Rigel;
         $this->{imap}->close();
         }
 
+    #
+    # This function encrpts a string so that it can be used in the
+    # configuration file for a password
+    #
+    #     RIGELLIB::Rigel->encrypt()
+    #
     sub encrypt
         {
         my $this   = shift;
@@ -164,6 +180,12 @@ package RIGELLIB::Rigel;
         print "----Start Encrypted Data----\n", $cipher->encrypt_hex( $this->{encrypt} ), "\n----End Encrpyted Data----\n";
         }
 
+    #
+    # This function is the main part of Rigel, it loops through the feeds and
+    # updates the IMAP folders
+    #
+    #     RIGELLIB::Rigel->run()
+    #
     sub run
         {
         my $this = shift;
@@ -198,6 +220,16 @@ package RIGELLIB::Rigel;
         $this->{imap}->close();
         }
 
+    #
+    # This function does the grunt work of getting the feed, ensuring TTL's
+    # are handled and if any updates need to be made
+    #
+    #     RIGELLIB::Rigel->get_rss( $url, $site_config)
+    #
+    # Where:
+    #     $url is the url of the feed
+    #     $site_config is the configuration to use for this feed
+    #
     sub get_rss {
         my $this        = shift;
         my $link        = shift;
@@ -401,6 +433,19 @@ package RIGELLIB::Rigel;
         return ( $rss, $ttl, @subject_lines );
         }
 
+    #
+    # This function does the grunt work of sending the mail message to the IMAP
+    # server as well as cleaning up old articles if required and updating the last
+    # update information.
+    #
+    #     RIGELLIB::Rigel->send( $rss, $site_config, $ttl, $subjects )
+    #
+    # Where:
+    #     $rss is the feed as a string
+    #     $site_config is the configuration to use for this feed
+    #     $ttl is the current time to live for the feed
+    #     $subjects is the currnet list of subjects from the lastupdate
+    #
     sub send
         {
         my $this        = shift;
@@ -633,6 +678,15 @@ package RIGELLIB::Rigel;
         return;
         }
 
+    #
+    # This function does the grunt work of expiring feed items on the IMAP
+    # server.
+    #
+    #     RIGELLIB::Rigel->expire( $rss)
+    #
+    # Where:
+    #     $rss is the feed as a string
+    #
     sub expire
         {
         my $this   = shift;
@@ -685,6 +739,15 @@ package RIGELLIB::Rigel;
             }
         }
 
+    #
+    # This function compares IMAP message dates and returns the latest one
+    #
+    #     RIGELLIB::Rigel->get_latest_date(  @messages, $date )
+    #
+    # Where:
+    #     @messages is an array of message ID's to compare
+    #     $date is the date to use, if omitted, the current date is used
+    #
     sub get_latest_date
         {
         my $this   = shift;
@@ -721,7 +784,17 @@ package RIGELLIB::Rigel;
         return ($latest, $lmsg);
         }
 
-
+    #
+    # This function stores the last update message on the IMAP server for
+    # a feed
+    #
+    #     RIGELLIB::Rigel->send_last_update(  $rss, $ttl, $subjects )
+    #
+    # Where:
+    #     $rss is the rss feed
+    #     $ttl is the time to live for the feed
+    #     $subjects is the new subject cache to store
+    #
     sub send_last_update
         {
         my $this          = shift;
@@ -778,6 +851,17 @@ BODY
         MarkFolderAsRead( $this->{imap}, $folder );
         }
 
+    #
+    # This function stores a single article on the IMAP server in the
+    # appropriate format.
+    #
+    #     RIGELLIB::Rigel->send_item(  $folder, $rss, $item )
+    #
+    # Where:
+    #     $folder is the IMAP folder to store the item in
+    #     $rss is the feed
+    #     $item is the item to store
+    #
     sub send_item
         {
         my $this        = shift;
@@ -834,6 +918,16 @@ BODY
         $this->{imap}->append_string( $folder, $message );
         }
 
+    #
+    # This function creates a header string for a mail message based upon the
+    # contents of the rss item to store
+    #
+    #     RIGELLIB::Rigel->get_headers(  $rss, $item )
+    #
+    # Where:
+    #     $rss is the feed
+    #     $item is the item to store
+    #
     sub get_headers
         {
         my $this        = shift;
@@ -909,6 +1003,15 @@ BODY
         return $return_headers;
         }
 
+    #
+    # This function returns a text only version of an rss item
+    #
+    #     RIGELLIB::Rigel->get_text_body(  $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed
+    #     $item is the item to store
+    #
     sub get_text_body
         {
         my $this       = shift;
@@ -917,7 +1020,7 @@ BODY
 
         my $subject    = $this->{site_config}->{subject};
         my $from       = $this->{site_config}->{from};
-        my $desc       = $this->get_description( $item );
+        my $desc       = $item->description();
 
         ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
 
@@ -945,7 +1048,15 @@ BODY
         return $return_text_body;
         }
 
-
+    #
+    # This function returns the raw version of an rss item
+    #
+    #     RIGELLIB::Rigel->get_raw_body(  $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed
+    #     $item is the item to store
+    #
     sub get_raw_body
         {
         my $this       = shift;
@@ -954,7 +1065,7 @@ BODY
 
         my $subject    = $this->{site_config}->{subject};
         my $from       = $this->{site_config}->{from};
-        my $desc       = $this->get_description( $item );
+        my $desc       = $item->description();
 
         ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
 
@@ -973,6 +1084,15 @@ BODY
         return $return_body;
         }
 
+    #
+    # This function returns an HTML embedded version of an rss item
+    #
+    #     RIGELLIB::Rigel->get_embedded_body(  $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed
+    #     $item is the item to store
+    #
     sub get_embedded_body
         {
         my $this       = shift;
@@ -981,7 +1101,7 @@ BODY
 
         my $subject    = $this->{site_config}->{subject};
         my $from       = $this->{site_config}->{from};
-        my $desc       = $this->get_description( $item );
+        my $desc       = $item->description();
 
         ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
 
@@ -1019,6 +1139,16 @@ BODY
         return $return_body;
         }
 
+    #
+    # This function returns a MIME HTML version of an rss item's linked web site
+    #
+    #     RIGELLIB::Rigel->get_mhtml_body(  $rss, $item, $site_config)
+    #
+    # Where:
+    #     $rss is the feed
+    #     $item is the item to store
+    #     $site_config is used to get the cropping marks so we only MIME encode what is required
+    #
     sub get_mhtml_body
         {
         my $this        = shift;
@@ -1029,6 +1159,15 @@ BODY
         return RIGELLIB::MHTML->GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
         }
 
+    #
+    # This function returns an HTML version of an rss item's linked web site
+    #
+    #     RIGELLIB::Rigel->get_html_body(  $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed
+    #     $item is the item to store
+    #
     sub get_html_body
         {
         my $this       = shift;
@@ -1038,6 +1177,14 @@ BODY
         return RIGELLIB::MHTML->GetHTML( $item->link() );
         }
 
+    #
+    # This function converts an rss item with HTML markup in it to plain text
+    #
+    #     RIGELLIB::Rigel->rss_txt_convert(  $string)
+    #
+    # Where:
+    #     $string is the string to convert
+    #
     sub rss_txt_convert
         {
         my $this = shift;
@@ -1118,7 +1265,14 @@ BODY
         return $string;
         }
 
-    # wrappers
+    #
+    # This function selects an IMAP folder, creating it if required
+    #
+    #     RIGELLIB::Rigel->select(  $folder)
+    #
+    # Where:
+    #     $folder is the folder to create/select
+    #
     sub select
         {
         my $this   = shift;
@@ -1128,6 +1282,14 @@ BODY
         $this->{imap}->select( $folder ) || print "@!\n";
         }
 
+    #
+    # This function creates an IMAP folder
+    #
+    #     RIGELLIB::Rigel->create_folder(  $folder)
+    #
+    # Where:
+    #     $folder is the folder to create
+    #
     sub create_folder
         {
         my $this       = shift;
@@ -1140,7 +1302,15 @@ BODY
             }
         }
 
-    # misc functions
+    #
+    # This function creates a message id to be used in the IMAP messages
+    #
+    #     RIGELLIB::Rigel->gen_message_id(  $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed (unused)
+    #     $item is the feed item
+    #
     sub gen_message_id
         {
         my $this = shift;
@@ -1150,6 +1320,11 @@ BODY
         return sprintf( '%s@%s', __trim( $item->link() ), $this->{host} );
         }
 
+    #
+    # This function determines if an error as occured
+    #
+    #     RIGELLIB::Rigel->is_error( )
+    #
     sub is_error
         {
         # if you use windows, FCNTL error will be ignored.
@@ -1161,6 +1336,15 @@ BODY
         return 1;
         }
 
+    #
+    # This function returns the last modified date for an rss item
+    #
+    #     RIGELLIB::Rigel->get_rss_Date(  $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed (unused)
+    #     $item is the feed item
+    #
     sub get_rss_date
         {
         my $this = shift;
@@ -1177,6 +1361,15 @@ BODY
         return $item->pubDate() || $rss->pubDate() || undef;
         }
 
+    #
+    # This function returns a HTTP formated time for an rss item
+    #
+    #     RIGELLIB::Rigel->get_date( $rss, $item)
+    #
+    # Where:
+    #     $rss is the feed (unused)
+    #     $item is the feed item
+    #
     sub get_date
         {
         my $this = shift;
@@ -1187,15 +1380,16 @@ BODY
         return HTTP::Date::time2str(HTTP::Date::str2time( $date ) );
         }
 
-    sub get_description
-        {
-        my $this = shift;
-        my $item = shift;
-
-        return $item->description();
-        }
-
-
+    #
+    # This function returns the full IMAP path to a folder, incuding any prefix
+    # and directory seperatores
+    #
+    #     RIGELLIB::Rigel->get_real_folder_name(  $folder, $dirsep)
+    #
+    # Where:
+    #     $folder is the folder you want to get
+    #     $dirsep is the directory seperator to use
+    #
     sub get_real_folder_name
         {
         my $this   = shift;
@@ -1223,6 +1417,12 @@ BODY
         return RIGELLIB::Unicode::to_utf7( $str );
         }
 
+    #
+    # This function returns an array of feed site configurations from the
+    # IMAP server
+    #
+    #     RIGELLIB::Rigel->get_feeds_from_imap( )
+    #
     sub get_feeds_from_imap
         {
         my $this = shift;
@@ -1275,6 +1475,15 @@ BODY
         return \@config_list;
         }
 
+    #
+    # This function returns the textual version of the message body in a
+    # MIME message
+    #
+    #     get_mime_text_body(  $mime)
+    #
+    # Where:
+    #     $mime is the mime encoded message to retreive
+    #
     sub get_mime_text_body
         {
         my $ent = shift;
@@ -1307,6 +1516,16 @@ BODY
             }
         }
 
+    #
+    # This function applies the Rigel configuration templates to a string
+    #
+    #     RIGELLIB::Rigel->apply_template(  $rss, $item, $folder)
+    #
+    # Where:
+    #     $rss is the feed (optional)
+    #     $item is the feed item (optional)
+    #     $folder is a flag (t/f) (optional)
+    #
     sub apply_template {
         my $this       = shift;
         my $rss        = shift;
@@ -1356,7 +1575,7 @@ BODY
                     {
                     if( !$cnf{$key} ) { next; }
 
-                    if ($folder_flg)
+                    if( $folder_flg )
                         {
                         $cnf{$key} =~ s/\./:/g ;
                         }
@@ -1374,6 +1593,11 @@ BODY
         return @result;
         }
 
+    #
+    # This function processes and add/delete messages on the IMAP server
+    #
+    #     RIGELLIB::Rigel->process_change+_requests( )
+    #
     sub process_change_requests()
         {
         my $this = shift;
@@ -1612,6 +1836,18 @@ BODY
         return;
         }
 
+    ###########################################################################
+    #  Internal Functions only from here
+    ###########################################################################
+
+    #
+    # This function 'fixes' some common feeds errors
+    #
+    #     __fix_feed(  $feed)
+    #
+    # Where:
+    #     $feed is the raw feed to fix
+    #
     sub __fix_feed()
         {
         my $content  = shift;
@@ -1680,6 +1916,14 @@ BODY
         return $fixed;
         }
 
+    #
+    # This function trims leading/trailing spaces from a string.
+    #
+    #     __trim( $string )
+    #
+    # Where:
+    #     $string is the string to trim
+    #
     sub __trim()
         {
         my $str = shift;
@@ -1696,11 +1940,22 @@ BODY
         return $str;
         }
 
+    #
+    # This function marks all items in and IMAP folder as seen.
+    #
+    #     __MarkFolderAsRead( $imap, $folder )
+    #
+    # Where:
+    #     $imap is the connection to use
+    #     $folder is the folder to work on (unused)
+    #
     sub MarkFolderAsRead()
         {
         my $imap = shift;
         my $folder = shift;
         my $message;
+
+        $imap->select( $folder );
 
         foreach $message ($imap->messages())
             {

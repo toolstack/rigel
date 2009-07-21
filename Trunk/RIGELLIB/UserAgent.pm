@@ -35,7 +35,7 @@ package RIGELLIB::UserAgent;
     sub new
         {
         my $pkg_name     = shift;
-        (%config)         = %{(shift)};
+        (%config)        = %{(shift)};
         my $ua = LWP::UserAgent->new( @_ );
 
         $common = RIGELLIB::Common->new( \%config );
@@ -45,7 +45,17 @@ package RIGELLIB::UserAgent;
         bless $ua, $pkg_name;
         }
 
-    # for proxy or basic authentication.
+    #
+    # This function retrives a set of basic credientals for a proxy server
+    # either from the config file or interactivly.
+    #
+    #     RIGELLIB::UserAgent->get_basic_credentials(  $realm, $uri, $isproxy )
+    #
+    # Where:
+    #     $realm is HTTP realm setting (unused at this time)
+    #     $uri is the url this is for (unused at this time)
+    #     $isproxy is wether this is for a proxy server or not (t/f)
+    #
     sub get_basic_credentials
         {
         my $this       = shift;
@@ -57,34 +67,25 @@ package RIGELLIB::UserAgent;
 
         if( $isproxy )
             {
-            if ( %config-5>{'proxy-user'} && %config->{'proxy-pass'} )
+            if ( %config->{'proxy-user'} && %config->{'proxy-pass'} )
                 {
                 return ( %config->{'proxy-user'}, %config->{'proxy-pass'} );
                 }
 
             if ( %config->{'proxy-user'})
                 {
-                return ( %config->{'proxy-user'}, $common->getPass( "Your proxy Password: ", 1 ) );
+                return ( %config->{'proxy-user'}, $common->getPass( "Your Proxy Password: ", 1 ) );
                 }
             else
                 {
                 print "Your Proxy Server Requires Authentication.\n";
-                return &__get_UserAndPass( undef, undef, 1 );
+                return ( $common->getUser( undef, $isproxy ), $common->getPass( undef, $isproxy ) );
                 }
             }
 
         # basic auth(401) is ignored, because you cannot input
         # auth information in daemon mode!!!!
         return @abort_list;
-        }
-
-    sub __get_UserAndPass
-        {
-        my $userprompt = shift;
-        my $passprompt = shift;
-        my $isproxy    = shift;
-
-        return ( $common->getUser( $userprompt, $isproxy ), $common->getPass( $passprompt, $isproxy ) );
         }
     }
 
