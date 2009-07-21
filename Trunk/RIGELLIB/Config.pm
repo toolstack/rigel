@@ -212,8 +212,8 @@ package RIGELLIB::Config;
                     }
                 elsif( /^([^:]+)\s*:\s*(.*)\s*/ )
                     {
-                    my $key   = &__trim( lc( $1 ) );
-                    my $value = &__trim( $2 );
+                    my $key   = RIGELLIB::Common->str_trim( lc( $1 ) );
+                    my $value = RIGELLIB::Common->str_trim( $2 );
 
                     if( !exists $config{$key} )
                         {
@@ -274,7 +274,7 @@ package RIGELLIB::Config;
 
             if( /^(ftp|http|https):\/\// )
                 {
-                push @{$config{url}}, __trim( $_ );
+                push @{$config{url}}, RIGELLIB::Common->str_trim( $_ );
                 }
             elsif(/^\#/ )
                 {
@@ -286,8 +286,8 @@ package RIGELLIB::Config;
                 }
             elsif( /^([^=]+)\s*=\s*(.*)\s*/ )
                 {
-                my $key   = &__trim( lc( $1 ) );
-                my $value = &__trim( $2 );
+                my $key   = RIGELLIB::Common->str_trim( lc( $1 ) );
+                my $value = RIGELLIB::Common->str_trim( $2 );
 
                 if( !exists $config{$key} )
                     {
@@ -609,8 +609,8 @@ package RIGELLIB::Config;
 
             my ($config_key, $value ) = split /=/, $line;
 
-            $config_key = &__trim( $config_key );
-            $value      = &__trim( $value );
+            $config_key = RIGELLIB::Common->str_trim( $config_key );
+            $value      = RIGELLIB::Common->str_trim( $value );
             $value = undef if ($value eq "undef" || $value eq "" || $value eq "no" );
             $return_hash{$config_key} = $value;
             }
@@ -662,30 +662,6 @@ package RIGELLIB::Config;
 
         # restore ARGV.
         @ARGV = @ARGV_TMP;
-        }
-
-    #
-    # This function trims leading/trailing spaces from a string.
-    #
-    #     __trim( $string )
-    #
-    # Where:
-    #     $string is the string to trim
-    #
-    sub __trim()
-        {
-        my $str = shift;
-
-        if( !defined( $str ) )
-            {
-            return undef;
-            }
-
-        chomp $str;
-        $str =~ s/^\s*//;
-        $str =~ s/\s*$//;
-
-        return $str;
         }
 
     #
