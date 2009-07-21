@@ -351,7 +351,7 @@ package RIGELLIB::Rigel;
                     {
                     # get_mime_text_body will retrevie all the plain text peices of the
                     # message and return it as one string.
-                    $subject_glob = __trim( get_mime_text_body( $e ) );
+                    $subject_glob = RIGELLIB::Common->str_trim( get_mime_text_body( $e ) );
                     $mp->filer->purge;
                     }
                 }
@@ -848,7 +848,7 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        MarkFolderAsRead( $this->{imap}, $folder );
+        __mark_folder_read( $this->{imap}, $folder );
         }
 
     #
@@ -1317,7 +1317,7 @@ BODY
         my $rss  = shift;
         my $item = shift;
 
-        return sprintf( '%s@%s', __trim( $item->link() ), $this->{host} );
+        return sprintf( '%s@%s', RIGELLIB::Common->str_trim( $item->link() ), $this->{host} );
         }
 
     #
@@ -1462,7 +1462,7 @@ BODY
                 {
                 # get_mime_text_body will retrevie all the plain text peices of the
                 # message and return it as one string.
-                $feedconf = __trim( get_mime_text_body( $e ) );
+                $feedconf = RIGELLIB::Common->str_trim( get_mime_text_body( $e ) );
                 $feeddesc = $this->{imap}->subject( $message );
                 $mp->filer->purge;
                 }
@@ -1650,7 +1650,7 @@ BODY
             my $feeddesc = $this->{imap}->subject( $message );
 
             $feedconf = "";
-            $feedconf = __trim( get_mime_text_body( $e ) );
+            $feedconf = RIGELLIB::Common->str_trim( get_mime_text_body( $e ) );
             $mp->filer->purge;
 
             %config = $config_obj->parse_url_list_from_string( $feedconf );
@@ -1661,7 +1661,7 @@ BODY
                 $siteurl = $siteurl . $site;
                 }
 
-            $siteurl = __trim( $siteurl );
+            $siteurl = RIGELLIB::Common->str_trim( $siteurl );
 
             if( $feeddesc eq "" ) { $feeddesc = $siteurl; }
 
@@ -1690,7 +1690,7 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        MarkFolderAsRead( $this->{imap}, $ConfigFolder );
+        __mark_folder_read( $this->{imap}, $ConfigFolder );
 
         # Now expunge any deleted messages
         $this->{imap}->select( $AddFolder );
@@ -1801,7 +1801,7 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        MarkFolderAsRead( $this->{imap}, $AddFolder );
+        __mark_folder_read( $this->{imap}, $AddFolder );
 
         $this->{imap}->select( $DeleteFolder );
         @messages = $this->{imap}->messages();
@@ -1856,7 +1856,7 @@ BODY
         my $count;
 
         # First, strip any spaces from feed
-        $fixed = __trim( $content );
+        $fixed = RIGELLIB::Common->str_trim( $content );
 
         # Some feeds seem to have some crap charaters in them (either at the begining or the end)
         # which need to get stripped out, so build a hash that contains the ASCII values of all the
@@ -1917,39 +1917,15 @@ BODY
         }
 
     #
-    # This function trims leading/trailing spaces from a string.
-    #
-    #     __trim( $string )
-    #
-    # Where:
-    #     $string is the string to trim
-    #
-    sub __trim()
-        {
-        my $str = shift;
-
-        if( !defined( $str ) )
-            {
-            return undef;
-            }
-
-        chomp $str;
-        $str =~ s/^\s*//;
-        $str =~ s/\s*$//;
-
-        return $str;
-        }
-
-    #
     # This function marks all items in and IMAP folder as seen.
     #
-    #     __MarkFolderAsRead( $imap, $folder )
+    #     __mark_folder_read( $imap, $folder )
     #
     # Where:
     #     $imap is the connection to use
     #     $folder is the folder to work on (unused)
     #
-    sub MarkFolderAsRead()
+    sub __mark_folder_read()
         {
         my $imap = shift;
         my $folder = shift;

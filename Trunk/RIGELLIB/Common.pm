@@ -264,6 +264,31 @@ package RIGELLIB::Common;
             $this->getPass( 'proxy password: ', 1 );
             }
         }
+
+    #
+    # This function trims leading/trailing spaces from a string.
+    #
+    #     RIGELLIB::Common->str_trim( $string )
+    #
+    # Where:
+    #     $string is the string to trim
+    #
+    sub str_trim()
+        {
+        my $this    = shift;
+        my $str     = shift;
+
+        if( !defined( $str ) )
+            {
+            return undef;
+            }
+
+        chomp $str;
+        $str =~ s/^\s*//;
+        $str =~ s/\s*$//;
+
+        return $str;
+        }
     }
 
 1;
