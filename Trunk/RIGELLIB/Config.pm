@@ -113,61 +113,14 @@ package RIGELLIB::Config;
         return $this;
         }
 
-    sub start_tag_handler
-        {
-        my $expat          = shift;
-        my $element_name   = shift;
-
-        my $attributes     = &__array_to_hash( @_ );
-        my @folder_array   = @{$this->{folder_array}};
-        my $current_folder = join( ".", @folder_array );
-
-        # outline tag( which includes title or text element )
-        if( 'outline' eq $element_name && !$attributes->{htmlUrl} )
-            {
-            # add folder to array.
-            if ( $attributes->{'text'} ) { push @folder_array, $attributes->{'text'}; }
-            if ( $attributes->{'title'} ) { push @folder_array, $attributes->{'title'}; }
-
-            $this->{folder_array} = \@folder_array;
-            $this->{outline_empty} = 0;
-
-            my $current_folder = join( ".", @folder_array );
-
-            $opml_parse->{$current_folder} = [];
-
-            return;
-            }
-
-        if ( 'outline' eq $element_name && $attributes->{htmlUrl} )
-            {
-            $this->{outline_empty} = 1;
-            chomp $attributes->{xmlUrl};
-            $attributes->{title} =~ s/\./-/g;
-            push @{$opml_parse->{$current_folder}}, $attributes->{xmlUrl};
-            }
-        }
-
-    sub end_tag_handler
-        {
-        my $expat = shift;
-        my $element_name = shift;
-
-        my @folder_array = @{$this->{folder_array}};
-
-        # if outline end tag
-        if( 'outline' eq $element_name && $this->{outline_empty} == 0 )
-            {
-            pop @folder_array;
-            $this->{folder_array} = \@folder_array;
-            $this->{outline_empty} = 0;
-            return;
-            }
-
-        # outline empty tag or other.
-        $this->{outline_empty} = 0;
-        }
-
+    #
+    # This function imports an OPML file
+    #
+    #     RIGELLIB::Config->import_file(  $filename )
+    #
+    # Where:
+    #     $filename is the fully qulified file name to import
+    #
     sub import_file
         {
         my $this = shift;
@@ -200,8 +153,8 @@ package RIGELLIB::Config;
 
         my $parser = new XML::Parser(
                             Handlers => {
-                                Start => \&start_tag_handler,
-                                End   => \&end_tag_handler,
+                                Start => \&__start_tag_handler,
+                                End   => \&__end_tag_handler,
                             }
                      );
 
@@ -225,6 +178,15 @@ package RIGELLIB::Config;
         exit();
         }
 
+    #
+    # This function parses a URL list from the old rss2imap utlity, it should
+    # be depricated at this point.
+    #
+    #     RIGELLIB::Config->parse_url_list(  @filename )
+    #
+    # Where:
+    #     @filename is the fully qulified file name array to parse
+    #
     sub parse_url_list
         {
         my $this = shift;
@@ -284,6 +246,16 @@ package RIGELLIB::Config;
         return \@config_list;
         }
 
+    #
+    # This function parses a URL list from a string, it is the new code used
+    # to replace parse_url_list in Rigel.
+    #
+    #     RIGELLIB::Config->parse_url_list_from_string(  $feedconf, $feeddesc )
+    #
+    # Where:
+    #     $feedconf is a feed configuration object returned by get_site_conf()
+    #     $feeddesc is the description of the feed (usually the subject line of the configuraiton message
+    #
     sub parse_url_list_from_string()
         {
         my $this     = shift;
@@ -340,6 +312,14 @@ package RIGELLIB::Config;
         return %config;
         }
 
+    #
+    # This function exports an OPML file from the Rigel configuration.
+    #
+    #     RIGELLIB::Config->export_file(  @filename )
+    #
+    # Where:
+    #     @filename is an array of file names to export, only one should be passed
+    #
     sub export_file
         {
         my $this        = shift;
@@ -487,6 +467,14 @@ package RIGELLIB::Config;
         exit();
         }
 
+    #
+    # This function returns a global configuration variable for a given setting
+    #
+    #     RIGELLIB::Config->get_global_conf(  $key )
+    #
+    # Where:
+    #     $key is the configuration variable you want the setting for
+    #
     sub get_global_conf
         {
         my $this = shift;
@@ -495,6 +483,14 @@ package RIGELLIB::Config;
         return $DEFAULT_GLOBAL_CONFIG->{$key};
         }
 
+    #
+    # This function returns a site configuration variable for a given setting
+    #
+    #     RIGELLIB::Config->get_site_conf(  $key )
+    #
+    # Where:
+    #     $key is the configuration variable you want the setting for
+    #
     sub get_site_conf
         {
         my $this = shift;
@@ -503,27 +499,48 @@ package RIGELLIB::Config;
         return $DEFAULT_SITE_CONFIG->{$key};
         }
 
+    #
+    # This function returns the version of Rigel
+    #
+    #     RIGELLIB::Config->get_version( )
+    #
     sub get_version
         {
         return $VERSION;
         }
 
+    #
+    # This function returns the default global configuration settings
+    #
+    #     RIGELLIB::Config->get_global_conf( )
+    #
     sub get_global_configall
         {
         return $DEFAULT_GLOBAL_CONFIG;
         }
 
+    #
+    # This function returns the default site configuration settings
+    #
+    #     RIGELLIB::Config->get_global_conf( )
+    #
     sub get_site_configall
         {
         return $DEFAULT_SITE_CONFIG;
         }
 
-    ######################################
-    #
-    #    from here, private subroutine.
-    #
-    ######################################
+    ###########################################################################
+    #  Internal Functions only from here
+    ###########################################################################
 
+    #
+    # This function converts an array to a hash
+    #
+    #     __array_to_hash(  @array )
+    #
+    # Where:
+    #     @array is the array to convert
+    #
     sub __array_to_hash
         {
         my $hash_ref = {};
@@ -539,7 +556,14 @@ package RIGELLIB::Config;
         return $hash_ref;
         }
 
-    sub __parse_conf {
+    #
+    # This function parses the Rigel.conf file and updates the default global
+    # and site configuration variables
+    #
+    #     __parse_conf( )
+    #
+    sub __parse_conf
+        {
         my %parse_result = &__parse_conffile( $DEFAULT_GLOBAL_CONFIG->{'config-file'} );
 
         # override config value for the site definition
@@ -561,6 +585,14 @@ package RIGELLIB::Config;
             }
         }
 
+    #
+    # This function parses the Rigel.conf file and returns the results in a hash.
+    #
+    #     __parse_conffile( $filename )
+    #
+    # Where:
+    #     $filename is the configuraiton file to load.
+    #
     sub __parse_conffile
         {
         my $filename   = shift;
@@ -586,6 +618,11 @@ package RIGELLIB::Config;
         return %return_hash;
         }
 
+    #
+    # This function parses the command line options.
+    #
+    #     __parse_options( )
+    #
     sub __parse_options
         {
         my @ARGV_TMP = @ARGV;
@@ -627,11 +664,19 @@ package RIGELLIB::Config;
         @ARGV = @ARGV_TMP;
         }
 
+    #
+    # This function trims leading/trailing spaces from a string.
+    #
+    #     __trim( $string )
+    #
+    # Where:
+    #     $string is the string to trim
+    #
     sub __trim()
         {
         my $str = shift;
 
-        if( !defined $str )
+        if( !defined( $str ) )
             {
             return undef;
             }
@@ -643,6 +688,15 @@ package RIGELLIB::Config;
         return $str;
         }
 
+    #
+    # This function converts ascii characters to HTML/XML entities versions.
+    # Only used in the export function.
+    #
+    #     __xmlval_convert( $string )
+    #
+    # Where:
+    #     $string is the string to convert
+    #
     sub __xmlval_convert()
         {
         my $str = shift;
@@ -662,6 +716,15 @@ package RIGELLIB::Config;
         return Encode::encode( "utf8", $str );
         }
 
+    #
+    # This function converts ascii characters to HTML/XML entities versions.
+    # Only used in the import function.
+    #
+    #     __print_config_file( $filename )
+    #
+    # Where:
+    #     $filename is the full path to the filename to output
+    #
     sub __print_config_file()
         {
         my $this        = shift;
@@ -713,6 +776,14 @@ package RIGELLIB::Config;
             }
         }
 
+    #
+    # This function sorts an array by the 'folder' key value.
+    #
+    #     __sort_array_byfolder( @array )
+    #
+    # Where:
+    #     @array is the array to sort
+    #
     sub __sort_array_byfolder
         {
         my @array = @_;
@@ -744,6 +815,16 @@ package RIGELLIB::Config;
         return @return_array;
         }
 
+    #
+    # This function asks a user what to do in case an export file already exists
+    #
+    #     __find_and_ask(  $cmd, $filename, $append)
+    #
+    # Where:
+    #     $cmd is the command time being executed (import/export)
+    #     $filename is the full path and filename to check
+    #     $append is wether the append option is avaliable in this case (t/f)
+    #
     sub __find_and_ask()
         {
         my $cmdname     = shift;
@@ -795,6 +876,67 @@ package RIGELLIB::Config;
         open OUTFILE, ">$output_file" or die "could not open output file:$!";
 
         return( *OUTFILE{IO} );
+        }
+
+    #
+    # This function is the start tag handler for the XML parser
+    #
+    sub __start_tag_handler
+        {
+        my $expat          = shift;
+        my $element_name   = shift;
+
+        my $attributes     = &__array_to_hash( @_ );
+        my @folder_array   = @{$this->{folder_array}};
+        my $current_folder = join( ".", @folder_array );
+
+        # outline tag( which includes title or text element )
+        if( 'outline' eq $element_name && !$attributes->{htmlUrl} )
+            {
+            # add folder to array.
+            if ( $attributes->{'text'} ) { push @folder_array, $attributes->{'text'}; }
+            if ( $attributes->{'title'} ) { push @folder_array, $attributes->{'title'}; }
+
+            $this->{folder_array} = \@folder_array;
+            $this->{outline_empty} = 0;
+
+            my $current_folder = join( ".", @folder_array );
+
+            $opml_parse->{$current_folder} = [];
+
+            return;
+            }
+
+        if ( 'outline' eq $element_name && $attributes->{htmlUrl} )
+            {
+            $this->{outline_empty} = 1;
+            chomp $attributes->{xmlUrl};
+            $attributes->{title} =~ s/\./-/g;
+            push @{$opml_parse->{$current_folder}}, $attributes->{xmlUrl};
+            }
+        }
+
+    #
+    # This function is the end tag handler for the XML parser
+    #
+    sub __end_tag_handler
+        {
+        my $expat = shift;
+        my $element_name = shift;
+
+        my @folder_array = @{$this->{folder_array}};
+
+        # if outline end tag
+        if( 'outline' eq $element_name && $this->{outline_empty} == 0 )
+            {
+            pop @folder_array;
+            $this->{folder_array} = \@folder_array;
+            $this->{outline_empty} = 0;
+            return;
+            }
+
+        # outline empty tag or other.
+        $this->{outline_empty} = 0;
         }
     }
 

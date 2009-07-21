@@ -157,7 +157,7 @@ package RIGELLIB::MHTML;
 
     #
     # This function returns a character string that represents the web page
-    # as an MHTML file
+    # as an HTML file
     #
     #     RIGELLIB::MHTML->GetHTML(  $url )
     #
@@ -171,6 +171,17 @@ package RIGELLIB::MHTML;
         return __get_http_body( $url );
         }
 
+    #
+    # This function crops a string at the first occurance of $crop_start and
+    # the first occurance of $crop_end after $crop_start.
+    #
+    #     RIGELLIB::MHTML->CropyBody(  $site_body, $crop_start, $crop_end )
+    #
+    # Where:
+    #     $site_body is the string to crop
+    #     $crop_start is the starting pattern to crop at (can be regex)
+    #     $crop_end is the ending pattern to crop at (can be regex)
+    #
     sub CropBody
         {
         my ( $this, $sitebody, $crop_start, $crop_end ) = @_;
@@ -193,10 +204,14 @@ package RIGELLIB::MHTML;
         return $sitebody;
         }
 
+    ###########################################################################
+    #  Internal Functions only from here
+    ###########################################################################
+
     #
     # This function returns the absolute URL give a relative url and a base url
     #
-    #     RIGELLIB::MHTML->__abs_url(  $RelativeURL,  $BaseURL  )
+    #     __abs_url(  $RelativeURL,  $BaseURL  )
     #
     # Where:
     #     $RelativeURL is the relative url
@@ -238,7 +253,7 @@ package RIGELLIB::MHTML;
     # This function returns a character string that represents the web page
     # body, it follows redirects as required.
     #
-    #     RIGELLIB::MHTML->__get_http_body(  $url  )
+    #     __get_http_body(  $url  )
     #
     # Where:
     #     $url is the web site to retreive

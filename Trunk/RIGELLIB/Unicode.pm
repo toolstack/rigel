@@ -27,6 +27,14 @@ package RIGELLIB::Unicode;
     use Encode::Guess qw/euc-jp shift-jis utf8 jis/;
     use Jcode;
 
+    #
+    # This function converts a string to UTF7 encoding
+    #
+    #     RIGELLIB::Unicode::to_utf7(  $string  )
+    #
+    # Where:
+    #     $string is the string to convert
+    #
     sub to_utf7
         {
         my $s = shift;
@@ -43,7 +51,15 @@ package RIGELLIB::Unicode;
         return $s;
         }
 
-
+    #
+    # This function converts a string to UTF8 encoding
+    #
+    #     RIGELLIB::Unicode::to_utf8(  $string, $from )
+    #
+    # Where:
+    #     $string is the string to convert
+    #     $from is the encoding the string is currently in
+    #
     sub to_utf8
         {
         my $s       = shift;
@@ -62,6 +78,15 @@ package RIGELLIB::Unicode;
         return Encode::decode( "utf8", $s );
         }
 
+    #
+    # This function converts a string to MIME encoding
+    #
+    #     RIGELLIB::Unicode::to_mime(  $string, $from )
+    #
+    # Where:
+    #     $string is the string to convert
+    #     $from is the encoding the string is currently in
+    #
     sub to_mime
         {
         my $string     = shift;

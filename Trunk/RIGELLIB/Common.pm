@@ -42,6 +42,17 @@ package RIGELLIB::Common;
         bless {}, $pkg_name;
         }
 
+    #
+    # This function returns an array with two entires, the rss feed as a
+    # string and the response code from the HTTP connection.
+    #
+    #     RIGELLIB::Common->getrss_and_response(  $URL,  $headers, $ttl  )
+    #
+    # Where:
+    #     $URL is the url of the feed to retreive
+    #     $headers are any headers to add to the HTTP request
+    #     $ttl is unused at this time
+    #
     sub getrss_and_response
         {
         my $this             = shift;
@@ -124,6 +135,16 @@ package RIGELLIB::Common;
         return @rss_and_response;
         }
 
+    #
+    # This function interactivly prompts (if required) for a username and
+    # returns it.
+    #
+    #     RIGELLIB::Common->getUser(  $prompt,  $is_proxy  )
+    #
+    # Where:
+    #     $prompt is the text to display before the user enters data
+    #     $is_proxy defines if this is for the proxy server or not (t/f)
+    #
     sub getUser
         {
         my $this    = shift;
@@ -156,6 +177,16 @@ package RIGELLIB::Common;
         return $user;
         }
 
+    #
+    # This function interactivly prompts (if required) for a password and
+    # returns it.
+    #
+    #     RIGELLIB::Common->getPass(  $prompt,  $is_proxy  )
+    #
+    # Where:
+    #     $prompt is the text to display before the user enters data
+    #     $is_proxy defines if this is for the proxy server or not (t/f)
+    #
     sub getPass
         {
         my $this    = shift;
@@ -218,7 +249,12 @@ package RIGELLIB::Common;
         return $password;
         }
 
-    # wrapper of proxy password getter
+    #
+    # This function interactivly prompts (if required) for a username and
+    # returns it for the proxy server.
+    #
+    #     RIGELLIB::Common->getProxyPass_ifEnabled(  )
+    #
     sub getProxyPass_ifEnabled
         {
         my $this = shift;
