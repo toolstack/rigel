@@ -20,13 +20,11 @@
 #
 
 use strict;
-use RIGELLIB::Config;
-use RIGELLIB::Common;
+use Common;
 
 package RIGELLIB::UserAgent;
     {
     our %config = undef;
-    our $common = undef;
 
     # extends LWP::UserAgent
     use LWP::UserAgent;
@@ -37,8 +35,6 @@ package RIGELLIB::UserAgent;
         my $pkg_name     = shift;
         (%config)        = %{(shift)};
         my $ua = LWP::UserAgent->new( @_ );
-
-        $common = RIGELLIB::Common->new( \%config );
 
         $ua->agent( "Rigel/" . %config->{'version'} );
 
@@ -74,12 +70,12 @@ package RIGELLIB::UserAgent;
 
             if ( %config->{'proxy-user'})
                 {
-                return ( %config->{'proxy-user'}, $common->getPass( "Your Proxy Password: ", 1 ) );
+                return ( %config->{'proxy-user'}, Common::getPass( "Your Proxy Password: ", 1 ) );
                 }
             else
                 {
                 print "Your Proxy Server Requires Authentication.\n";
-                return ( $common->getUser( undef, $isproxy ), $common->getPass( undef, $isproxy ) );
+                return ( Common::getUser( undef, $isproxy ), Common::getPass( undef, $isproxy ) );
                 }
             }
 
