@@ -32,7 +32,7 @@ package RIGELLIB::Config;
     use Getopt::Long;
     use RIGELLIB::Common;
     use RIGELLIB::Unicode;
-    use RIGELLIB::Debug;
+    use Debug;
 
     our $this = undef;
 
@@ -83,8 +83,6 @@ package RIGELLIB::Config;
     # opml parse result.
     our $opml_parse = undef;
 
-    our $debug = undef;
-
     sub new
         {
         my $pkg_name  = shift;
@@ -99,10 +97,8 @@ package RIGELLIB::Config;
         # Now reparse the command line to override and config values set above
         &__parse_options();
 
-        $debug = RIGELLIB::Debug->new( \%{$DEFAULT_GLOBAL_CONFIG} );
-
-        $debug->OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
-        $debug->OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
+        Debug::OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
+        Debug::OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
 
         $this = bless
             {
@@ -301,7 +297,7 @@ package RIGELLIB::Config;
                     }
 
                 $config{$key} = RIGELLIB::Unicode::to_utf8( $value );
-                $debug->OutputDebug( 2, "config{$key} = $value\r\n" );
+                Debug::OutputDebug( 2, "config{$key} = $value\r\n" );
                 }
             else
                 {
@@ -773,7 +769,7 @@ package RIGELLIB::Config;
 
         @key_array = sort @key_array;
 
-        $debug->OutputDebug( 2, "Array Dump:", \@key_array );
+        Debug::OutputDebug( 2, "Array Dump:", \@key_array );
 
         foreach my $key_item (@key_array)
             {

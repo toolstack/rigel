@@ -26,18 +26,15 @@ package RIGELLIB::Common;
     use RIGELLIB::Config;
     use RIGELLIB::UserAgent;
     use RIGELLIB::Unicode;
-    use RIGELLIB::Debug;
+    use Debug;
 
     our %config = undef;
-    our $debug = undef;
 
     sub new
         {
         my $pkg_name = shift;
 
         (%config) = %{(shift)};
-
-        $debug = RIGELLIB::Debug->new( \%config );
 
         bless {}, $pkg_name;
         }
@@ -63,7 +60,7 @@ package RIGELLIB::Common;
         my $ua               = RIGELLIB::UserAgent->new( \%config );
         my @rss_and_response = ();
 
-        $debug->OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
+        Debug::OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
 
         if( %config->{'proxy'} )
             {
@@ -72,25 +69,25 @@ package RIGELLIB::Common;
 
         my $request = HTTP::Request->new( 'GET' );
 
-        $debug->OutputDebug( 1, "uri = " . $uri );
+        Debug::OutputDebug( 1, "uri = " . $uri );
         $request->url( $uri );
 
         # set header if any.
         while( my ($key,$value) = each %header_hash )
             {
-            $debug->OutputDebug( 1, "Header[$key] = $value" );
+            Debug::OutputDebug( 1, "Header[$key] = $value" );
             $request->header( $key => $value );
             }
 
         # finally send request.
         my $response = $ua->request( $request );
 
-        $debug->OutputDebug( 1, "response code :" . $response->code );
+        Debug::OutputDebug( 1, "response code :" . $response->code );
 
         # Not Modified
         if( $response->code eq '304' )
             {
-            $debug->OutputDebug( 1, "received 304 code from RSS Server, not modified" );
+            Debug::OutputDebug( 1, "received 304 code from RSS Server, not modified" );
 
             return @rss_and_response;
             }
@@ -98,7 +95,7 @@ package RIGELLIB::Common;
         # Connection Error.
         unless( $response->is_success )
             {
-            $debug->OutputDebug( 1, "connection error" );
+            Debug::OutputDebug( 1, "connection error" );
 
             return @rss_and_response;
             }
@@ -126,8 +123,8 @@ package RIGELLIB::Common;
                         );
                     /eig;
 
-        $debug->OutputDebug( 2, "content = $content" );
-        $debug->OutputDebug( 2, "response = $response" );
+        Debug::OutputDebug( 2, "content = $content" );
+        Debug::OutputDebug( 2, "response = $response" );
 
         push @rss_and_response, $content;
         push @rss_and_response, $response;

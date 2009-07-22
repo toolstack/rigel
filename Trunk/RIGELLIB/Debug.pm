@@ -21,20 +21,20 @@
 
 use strict;
 
-package RIGELLIB::Debug;
+package Debug;
     {
     use Data::Dumper;
+    use Exporter;
 
-    our %config = undef;
+    our (@ISA, @EXPORT_OK);
+    @ISA=qw(Exporter);
+    @EXPORT_OK=qw(OutputDebug DebugEnabled  SetCurrentDebugLevel);
+    
+    our $__DebugLevel = undef;
 
-    sub new
+    sub SetCurrentDebugLevel
         {
-        my $pkg_name = shift;
-        my (%conf) = %{(shift)};
-
-        %config = %conf;
-
-        bless {}, $pkg_name;
+        $__DebugLevel = shift;
         }
 
     #
@@ -48,10 +48,9 @@ package RIGELLIB::Debug;
     #
     sub DebugEnabled
         {
-        my $this = shift;
         my $level = shift;
 
-        if( $config{'debug'} >= $level )
+        if( $__DebugLevel >= $level )
             {
             return 1;
             }
@@ -80,12 +79,11 @@ package RIGELLIB::Debug;
     #
     sub OutputDebug
         {
-        my $this = shift;
         my $level = shift;
         my $string = shift;
         my $var = shift;
 
-        if( $config{'debug'} >= $level )
+        if( $__DebugLevel >= $level )
             {
             my $parent = ( caller(1) )[3];
             print "[" . localtime() . "] " . $parent . ": " . $string . "\n";
