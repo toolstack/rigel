@@ -17,13 +17,14 @@
 # This is the main Rigel script, it is responsible for inital
 # setup and calling of the subfunctions as required.
 #
+use lib './RIGELLIB';
 
 use strict;
 use POSIX qw(setsid);
 use RIGELLIB::Config;
 use RIGELLIB::Rigel;
 use RIGELLIB::Common;
-use RIGELLIB::Debug;
+use Debug;
 use Data::Dumper;
 
 package main;
@@ -74,10 +75,12 @@ sub main
     my %config      = %{$config_obj->get_global_configall()};
     my $version     = $config_obj->get_version();
     my @config_list = @{$config{'list'}};
-    my $debug       = RIGELLIB::Debug->new( \%config );
 
+    #    Set the current debug level
+    Debug::SetCurrentDebugLevel( $config{debug} );
+    
     #    print version
-    if( $config {version} )
+    if( $config{version} )
         {
         print "Rigel $version\n";
         exit();

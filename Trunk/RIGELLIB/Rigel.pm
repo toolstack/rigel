@@ -39,7 +39,7 @@ package RIGELLIB::Rigel;
     use RIGELLIB::Unicode;
     use RIGELLIB::Config;
     use RIGELLIB::Common;
-    use RIGELLIB::Debug;
+    use Debug;
     use RIGELLIB::MHTML;
     use Crypt::CBC;
     use MIME::Parser;
@@ -49,7 +49,6 @@ package RIGELLIB::Rigel;
     use HTML::FormatText::WithLinks::AndTables;
 
     our $VERSION       = undef;
-    our $debug         = undef;
 
     # config init.
     our $config_obj    = undef;
@@ -67,8 +66,6 @@ package RIGELLIB::Rigel;
         $VERSION       = $config_obj->get_version();
 
         $common = RIGELLIB::Common->new( \%{$GLOBAL_CONFIG} );
-
-        $debug = RIGELLIB::Debug->new( \%{$GLOBAL_CONFIG} );
 
         bless $GLOBAL_CONFIG, $this;
         }
@@ -128,7 +125,7 @@ package RIGELLIB::Rigel;
         ( $this->{'management-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'management-folder'} );
         ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
 
-        if( $debug->DebugEnabled( 3 ) )
+        if( Debug::DebugEnabled( 3 ) )
             {
             $imap->Debug( 1 );
             $imap->Debug_fh();
@@ -242,12 +239,12 @@ package RIGELLIB::Rigel;
         print "\r\nprocessing '$site_config->{'desc'}'...\n";
 
         $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "last update folder: $folder" );
+        Debug::OutputDebug( 2, "last update folder: $folder" );
         $imap->select( $folder );
 
         my $message_id = sprintf('%s@%s', $link, $this->{host} );
         my @search = $imap->search( "HEADER message-id \"$message_id\"" );
-        $debug->OutputDebug( 2, "HEADER message-id \"$message_id\"" );
+        Debug::OutputDebug( 2, "HEADER message-id \"$message_id\"" );
 
         if( $this->is_error() )
             {
@@ -257,8 +254,8 @@ package RIGELLIB::Rigel;
         my $latest = undef;
         my $lmsg = undef;
         ( $latest, $lmsg ) = $this->get_latest_date( \@search );
-        $debug->OutputDebug( 2, "Message search: ", \@search );
-        $debug->OutputDebug( 2, "Latest message: $lmsg" );
+        Debug::OutputDebug( 2, "Message search: ", \@search );
+        Debug::OutputDebug( 2, "Latest message: $lmsg" );
 
         # First, let's see if any TTL has been idenfitifed for this feed
         my $rss_ttl = 0;
@@ -266,13 +263,13 @@ package RIGELLIB::Rigel;
         if( $lmsg && ( $site_config->{'force-ttl'} == -1 ) )
             {
             $rss_ttl = $imap->get_header( $lmsg, "X-RSS-TTL" );
-            $debug->OutputDebug( 1, "Cached TTL = $rss_ttl" );
+            Debug::OutputDebug( 1, "Cached TTL = $rss_ttl" );
 
             # The RSS TTL is expressed in minutes, and the latest is expressed
             # in seconds, so take the latest and add the ttl in seconds to it
             # for use later in get_rss_and_response
             $rss_ttl = $latest + ( $rss_ttl * 60 );
-            $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
+            Debug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
             }
         else
             {
@@ -283,8 +280,8 @@ package RIGELLIB::Rigel;
                 {
                 $rss_ttl = $latest + ( $site_config->{'force-ttl'} * 60 );
                 }
-            $debug->OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
-            $debug->OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
+            Debug::OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
+            Debug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
             }
 
         if( $latest )
@@ -297,7 +294,7 @@ package RIGELLIB::Rigel;
         my $ctime = time();
         my @rss_and_response;
 
-        $debug->OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
+        Debug::OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
         if( $rss_ttl > $ctime )
             {
             # Not time to update
@@ -330,7 +327,7 @@ package RIGELLIB::Rigel;
             my $e;
             my $subject_glob;
 
-            $debug->OutputDebug( 1, "Enabled subject caching" );
+            Debug::OutputDebug( 1, "Enabled subject caching" );
 
             # setup the message parser so we don't get any errors and we
             # automatically decode messages
@@ -360,7 +357,7 @@ package RIGELLIB::Rigel;
                 $subject_glob = "";
                 }
 
-            $debug->OutputDebug( 1, "subject glob = $subject_glob" );
+            Debug::OutputDebug( 1, "subject glob = $subject_glob" );
 
             # Now that we have the last updated subject list in a big string, time
             # to prase it in to an array.
@@ -370,7 +367,7 @@ package RIGELLIB::Rigel;
                 if( $beyond_headers == 1 )
                     {
                     push @subject_lines, $subject;
-                    $debug->OutputDebug( 1, "subject line = $subject" );
+                    Debug::OutputDebug( 1, "subject line = $subject" );
                     }
 
                 if( $subject eq "" ) { $beyond_headers = 1; }
@@ -383,16 +380,16 @@ package RIGELLIB::Rigel;
         my $ttl = 0;
 
         # Do some rudimentary checks/fixes on the feed before parsing it
-        $debug->OutputDebug( 1, "Fix feed for common errors..." );
+        Debug::OutputDebug( 1, "Fix feed for common errors..." );
         $content = __fix_feed( $content );
-        $debug->OutputDebug( 1, "Fix feed complete." );
+        Debug::OutputDebug( 1, "Fix feed complete." );
 
         # As FeedPP doesn't understand TTL values in the feed, check to see
         # if one exists and get it for later use
         if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i)
             {
             $ttl = $1;
-            $debug->OutputDebug( 1, "Feed has TTL! Set to: " . $ttl );
+            Debug::OutputDebug( 1, "Feed has TTL! Set to: " . $ttl );
             }
 
         # Parse the feed
@@ -418,11 +415,11 @@ package RIGELLIB::Rigel;
         # delete the last update info from the IMAP server
         foreach my $MessageToDelete (@search )
             {
-            $debug->OutputDebug( 2, "Delete meesage: " . $MessageToDelete );
+            Debug::OutputDebug( 2, "Delete meesage: " . $MessageToDelete );
             $imap->delete_message( $MessageToDelete ); # delete other messages;
             }
 
-        $debug->OutputDebug( 2, "Expunge the mailbox!" );
+        Debug::OutputDebug( 2, "Expunge the mailbox!" );
         $imap->expunge();
 
         # copy session information
@@ -470,7 +467,7 @@ package RIGELLIB::Rigel;
                 }
             }
 
-        $debug->OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
+        Debug::OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
         my $type = $this->{site_config}->{type};
 
         if( $type eq "channel" )
@@ -492,7 +489,7 @@ package RIGELLIB::Rigel;
 
         my ($folder) = $this->apply_template( $rss, undef, 1, $this->{site_config}->{folder} );
         $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 1, "IMAP folder to use = $folder" );
+        Debug::OutputDebug( 1, "IMAP folder to use = $folder" );
         $this->select( $folder );
 
         my @append_items;
@@ -525,16 +522,16 @@ package RIGELLIB::Rigel;
             # strip any newlines so we can store it in the IMAP message properly
             $subject = $this->rss_txt_convert( $item->title() );
             $subject =~ s/\n//g;
-            $debug->OutputDebug( 2, "RSS Item Subject = $subject" );
+            Debug::OutputDebug( 2, "RSS Item Subject = $subject" );
             push @subject_lines, $subject;
 
             # Retreive the date from the item or feed for future work.
             my $rss_date = $this->get_date ($rss, $item);
-            $debug->OutputDebug( 2, "RSS Item date = $rss_date" );
+            Debug::OutputDebug( 2, "RSS Item date = $rss_date" );
 
             # Convert the above date to a unix time code
             my $rss_time = HTTP::Date::str2time( $rss_date );
-            $debug->OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
+            Debug::OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
 
             # if expire enabled, get lastest-modified time of rss.
             if( $this->{site_config}->{expire} > 0 )
@@ -548,13 +545,13 @@ package RIGELLIB::Rigel;
 
             # Check to see if the rss item is older than the last update, in otherwords, the user
             # deleted it so we shouldn't add it back in.
-            $debug->OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
-            $debug->OutputDebug( 2, "Or is '$rss_date' = '' ?" );
+            Debug::OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
+            Debug::OutputDebug( 2, "Or is '$rss_date' = '' ?" );
             if( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" )
                 {
                 # message id is "rss url@host" AND x-rss-aggregator field is "Rigel"
                 # and not deleted.
-                $debug->OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
+                Debug::OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
                 my @search = $imap->search( "NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
 
                 if( $this->is_error() )
@@ -573,13 +570,13 @@ package RIGELLIB::Rigel;
                         # in the match with \Q and \E
                         if( $old_subject_glob !~ m/\Q$subject\E/ )
                             {
-                            $debug->OutputDebug( 2, "Subject not found in glob, adding item!" );
+                            Debug::OutputDebug( 2, "Subject not found in glob, adding item!" );
                             push @append_items, $item;
                             }
                         }
                     else
                         {
-                        $debug->OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
+                        Debug::OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
                         push @append_items, $item;
                         }
 
@@ -591,17 +588,17 @@ package RIGELLIB::Rigel;
                         next ; # date field is not found, we ignore it.
                         }
 
-                    $debug->OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
+                    Debug::OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
                     my ( $latest, $lmsg ) = $this->get_latest_date( \@search );
-                    $debug->OutputDebug( 2, "latest date = $latest" );
+                    Debug::OutputDebug( 2, "latest date = $latest" );
 
                     # if rss date is newer, delete search result and add rss items.
                     # by this, duplicate message is replaced with lastest one.
                     if( $rss_time > $latest )
                         {
-                        $debug->OutputDebug( 2, "updating items!" );
+                        Debug::OutputDebug( 2, "updating items!" );
                         push @delete_mail, @search;
                         push @append_items, $item;
                         }
@@ -612,7 +609,7 @@ package RIGELLIB::Rigel;
         # delete items, if sync functionality is enabled
         if( $this->{site_config}->{'sync'} eq "yes" )
             {
-            $debug->OutputDebug( 2, "Sync mode enabled for this feed." );
+            Debug::OutputDebug( 2, "Sync mode enabled for this feed." );
             my %found = ();
             for my $item (@items)
                 {
@@ -696,7 +693,7 @@ package RIGELLIB::Rigel;
 
         if( $expire <= 0 )
             {
-            $debug->OutputDebug( 2, "Expire disabled for this feed." );
+            Debug::OutputDebug( 2, "Expire disabled for this feed." );
             return;
             }
 
@@ -704,14 +701,14 @@ package RIGELLIB::Rigel;
         $folder        = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
         $expire_folder = $this->get_real_folder_name( $expire_folder, $this->{'directory_separator'} );
 
-        $debug->OutputDebug( 2, "RSS Folder:" . $folder );
-        $debug->OutputDebug( 2, "Expire Folder:" . $expire_folder );
+        Debug::OutputDebug( 2, "RSS Folder:" . $folder );
+        Debug::OutputDebug( 2, "Expire Folder:" . $expire_folder );
 
         my $key = Mail::IMAPClient->Rfc2060_date( time() - $expire * 60 * 60 * 24 );
 
         my $query = (defined $this->{site_config}->{'expire-unseen'}) ? "SENTBEFORE $key" : "SEEN SENTBEFORE $key";
         $query .= " HEADER x-rss-aggregator \"Rigel\"";
-        $debug->OutputDebug( 2, "Expire query:" . $query );
+        Debug::OutputDebug( 2, "Expire query:" . $query );
 
         $this->select( $folder );
         my @search = $imap->search( $query );
@@ -841,7 +838,7 @@ BODY
 
         my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
         $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "last update folder: $folder" );
+        Debug::OutputDebug( 2, "last update folder: $folder" );
         $this->{imap}->select( $folder );
         my $uid = $this->{imap}->append_string( $folder, $body, "Seen" );
 
@@ -1443,7 +1440,7 @@ BODY
         $mp->extract_uuencode( 1 );
 
         $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "config folder: $folder" );
+        Debug::OutputDebug( 2, "config folder: $folder" );
         $this->{imap}->select( $folder );
 
         @messages = $this->{imap}->messages();
@@ -1623,19 +1620,19 @@ BODY
         $mp->extract_uuencode( 1 );
 
         $AddFolder = $this->get_real_folder_name( $AddFolder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "Add folder: $AddFolder" );
+        Debug::OutputDebug( 2, "Add folder: $AddFolder" );
         $this->create_folder( $AddFolder );
 
         $DeleteFolder = $this->get_real_folder_name( $DeleteFolder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "Delete folder: $DeleteFolder" );
+        Debug::OutputDebug( 2, "Delete folder: $DeleteFolder" );
         $this->create_folder( $DeleteFolder );
 
         $ConfigFolder = $this->get_real_folder_name( $ConfigFolder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "Config folder: $ConfigFolder" );
+        Debug::OutputDebug( 2, "Config folder: $ConfigFolder" );
         $this->create_folder( $ConfigFolder );
 
         $LastModFolder = $this->get_real_folder_name( $LastModFolder, $this->{'directory_separator'} );
-        $debug->OutputDebug( 2, "last update folder: $LastModFolder" );
+        Debug::OutputDebug( 2, "last update folder: $LastModFolder" );
         $this->create_folder( $LastModFolder );
 
         $this->{imap}->select( $AddFolder );
@@ -1861,15 +1858,15 @@ BODY
         # Some feeds seem to have some crap charaters in them (either at the begining or the end)
         # which need to get stripped out, so build a hash that contains the ASCII values of all the
         # characters we want to keep (\r, \n, a-Z, etc.).  Then run a regex to process the change.
-        $debug->OutputDebug( 2, "Remove unwanted characters..." );
+        Debug::OutputDebug( 2, "Remove unwanted characters..." );
         #    my %CharatersToKeep = map {$_=>1} (9,10,13,32..127);
         #    $fixed =~ s/(.)/$CharatersToKeep{ord($1)} ? $1 : ' '/eg;
         $fixed =~ s/[^[:ascii:]]/ /eg;
-        $debug->OutputDebug( 2, "Finished." );
+        Debug::OutputDebug( 2, "Finished." );
 
         # if the opening xml tag is missing, add it
         $count = 0;
-        $debug->OutputDebug( 2, "Add missing XML tag..." );
+        Debug::OutputDebug( 2, "Add missing XML tag..." );
 
         while( $fixed =~ /\<\?xml/gi )
             {
@@ -1883,7 +1880,7 @@ BODY
 
         # Make sure we don't have duplicate closing channel tags
         $count = 0;
-        $debug->OutputDebug( 2, "Remove duplicate closing channel tags..." );
+        Debug::OutputDebug( 2, "Remove duplicate closing channel tags..." );
         while( $fixed =~ /\<\/channel\>/gi )
             {
             $count++;
@@ -1899,7 +1896,7 @@ BODY
 
         # Make sure we don't have duplicate closing rss tags
         $count = 0;
-        $debug->OutputDebug( 2, "Remove duplicate closing rss tags..." );
+        Debug::OutputDebug( 2, "Remove duplicate closing rss tags..." );
         while( $fixed =~ /\<\/rss\>/gi )
             {
             $count++;
