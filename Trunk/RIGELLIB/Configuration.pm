@@ -22,7 +22,7 @@
 #     - Parsing the command line options
 #
 
-package RIGELLIB::Config;
+package Configuration;
     {
     use strict;
     use Encode;
@@ -30,11 +30,14 @@ package RIGELLIB::Config;
     use XML::Parser::Expat;
     use XML::FeedPP;
     use Getopt::Long;
-    use RIGELLIB::Common;
+    use Common;
     use RIGELLIB::Unicode;
     use Debug;
+    use Exporter;
 
-    our $this = undef;
+    our (@ISA, @EXPORT_OK);
+    @ISA=qw(Exporter);
+    @EXPORT_OK=qw(LoadConfig import_file parse_url_list parse_url_list_from_string export_file get_global_conf get_site_conf get_version get_global_configall get_site_configall);
 
     our $VERSION = "V1 post-b5 development";
 
@@ -82,12 +85,11 @@ package RIGELLIB::Config;
 
     # opml parse result.
     our $opml_parse = undef;
+    our @folder_array = ();
+    our $outline_empty = 0;
 
-    sub new
+    sub LoadConfig
         {
-        my $pkg_name  = shift;
-        my @folder_name = ();
-
         # First, parse the commnad line in case the config file location is specified
         &__parse_options();
 
@@ -99,30 +101,21 @@ package RIGELLIB::Config;
 
         Debug::OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
         Debug::OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
-
-        $this = bless
-            {
-            folder_array   => \@folder_name,
-            outline_empty  => 0,
-            }, $pkg_name;
-
-        return $this;
         }
 
     #
     # This function imports an OPML file
     #
-    #     RIGELLIB::Config->import_file(  $filename )
+    #     RIGELLIB::Configuration::import_file(  $filename )
     #
     # Where:
     #     $filename is the fully qulified file name to import
     #
     sub import_file
         {
-        my $this = shift;
         my $filename = shift;
 
-        my $output_file = $this->get_global_conf( 'outfile' );
+        my $output_file = get_global_conf( 'outfile' );
 
         # parameter check.
         if( !defined $filename )
@@ -168,7 +161,7 @@ package RIGELLIB::Config;
             }
 
         # output result here.
-        $this->__print_config_file( $output_file );
+        __print_config_file( $output_file );
 
         print "finished generating site file successfully -> $output_file\n";
         exit();
@@ -178,14 +171,13 @@ package RIGELLIB::Config;
     # This function parses a URL list from the old rss2imap utlity, it should
     # be depricated at this point.
     #
-    #     RIGELLIB::Config->parse_url_list(  @filename )
+    #     RIGELLIB::Configuration::parse_url_list(  @filename )
     #
     # Where:
     #     @filename is the fully qulified file name array to parse
     #
     sub parse_url_list
         {
-        my $this = shift;
         my @filenames =  shift;
 
         my %config = %{$DEFAULT_SITE_CONFIG};
@@ -208,8 +200,8 @@ package RIGELLIB::Config;
                     }
                 elsif( /^([^:]+)\s*:\s*(.*)\s*/ )
                     {
-                    my $key   = RIGELLIB::Common->str_trim( lc( $1 ) );
-                    my $value = RIGELLIB::Common->str_trim( $2 );
+                    my $key   = Common::str_trim( lc( $1 ) );
+                    my $value = Common::str_trim( $2 );
 
                     if( !exists $config{$key} )
                         {
@@ -246,15 +238,14 @@ package RIGELLIB::Config;
     # This function parses a URL list from a string, it is the new code used
     # to replace parse_url_list in Rigel.
     #
-    #     RIGELLIB::Config->parse_url_list_from_string(  $feedconf, $feeddesc )
+    #     RIGELLIB::Configuration::parse_url_list_from_string(  $feedconf, $feeddesc )
     #
     # Where:
     #     $feedconf is a feed configuration object returned by get_site_conf()
     #     $feeddesc is the description of the feed (usually the subject line of the configuraiton message
     #
-    sub parse_url_list_from_string()
+    sub parse_url_list_from_string
         {
-        my $this     = shift;
         my $feedconf = shift;
         my $feeddesc = shift;
 
@@ -270,7 +261,7 @@ package RIGELLIB::Config;
 
             if( /^(ftp|http|https):\/\// )
                 {
-                push @{$config{url}}, RIGELLIB::Common->str_trim( $_ );
+                push @{$config{url}}, Common::str_trim( $_ );
                 }
             elsif(/^\#/ )
                 {
@@ -282,8 +273,8 @@ package RIGELLIB::Config;
                 }
             elsif( /^([^=]+)\s*=\s*(.*)\s*/ )
                 {
-                my $key   = RIGELLIB::Common->str_trim( lc( $1 ) );
-                my $value = RIGELLIB::Common->str_trim( $2 );
+                my $key   = Common::str_trim( lc( $1 ) );
+                my $value = Common::str_trim( $2 );
 
                 if( !exists $config{$key} )
                     {
@@ -311,17 +302,16 @@ package RIGELLIB::Config;
     #
     # This function exports an OPML file from the Rigel configuration.
     #
-    #     RIGELLIB::Config->export_file(  @filename )
+    #     RIGELLIB::Configuration::export_file(  @filename )
     #
     # Where:
     #     @filename is an array of file names to export, only one should be passed
     #
     sub export_file
         {
-        my $this        = shift;
         my @filenames   = shift;
 
-        my $output_file = $this->get_global_conf( 'outfile' );
+        my $output_file = get_global_conf( 'outfile' );
 
         # parameter check.
         if( !@filenames || !defined $filenames[0] )
@@ -341,8 +331,7 @@ package RIGELLIB::Config;
             }
 
         # get proxy pass if enabled
-        my $common = RIGELLIB::Common->new( \%{$DEFAULT_GLOBAL_CONFIG} );
-        $common->getProxyPass_ifEnabled();
+        Common::getProxyPass_ifEnabled();
 
         # open output file. if output file exists, ask if overwrite it.
         my ($out_fh) = &__find_and_ask( 'export', $output_file, 0 );
@@ -351,7 +340,7 @@ package RIGELLIB::Config;
         # this array is composed of ${DEFAULT_SITE_CONFIG}
         # which value is overridden by url list.
         print "export: parsing site file...\n";
-        my @config_list = @{$this->parse_url_list( @filenames )};
+        my @config_list = @{parse_url_list( @filenames )};
 
         # sort array by 'folder' key.
         @config_list = &__sort_array_byfolder( @config_list );
@@ -414,8 +403,7 @@ package RIGELLIB::Config;
             foreach my $link (@{$config->{'url'}})
                 {
                 print "processing $link ....\n";
-                my $common = RIGELLIB::Common->new( \%{$DEFAULT_GLOBAL_CONFIG} );
-                my @rss_and_response = $common->getrss_and_response( $link, {} );
+                my @rss_and_response = Common::getrss_and_response( $link, {} );
 
                 if ( scalar(@rss_and_response) == 0 )
                     {
@@ -466,30 +454,45 @@ package RIGELLIB::Config;
     #
     # This function returns a global configuration variable for a given setting
     #
-    #     RIGELLIB::Config->get_global_conf(  $key )
+    #     RIGELLIB::Configuration::get_global_conf(  $key )
     #
     # Where:
     #     $key is the configuration variable you want the setting for
     #
     sub get_global_conf
         {
-        my $this = shift;
         my $key  = shift;
 
         return $DEFAULT_GLOBAL_CONFIG->{$key};
         }
 
     #
+    # This function returns a global configuration variable for a given setting
+    #
+    #     RIGELLIB::Configuration::set_global_conf(  $key, $value )
+    #
+    # Where:
+    #     $key is the configuration variable you want to set
+	#     $value is the value to set $key to
+    #
+    sub set_global_conf
+        {
+        my $key  	= shift;
+		my $value 	= shift;
+
+        return $DEFAULT_GLOBAL_CONFIG->{$key} = $value;
+        }
+		
+    #
     # This function returns a site configuration variable for a given setting
     #
-    #     RIGELLIB::Config->get_site_conf(  $key )
+    #     RIGELLIB::Configuration::get_site_conf(  $key )
     #
     # Where:
     #     $key is the configuration variable you want the setting for
     #
     sub get_site_conf
         {
-        my $this = shift;
         my $key  = shift;
 
         return $DEFAULT_SITE_CONFIG->{$key};
@@ -498,7 +501,7 @@ package RIGELLIB::Config;
     #
     # This function returns the version of Rigel
     #
-    #     RIGELLIB::Config->get_version( )
+    #     RIGELLIB::Configuration::get_version( )
     #
     sub get_version
         {
@@ -508,7 +511,7 @@ package RIGELLIB::Config;
     #
     # This function returns the default global configuration settings
     #
-    #     RIGELLIB::Config->get_global_conf( )
+    #     RIGELLIB::Configuration::get_global_conf( )
     #
     sub get_global_configall
         {
@@ -518,7 +521,7 @@ package RIGELLIB::Config;
     #
     # This function returns the default site configuration settings
     #
-    #     RIGELLIB::Config->get_global_conf( )
+    #     RIGELLIB::Configuration::get_global_conf( )
     #
     sub get_site_configall
         {
@@ -605,8 +608,8 @@ package RIGELLIB::Config;
 
             my ($config_key, $value ) = split /=/, $line;
 
-            $config_key = RIGELLIB::Common->str_trim( $config_key );
-            $value      = RIGELLIB::Common->str_trim( $value );
+            $config_key = Common::str_trim( $config_key );
+            $value      = Common::str_trim( $value );
             $value = undef if ($value eq "undef" || $value eq "" || $value eq "no" );
             $return_hash{$config_key} = $value;
             }
@@ -699,7 +702,6 @@ package RIGELLIB::Config;
     #
     sub __print_config_file()
         {
-        my $this        = shift;
         my $output_file = shift;
 
         my %parse_result = %{$opml_parse};
@@ -859,7 +861,7 @@ package RIGELLIB::Config;
         my $element_name   = shift;
 
         my $attributes     = &__array_to_hash( @_ );
-        my @folder_array   = @{$this->{folder_array}};
+#        my @folder_array   = @{$this->{folder_array}};
         my $current_folder = join( ".", @folder_array );
 
         # outline tag( which includes title or text element )
@@ -869,8 +871,7 @@ package RIGELLIB::Config;
             if ( $attributes->{'text'} ) { push @folder_array, $attributes->{'text'}; }
             if ( $attributes->{'title'} ) { push @folder_array, $attributes->{'title'}; }
 
-            $this->{folder_array} = \@folder_array;
-            $this->{outline_empty} = 0;
+            $outline_empty = 0;
 
             my $current_folder = join( ".", @folder_array );
 
@@ -881,7 +882,7 @@ package RIGELLIB::Config;
 
         if ( 'outline' eq $element_name && $attributes->{htmlUrl} )
             {
-            $this->{outline_empty} = 1;
+            $outline_empty = 1;
             chomp $attributes->{xmlUrl};
             $attributes->{title} =~ s/\./-/g;
             push @{$opml_parse->{$current_folder}}, $attributes->{xmlUrl};
@@ -896,19 +897,19 @@ package RIGELLIB::Config;
         my $expat = shift;
         my $element_name = shift;
 
-        my @folder_array = @{$this->{folder_array}};
+ #       my @folder_array = @{$this->{folder_array}};
 
         # if outline end tag
-        if( 'outline' eq $element_name && $this->{outline_empty} == 0 )
+        if( 'outline' eq $element_name && $outline_empty == 0 )
             {
             pop @folder_array;
-            $this->{folder_array} = \@folder_array;
-            $this->{outline_empty} = 0;
+            @folder_array = \@folder_array;
+            $outline_empty = 0;
             return;
             }
 
         # outline empty tag or other.
-        $this->{outline_empty} = 0;
+        $outline_empty = 0;
         }
     }
 

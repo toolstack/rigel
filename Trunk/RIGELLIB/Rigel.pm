@@ -37,8 +37,8 @@ package RIGELLIB::Rigel;
     use XML::FeedPP;
     use HTTP::Date;
     use RIGELLIB::Unicode;
-    use RIGELLIB::Config;
-    use RIGELLIB::Common;
+    use Configuration;
+    use Common;
     use Debug;
     use RIGELLIB::MHTML;
     use Crypt::CBC;
@@ -51,21 +51,16 @@ package RIGELLIB::Rigel;
     our $VERSION       = undef;
 
     # config init.
-    our $config_obj    = undef;
     our $GLOBAL_CONFIG = undef;
     our $SITE_CONFIG   = undef;
-    our $common        = undef;
 
     sub new
         {
         my $this       = shift;
-        $config_obj    = shift;
 
-        $GLOBAL_CONFIG = $config_obj->get_global_configall();
-        $SITE_CONFIG   = $config_obj->get_site_configall();
-        $VERSION       = $config_obj->get_version();
-
-        $common = RIGELLIB::Common->new( \%{$GLOBAL_CONFIG} );
+        $GLOBAL_CONFIG = Configuration::get_global_configall();
+        $SITE_CONFIG   = Configuration::get_site_configall();
+        $VERSION       = Configuration::get_version();
 
         bless $GLOBAL_CONFIG, $this;
         }
@@ -304,7 +299,7 @@ package RIGELLIB::Rigel;
         else
             {
             # We're good to go, get the update
-            @rss_and_response = $common->getrss_and_response( $link, $headers, $rss_ttl );
+            @rss_and_response = Common::getrss_and_response( $link, $headers, $rss_ttl );
 
             # If we didn't actually get an update from the feed, just return undef's
             if( scalar(@rss_and_response) == 0 )
@@ -348,7 +343,7 @@ package RIGELLIB::Rigel;
                     {
                     # get_mime_text_body will retrevie all the plain text peices of the
                     # message and return it as one string.
-                    $subject_glob = RIGELLIB::Common->str_trim( get_mime_text_body( $e ) );
+                    $subject_glob = Common::str_trim( get_mime_text_body( $e ) );
                     $mp->filer->purge;
                     }
                 }
@@ -1314,7 +1309,7 @@ BODY
         my $rss  = shift;
         my $item = shift;
 
-        return sprintf( '%s@%s', RIGELLIB::Common->str_trim( $item->link() ), $this->{host} );
+        return sprintf( '%s@%s', Common::str_trim( $item->link() ), $this->{host} );
         }
 
     #
@@ -1459,13 +1454,13 @@ BODY
                 {
                 # get_mime_text_body will retrevie all the plain text peices of the
                 # message and return it as one string.
-                $feedconf = RIGELLIB::Common->str_trim( get_mime_text_body( $e ) );
+                $feedconf = Common::str_trim( get_mime_text_body( $e ) );
                 $feeddesc = $this->{imap}->subject( $message );
                 $mp->filer->purge;
                 }
 
             # parse the configuration options in to a configuration object
-            %config = $config_obj->parse_url_list_from_string( $feedconf, $feeddesc );
+            %config = Configuration::parse_url_list_from_string( $feedconf, $feeddesc );
             push @config_list, { %config };
             }
 
@@ -1599,7 +1594,7 @@ BODY
         {
         my $this = shift;
 
-        my $site_config = RIGELLIB::Config->get_site_configall();
+        my $site_config = Configuration::get_site_configall();
         my @messages;
         my $message;
         my $feedconf;
@@ -1647,10 +1642,10 @@ BODY
             my $feeddesc = $this->{imap}->subject( $message );
 
             $feedconf = "";
-            $feedconf = RIGELLIB::Common->str_trim( get_mime_text_body( $e ) );
+            $feedconf = Common::str_trim( get_mime_text_body( $e ) );
             $mp->filer->purge;
 
-            %config = $config_obj->parse_url_list_from_string( $feedconf );
+            %config = Configuration::parse_url_list_from_string( $feedconf );
 
             $siteurl = "";
             foreach my $site (@{$config{url}})
@@ -1658,7 +1653,7 @@ BODY
                 $siteurl = $siteurl . $site;
                 }
 
-            $siteurl = RIGELLIB::Common->str_trim( $siteurl );
+            $siteurl = Common::str_trim( $siteurl );
 
             if( $feeddesc eq "" ) { $feeddesc = $siteurl; }
 
@@ -1853,7 +1848,7 @@ BODY
         my $count;
 
         # First, strip any spaces from feed
-        $fixed = RIGELLIB::Common->str_trim( $content );
+        $fixed = Common::str_trim( $content );
 
         # Some feeds seem to have some crap charaters in them (either at the begining or the end)
         # which need to get stripped out, so build a hash that contains the ASCII values of all the

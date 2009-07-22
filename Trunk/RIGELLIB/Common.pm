@@ -20,23 +20,23 @@
 #     - Retreiving the username/password info if required
 #
 
-package RIGELLIB::Common;
+package Common;
     {
     use strict;
-    use RIGELLIB::Config;
     use RIGELLIB::UserAgent;
     use RIGELLIB::Unicode;
     use Debug;
+    use Exporter;
+
+    our (@ISA, @EXPORT_OK);
+    @ISA=qw(Exporter);
+    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim);
 
     our %config = undef;
 
-    sub new
+    sub SetCommonConfig
         {
-        my $pkg_name = shift;
-
         (%config) = %{(shift)};
-
-        bless {}, $pkg_name;
         }
 
     #
@@ -52,7 +52,6 @@ package RIGELLIB::Common;
     #
     sub getrss_and_response
         {
-        my $this             = shift;
         my $uri              = shift;
         my $headers          = shift;
         my $rss_ttl          = shift;
@@ -144,7 +143,6 @@ package RIGELLIB::Common;
     #
     sub getUser
         {
-        my $this    = shift;
         my $prompt  = shift;
         my $isproxy = shift;
 
@@ -186,7 +184,6 @@ package RIGELLIB::Common;
     #
     sub getPass
         {
-        my $this    = shift;
         my $prompt  = shift;
         my $isproxy = shift;
 
@@ -254,11 +251,10 @@ package RIGELLIB::Common;
     #
     sub getProxyPass_ifEnabled
         {
-        my $this = shift;
 
         if( %config->{'proxy'} && %config->{'proxy-user'} )
             {
-            $this->getPass( 'proxy password: ', 1 );
+            getPass( 'proxy password: ', 1 );
             }
         }
 
@@ -270,9 +266,8 @@ package RIGELLIB::Common;
     # Where:
     #     $string is the string to trim
     #
-    sub str_trim()
+    sub str_trim
         {
-        my $this    = shift;
         my $str     = shift;
 
         if( !defined( $str ) )
