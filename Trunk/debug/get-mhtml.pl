@@ -21,21 +21,20 @@
 use strict;
 use warnings;
 # Include the base RIGEL build path so we can find the RIGEL Library directory
-use lib "../";
+use lib "../RIGELLIB";
 
-use RIGELLIB::MHTML;
-use RIGELLIB::Rigel;
+use MHTML;
 
 my $url = "http://www.askmen.com/daily/jokes/2008_aug/aug29.html";
 my $crop_start = "<div class=\"fun_stuff\">";
 my $crop_end = "<div class=\"more_fun\">";
 
 # print out the MIME HTML output
-#print RIGELLIB::MHTML->GetMHTML( $url, $crop_start, $crop_end );
+#print MHTML::GetMHTML( $url, $crop_start, $crop_end );
 
 # print out the HTML output
-#print RIGELLIB::MHTML->GetHTML( $url );
+#print MHTML::GetHTML( $url );
 
 #print out the plain text output
-#print RIGELLIB::MHTML->GetTEXT( $url );
+#print MHTML::GetTEXT( $url );
 
