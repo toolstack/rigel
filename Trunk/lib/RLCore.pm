@@ -40,7 +40,7 @@ package RIGELLIB::Rigel;
     use Configuration;
     use Common;
     use Debug;
-    use MHTML;
+    use RIGELLIB::MHTML;
     use Crypt::CBC;
     use MIME::Parser;
     use MIME::WordDecoder;
@@ -867,11 +867,11 @@ BODY
 
         if( $this->{site_config}->{'delivery-mode'} eq 'embedded' )
             {
-            $body = MHTML::CropBody( $this->get_embedded_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RIGELLIB::MHTML->CropBody( $this->get_embedded_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
             }
         elsif( $this->{site_config}->{'delivery-mode'} eq 'text' )
             {
-            $body = MHTML::CropBody( $this->get_text_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RIGELLIB::MHTML->CropBody( $this->get_text_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
             }
         elsif( $this->{site_config}->{'delivery-mode'} eq 'mhtmllink' )
             {
@@ -885,22 +885,22 @@ BODY
             }
         elsif( $this->{site_config}->{'delivery-mode'} eq 'htmllink' )
             {
-            $body = MHTML::CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RIGELLIB::MHTML->CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
             }
         elsif( $this->{site_config}->{'delivery-mode'} eq 'textlink' )
             {
-            $body = MHTML::CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RIGELLIB::MHTML->CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
             $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
             }
         elsif( $this->{site_config}->{'delivery-mode'} eq 'thtmllink' )
             {
             $body = $this->get_html_body( $rss, $item );
-            $body = MHTML::CropBody( $body, $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RIGELLIB::MHTML->CropBody( $body, $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
             $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
             }
         else
             {
-            $body = MHTML::CropBody( $this->get_raw_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RIGELLIB::MHTML->CropBody( $this->get_raw_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
             }
 
         my $message = $headers . "\r\n" . $body;
@@ -1148,7 +1148,7 @@ BODY
         my $item        = shift;
         my $site_config = shift;
 
-        return MHTML::GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+        return RIGELLIB::MHTML->GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
         }
 
     #
@@ -1166,7 +1166,7 @@ BODY
         my $rss        = shift;
         my $item       = shift;
 
-        return MHTML::GetHTML( $item->link() );
+        return RIGELLIB::MHTML->GetHTML( $item->link() );
         }
 
     #
