@@ -21,7 +21,7 @@
 
 use strict;
 
-package Debug;
+package RLDebug;
     {
     use Data::Dumper;
     use Exporter;
@@ -29,7 +29,7 @@ package Debug;
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
     @EXPORT_OK=qw(OutputDebug DebugEnabled  SetCurrentDebugLevel);
-    
+
     our $__DebugLevel = undef;
 
     sub SetCurrentDebugLevel

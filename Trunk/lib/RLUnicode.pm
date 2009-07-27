@@ -21,16 +21,21 @@
 
 use strict;
 
-package RIGELLIB::Unicode;
+package RLUnicode;
     {
     use Encode;
     use Encode::Guess qw/euc-jp shift-jis utf8 jis/;
     use Jcode;
+    use Exporter;
+
+    our (@ISA, @EXPORT_OK);
+    @ISA=qw(Exporter);
+    @EXPORT_OK=qw(to_utf7 to_mime to_utf8);
 
     #
     # This function converts a string to UTF7 encoding
     #
-    #     RIGELLIB::Unicode::to_utf7(  $string  )
+    #     RLUnicode::to_utf7(  $string  )
     #
     # Where:
     #     $string is the string to convert
@@ -54,7 +59,7 @@ package RIGELLIB::Unicode;
     #
     # This function converts a string to UTF8 encoding
     #
-    #     RIGELLIB::Unicode::to_utf8(  $string, $from )
+    #     RLUnicode::to_utf8(  $string, $from )
     #
     # Where:
     #     $string is the string to convert
@@ -81,7 +86,7 @@ package RIGELLIB::Unicode;
     #
     # This function converts a string to MIME encoding
     #
-    #     RIGELLIB::Unicode::to_mime(  $string, $from )
+    #     RLUnicode::to_mime(  $string, $from )
     #
     # Where:
     #     $string is the string to convert

@@ -19,16 +19,14 @@
 #     - Handling proxy authentication
 #
 
-use strict;
-use Common;
-
-package RIGELLIB::UserAgent;
+package RLUserAgent;
     {
-    our %config = undef;
-
-    # extends LWP::UserAgent
-    use LWP::UserAgent;
+    use strict;
+    use RLCommon;
+    use LWP::UserAgent;     # extends LWP::UserAgent
     our @ISA = qw ( LWP::UserAgent );
+
+    our %config = undef;
 
     sub new
         {
@@ -45,7 +43,7 @@ package RIGELLIB::UserAgent;
     # This function retrives a set of basic credientals for a proxy server
     # either from the config file or interactivly.
     #
-    #     RIGELLIB::UserAgent->get_basic_credentials(  $realm, $uri, $isproxy )
+    #     RLUserAgent::->get_basic_credentials(  $realm, $uri, $isproxy )
     #
     # Where:
     #     $realm is HTTP realm setting (unused at this time)
@@ -70,12 +68,12 @@ package RIGELLIB::UserAgent;
 
             if ( %config->{'proxy-user'})
                 {
-                return ( %config->{'proxy-user'}, Common::getPass( "Your Proxy Password: ", 1 ) );
+                return ( %config->{'proxy-user'}, RLCommon::getPass( "Your Proxy Password: ", 1 ) );
                 }
             else
                 {
                 print "Your Proxy Server Requires Authentication.\n";
-                return ( Common::getUser( undef, $isproxy ), Common::getPass( undef, $isproxy ) );
+                return ( RLCommon::getUser( undef, $isproxy ), RLCommon::getPass( undef, $isproxy ) );
                 }
             }
 
