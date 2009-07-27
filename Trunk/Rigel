@@ -17,14 +17,15 @@
 # This is the main Rigel script, it is responsible for inital
 # setup and calling of the subfunctions as required.
 #
-use lib './RIGELLIB';
+use lib './lib';
 
 use strict;
 use POSIX qw(setsid);
-use Configuration;
-use RIGELLIB::Rigel;
-use Common;
-use Debug;
+use RLConfig;
+use RLCore;
+use RLCommon;
+use RLDebug;
+use RLIMAP;
 use Data::Dumper;
 
 package main;
@@ -71,19 +72,21 @@ sub main
     select( STDOUT );
 
     #    Load the configuration
-    Configuration::LoadConfig();
+    RLConfig::LoadConfig();
 
-    my $rigel       = new RIGELLIB::Rigel();
-    my %config      = %{Configuration::get_global_configall()};
-    my $version     = Configuration::get_version();
+    #     Initalize the Core library
+    RLCore::InitCore();
+
+    my %config      = %{RLConfig::get_global_configall()};
+    my $version     = RLConfig::get_version();
     my @config_list = @{$config{'list'}};
-    
-    #    Set the current debug level
-    Debug::SetCurrentDebugLevel( $config{debug} );
 
-    #    Initalize the various libraries
-    Common::SetCommonConfig( \%config );
-    
+    #    Set the current debug level
+    RLDebug::SetCurrentDebugLevel( $config{debug} );
+
+    #    Initalize the common library
+    RLCommon::SetCommonConfig( \%config );
+
     #    print version
     if( $config{version} )
         {
@@ -104,17 +107,17 @@ sub main
     #   execute and exit.
     if( $config{import} )
         {
-        Configuration::import_file( $config_list[0] );
-        Configuration::export_file( @config_list );
+        RLConfig::import_file( $config_list[0] );
+        RLConfig::export_file( @config_list );
         }
 
     #   Prompt for imap and proxy password if required
     if( !$config{'password'} )
         {
         print "You require authentication ...\n";
-        Common::getProxyPass_ifEnabled();
+        RLCommon::getProxyPass_ifEnabled();
 
-        Configuration::set_global_config( 'password', Common::getPass( 'IMAP password: ' ) );
+        RLConfig::set_global_config( 'password', RLCommon::getPass( 'IMAP password: ' ) );
         }
 
     #   finally do something!
@@ -122,18 +125,18 @@ sub main
         {
         #   Encrypt a password and print it out so it can be stored
         #   in the config file for later use.
-        $rigel->encrypt();
+        RLCore::encrypt();
         }
     elsif( $config{once_p} || $config{debug} )
         {
         #   We're only going to run once if that's all there is to do or
         #   if we're in debug mode.
-        $rigel->run();
+        RLCore::UpdateFeeds();
         }
     else
         {
         #   Invoke once to check whether given parameters are OK
-        $rigel->connect_test();
+        RLIMAP::imap_connect_test();
 
         if( !defined( $config{nodaemon} ) )
             {
@@ -156,7 +159,7 @@ sub main
         #   Loop forever and sleep for a while.
         while( 1 )
             {
-            eval { $rigel->run(); };
+            eval { RLCore::UpdateFeeds(); };
             sleep $config{interval} * 60;
             }
         }
