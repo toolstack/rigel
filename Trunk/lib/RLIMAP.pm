@@ -1,3 +1,26 @@
+#!/usr/bin/env perl -w
+
+#
+# Rigel - an RSS to IMAP Gateway
+#
+# Copyright (C) 2004 Taku Kudo <taku@chasen.org>
+#               2005 Yoshinari Takaoka <mumumu@mumumu.org>
+#               2008 Greg Ross <greg@darkphoton.com>
+#     All rights reserved.
+#     This is free software with ABSOLUTELY NO WARRANTY.
+#
+# You can redistribute it and/or modify it under the terms of the
+# GPL2, GNU General Public License version 2.
+#
+
+#
+# This is the IMAP module for Rigel, it is
+# responsible for:
+#     - connecting to the IMAP server
+#     - selecting and creating folders
+#     - ratinalizing folder names to their IMAP namespace
+#
+
 package RLIMAP;
     {
     use strict;

@@ -19,10 +19,9 @@
 #     - encoding and decoding UTF8 and UTF7 strings
 #
 
-use strict;
-
 package RLUnicode;
     {
+    use strict;
     use Encode;
     use Encode::Guess qw/euc-jp shift-jis utf8 jis/;
     use Jcode;

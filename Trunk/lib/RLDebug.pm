@@ -19,10 +19,9 @@
 #     - outputing debug information
 #
 
-use strict;
-
 package RLDebug;
     {
+    use strict;
     use Data::Dumper;
     use Exporter;
 
