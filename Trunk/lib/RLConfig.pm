@@ -22,7 +22,7 @@
 #     - Parsing the command line options
 #
 
-package Configuration;
+package RLConfig;
     {
     use strict;
     use Encode;
@@ -30,14 +30,14 @@ package Configuration;
     use XML::Parser::Expat;
     use XML::FeedPP;
     use Getopt::Long;
-    use Common;
-    use RIGELLIB::Unicode;
-    use Debug;
+    use RLCommon;
+    use RLUnicode;
+    use RLDebug;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(LoadConfig import_file parse_url_list parse_url_list_from_string export_file get_global_conf get_site_conf get_version get_global_configall get_site_configall);
+    @EXPORT_OK=qw(LoadConfig import_file parse_url_list parse_url_list_from_string export_file get_global_conf get_site_conf get_version get_global_configall get_site_configall apply_template);
 
     our $VERSION = "V1 post-b5 development";
 
@@ -99,14 +99,14 @@ package Configuration;
         # Now reparse the command line to override and config values set above
         &__parse_options();
 
-        Debug::OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
-        Debug::OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
+        RLDebug::OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
+        RLDebug::OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
         }
 
     #
     # This function imports an OPML file
     #
-    #     RIGELLIB::Configuration::import_file(  $filename )
+    #     RIGELLIB::RLConfig::import_file(  $filename )
     #
     # Where:
     #     $filename is the fully qulified file name to import
@@ -171,7 +171,7 @@ package Configuration;
     # This function parses a URL list from the old rss2imap utlity, it should
     # be depricated at this point.
     #
-    #     RIGELLIB::Configuration::parse_url_list(  @filename )
+    #     RIGELLIB::RLConfig::parse_url_list(  @filename )
     #
     # Where:
     #     @filename is the fully qulified file name array to parse
@@ -200,8 +200,8 @@ package Configuration;
                     }
                 elsif( /^([^:]+)\s*:\s*(.*)\s*/ )
                     {
-                    my $key   = Common::str_trim( lc( $1 ) );
-                    my $value = Common::str_trim( $2 );
+                    my $key   = RLCommon::str_trim( lc( $1 ) );
+                    my $value = RLCommon::str_trim( $2 );
 
                     if( !exists $config{$key} )
                         {
@@ -214,7 +214,7 @@ package Configuration;
                         next;
                         }
 
-                    $config{$key} = RIGELLIB::Unicode::to_utf8( $value );
+                    $config{$key} = RLUnicode::to_utf8( $value );
                     }
                 elsif( /^\s*$/ )
                     {
@@ -238,7 +238,7 @@ package Configuration;
     # This function parses a URL list from a string, it is the new code used
     # to replace parse_url_list in Rigel.
     #
-    #     RIGELLIB::Configuration::parse_url_list_from_string(  $feedconf, $feeddesc )
+    #     RIGELLIB::RLConfig::parse_url_list_from_string(  $feedconf, $feeddesc )
     #
     # Where:
     #     $feedconf is a feed configuration object returned by get_site_conf()
@@ -261,7 +261,7 @@ package Configuration;
 
             if( /^(ftp|http|https):\/\// )
                 {
-                push @{$config{url}}, Common::str_trim( $_ );
+                push @{$config{url}}, RLCommon::str_trim( $_ );
                 }
             elsif(/^\#/ )
                 {
@@ -273,8 +273,8 @@ package Configuration;
                 }
             elsif( /^([^=]+)\s*=\s*(.*)\s*/ )
                 {
-                my $key   = Common::str_trim( lc( $1 ) );
-                my $value = Common::str_trim( $2 );
+                my $key   = RLCommon::str_trim( lc( $1 ) );
+                my $value = RLCommon::str_trim( $2 );
 
                 if( !exists $config{$key} )
                     {
@@ -287,8 +287,8 @@ package Configuration;
                     next;
                     }
 
-                $config{$key} = RIGELLIB::Unicode::to_utf8( $value );
-                Debug::OutputDebug( 2, "config{$key} = $value\r\n" );
+                $config{$key} = RLUnicode::to_utf8( $value );
+                RLDebug::OutputDebug( 2, "config{$key} = $value\r\n" );
                 }
             else
                 {
@@ -302,7 +302,7 @@ package Configuration;
     #
     # This function exports an OPML file from the Rigel configuration.
     #
-    #     RIGELLIB::Configuration::export_file(  @filename )
+    #     RIGELLIB::RLConfig::export_file(  @filename )
     #
     # Where:
     #     @filename is an array of file names to export, only one should be passed
@@ -331,7 +331,7 @@ package Configuration;
             }
 
         # get proxy pass if enabled
-        Common::getProxyPass_ifEnabled();
+        RLCommon::getProxyPass_ifEnabled();
 
         # open output file. if output file exists, ask if overwrite it.
         my ($out_fh) = &__find_and_ask( 'export', $output_file, 0 );
@@ -403,7 +403,7 @@ package Configuration;
             foreach my $link (@{$config->{'url'}})
                 {
                 print "processing $link ....\n";
-                my @rss_and_response = Common::getrss_and_response( $link, {} );
+                my @rss_and_response = RLCommon::getrss_and_response( $link, {} );
 
                 if ( scalar(@rss_and_response) == 0 )
                     {
@@ -454,7 +454,7 @@ package Configuration;
     #
     # This function returns a global configuration variable for a given setting
     #
-    #     RIGELLIB::Configuration::get_global_conf(  $key )
+    #     RIGELLIB::RLConfig::get_global_conf(  $key )
     #
     # Where:
     #     $key is the configuration variable you want the setting for
@@ -469,24 +469,24 @@ package Configuration;
     #
     # This function returns a global configuration variable for a given setting
     #
-    #     RIGELLIB::Configuration::set_global_conf(  $key, $value )
+    #     RIGELLIB::RLConfig::set_global_conf(  $key, $value )
     #
     # Where:
     #     $key is the configuration variable you want to set
-	#     $value is the value to set $key to
+    #     $value is the value to set $key to
     #
     sub set_global_conf
         {
-        my $key  	= shift;
-		my $value 	= shift;
+        my $key      = shift;
+        my $value     = shift;
 
         return $DEFAULT_GLOBAL_CONFIG->{$key} = $value;
         }
-		
+
     #
     # This function returns a site configuration variable for a given setting
     #
-    #     RIGELLIB::Configuration::get_site_conf(  $key )
+    #     RIGELLIB::RLConfig::get_site_conf(  $key )
     #
     # Where:
     #     $key is the configuration variable you want the setting for
@@ -501,7 +501,7 @@ package Configuration;
     #
     # This function returns the version of Rigel
     #
-    #     RIGELLIB::Configuration::get_version( )
+    #     RIGELLIB::RLConfig::get_version( )
     #
     sub get_version
         {
@@ -511,7 +511,7 @@ package Configuration;
     #
     # This function returns the default global configuration settings
     #
-    #     RIGELLIB::Configuration::get_global_conf( )
+    #     RIGELLIB::RLConfig::get_global_conf( )
     #
     sub get_global_configall
         {
@@ -521,11 +521,88 @@ package Configuration;
     #
     # This function returns the default site configuration settings
     #
-    #     RIGELLIB::Configuration::get_global_conf( )
+    #     RIGELLIB::RLConfig::get_global_conf( )
     #
     sub get_site_configall
         {
         return $DEFAULT_SITE_CONFIG;
+        }
+
+    #
+    # This function applies the Rigel configuration templates to a string
+    #
+    #     RIGELLIB::Rigel->apply_template(  $rss, $item, $folder)
+    #
+    # Where:
+    #     $rss is the feed (optional)
+    #     $item is the feed item (optional)
+    #     $folder is a flag (t/f) (optional)
+    #
+    sub apply_template
+        {
+        my $rss        = shift;
+        my $item       = shift;
+        my $folder_flg = shift;
+
+        my @from       = @_;
+        my %cnf;
+
+        if( $rss )
+            {
+            $cnf{'channel:title'}       = $rss->title();
+            $cnf{'channel:link'}        = $rss->link();
+            $cnf{'channel:description'} = $rss->description();
+            $cnf{'channel:dc:date'}     = $rss->pubDate() || "";
+
+            $cnf{'dashline:channel:title'} = "-" x length( $cnf{'channel:title'} );
+            }
+
+        if( $item )
+            {
+            $cnf{'item:description'}  = $item->description();
+            $cnf{'item:link'}         = $item->link();
+            $cnf{'item:title'}        = $item->title();
+            $cnf{'item:dc:date'}      = $item->pubDate();
+            $cnf{'item:dc:subject'}   = $item->category();
+            $cnf{'item:dc:creator'}   = $item->author();
+
+            $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
+            }
+
+        $cnf{host}            = $DEFAULT_GLOBAL_CONFIG->{host};
+        $cnf{user}            = $DEFAULT_GLOBAL_CONFIG->{user};
+        $cnf{'last-modified'} = $rss->{'Rigel:last-modified'};
+        $cnf{'rss-link'}      = $rss->{'Rigel:rss-link'};
+        $cnf{'dir:sep'}       = $DEFAULT_GLOBAL_CONFIG->{'directory_separator'};
+        $cnf{'dir:manage'}    = $DEFAULT_GLOBAL_CONFIG->{'management-folder'};
+        $cnf{'dir:lastmod'}   = $DEFAULT_GLOBAL_CONFIG->{'last-modified-folder'};
+        $cnf{'newline'}       = "\n";
+
+        my @result;
+        for my $from (@from)
+            {
+            if( $from )
+                {
+                for my $key (keys %cnf)
+                    {
+                    if( !$cnf{$key} ) { next; }
+
+                    if( $folder_flg )
+                        {
+                        $cnf{$key} =~ s/\./:/g ;
+                        }
+
+                    my $key2 = "%{" . $key . "}";
+                    $from =~ s/$key2/$cnf{$key}/eg;
+                    }
+
+                $from =~ s/%{.*}//g;
+                }
+
+            push @result, $from;
+            }
+
+        return @result;
         }
 
     ###########################################################################
@@ -608,8 +685,8 @@ package Configuration;
 
             my ($config_key, $value ) = split /=/, $line;
 
-            $config_key = Common::str_trim( $config_key );
-            $value      = Common::str_trim( $value );
+            $config_key = RLCommon::str_trim( $config_key );
+            $value      = RLCommon::str_trim( $value );
             $value = undef if ($value eq "undef" || $value eq "" || $value eq "no" );
             $return_hash{$config_key} = $value;
             }
@@ -743,7 +820,7 @@ package Configuration;
 
             foreach my $xml_uri (@{$value})
                 {
-                print $out_fh RIGELLIB::Unicode::to_utf8( "$xml_uri\n" );
+                print $out_fh RLUnicode::to_utf8( "$xml_uri\n" );
                 }
 
             print $out_fh "\n";
@@ -771,7 +848,7 @@ package Configuration;
 
         @key_array = sort @key_array;
 
-        Debug::OutputDebug( 2, "Array Dump:", \@key_array );
+        RLDebug::OutputDebug( 2, "Array Dump:", \@key_array );
 
         foreach my $key_item (@key_array)
             {
