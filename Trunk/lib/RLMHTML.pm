@@ -20,10 +20,9 @@
 #     - retreiving a web page as a text string
 #
 
-use strict;
-
 package RLMHTML;
     {
+    use strict;
     use LWP::UserAgent;
     use HTML::TreeBuilder;
     use File::Basename;
