@@ -29,242 +29,151 @@
 
 require 5.008_000;
 
-package RIGELLIB::Rigel;
+package RLCore;
     {
     use strict;
     use Mail::IMAPClient;
     use Mail::IMAPClient::BodyStructure;
     use XML::FeedPP;
-    use HTTP::Date;
-    use RIGELLIB::Unicode;
-    use Configuration;
-    use Common;
-    use Debug;
-    use RIGELLIB::MHTML;
+    use RLUnicode;
+    use RLConfig;
+    use RLCommon;
+    use RLDebug;
+    use RLMHTML;
+    use RLIMAP;
+    use RLTemplates;
     use Crypt::CBC;
+    use HTTP::Date;
     use MIME::Parser;
     use MIME::WordDecoder;
     use HTML::Entities;
     use Text::Unidecode;
     use HTML::FormatText::WithLinks::AndTables;
+    use Exporter;
+
+    our (@ISA, @EXPORT_OK);
+    @ISA=qw(Exporter);
+    @EXPORT_OK=qw(InitCore encrypt UpdateFeeds);
 
     our $VERSION       = undef;
 
     # config init.
     our $GLOBAL_CONFIG = undef;
     our $SITE_CONFIG   = undef;
+    our $IMAP_CONNECT  = undef;
 
-    sub new
+    sub InitCore
         {
-        my $this       = shift;
-
-        $GLOBAL_CONFIG = Configuration::get_global_configall();
-        $SITE_CONFIG   = Configuration::get_site_configall();
-        $VERSION       = Configuration::get_version();
-
-        bless $GLOBAL_CONFIG, $this;
-        }
-
-    #
-    # This function connects to the IMAP server and stores the connection handle
-    #
-    #     RIGELLIB::Rigel->connect()
-    #
-    sub connect
-        {
-        my $this     = shift;
-        my $ssl_sock = undef;
-
-        if( $this->{'use-ssl'} )
-            {
-            eval 'use IO::Socket::SSL';
-
-            if( $this->is_error() )
-                {
-                print "you specify use SSL but dont install IO::Socket::SSL.\n";
-                print "please install it via cpan.\n";
-
-                exit();
-                }
-
-            $ssl_sock = IO::Socket::SSL->new( "$this->{host}:$this->{port}" )
-            or die "could not connect to the imap server over ssl.";
-            }
-
-        if( substr( $this->{password}, 0, 16 ) == "53616c7465645f5f" )
-            {
-            my $cipher = Crypt::CBC->new( -key => 'rigel007', -cipher => 'DES_PP', -salt => "rigel007");
-
-            $this->{password} = $cipher->decrypt_hex( $this->{password} );
-            }
-
-        my $imap = Mail::IMAPClient->new( Socket           => ( $ssl_sock ? $ssl_sock : undef ),
-                                          Server           => $this->{host},
-                                          User             => $this->{user},
-                                          Port             => $this->{port},
-                                          Password         => $this->{password},
-                                          Authmechanism    => ($this->{'cram-md5'} ? "CRAM-MD5" : undef),
-                                          Ignoresizeerrors => 1
-                                        );
-
-        if( !$imap )
-            {
-             die "imap client initialize failed. maybe you dont specify proper option...\n";
-            }
-
-        $this->{'directory_separator'} = $imap->separator();
-
-        # Now that we have the directory seperator, update the management
-        # folder value and last modified folder value with the proper template
-        # values
-        ( $this->{'management-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'management-folder'} );
-        ( $this->{'last-modified-folder'} ) = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
-
-        if( Debug::DebugEnabled( 3 ) )
-            {
-            $imap->Debug( 1 );
-            $imap->Debug_fh();
-            }
-
-        if( $this->{'use-ssl'} )
-            {
-            $imap->State( 1 );  # connected
-            $imap->login();     # if ssl enabled, login required because it is bypassed.
-            }
-
-        # authentication failure. sorry.
-        if( !$imap->IsAuthenticated() )
-            {
-            print "Authentication failure, sorry.\n";
-            print "connected to : $this->{host}:$this->{port}\n";
-
-            exit();
-            }
-
-        $this->{imap} = $imap;
-        die "$@ $this->{user}\@$this->{host}\n" unless ($imap);
-        }
-
-    #
-    # This function test that the connection to the IMAP server can be made
-    #
-    #     RIGELLIB::Rigel->connect_test()
-    #
-    sub connect_test
-        {
-        my $this = shift;
-
-        $this->connect();
-        $this->{imap}->close();
+        $GLOBAL_CONFIG = RLConfig::get_global_configall();
+        $SITE_CONFIG   = RLConfig::get_site_configall();
+        $VERSION       = RLConfig::get_version();
         }
 
     #
     # This function encrpts a string so that it can be used in the
     # configuration file for a password
     #
-    #     RIGELLIB::Rigel->encrypt()
+    #     RLCore::encrypt()
     #
     sub encrypt
         {
-        my $this   = shift;
         my $cipher = Crypt::CBC->new( -key => 'rigel007', -cipher => 'DES_PP', -salt => "rigel007");
 
-        print "----Start Encrypted Data----\n", $cipher->encrypt_hex( $this->{encrypt} ), "\n----End Encrpyted Data----\n";
+        print "----Start Encrypted Data----\n", $cipher->encrypt_hex( $GLOBAL_CONFIG->{encrypt} ), "\n----End Encrpyted Data----\n";
         }
 
     #
     # This function is the main part of Rigel, it loops through the feeds and
     # updates the IMAP folders
     #
-    #     RIGELLIB::Rigel->run()
+    #     RLCore::UpdateFeeds()
     #
-    sub run
+    sub UpdateFeeds
         {
-        my $this = shift;
-
         # First, connect to the IMAP server
-        $this->connect();
+        $IMAP_CONNECT = RLIMAP::imap_connect( $GLOBAL_CONFIG );
 
         # Next, check to see if there are any Add/Delete's to process
-        $this->process_change_requests();
+        __process_change_requests();
 
         # Finally, load the feeds from the server
-        my $site_config_list = $this->get_feeds_from_imap();
+        my $site_config_list = __get_feeds_from_imap();
 
         for my $site_config (@{$site_config_list})
             {
-            $this->{site_config} = $site_config;
-
             for my $url (@{$site_config->{url}})
                 {
-                my ( $rss, $ttl, @subject_lines ) = $this->get_rss( $url, $site_config );
+                my ( $rss, $ttl, @subject_lines ) = __get_rss( $url, $site_config );
 
                 if( !$rss )
                     {
                     next;
                     }
 
-                $this->send( $rss, $site_config, $ttl, \@subject_lines );
-                $this->expire( $rss );
+                __send_feed( $rss, $site_config, $ttl, \@subject_lines );
+                __expire_feed( $rss, $site_config );
                 }
             }
 
-        $this->{imap}->close();
+        $IMAP_CONNECT->close();
         }
+
+    ###########################################################################
+    #  Internal Functions only from here
+    ###########################################################################
 
     #
     # This function does the grunt work of getting the feed, ensuring TTL's
     # are handled and if any updates need to be made
     #
-    #     RIGELLIB::Rigel->get_rss( $url, $site_config)
+    #     RLCore::__get_rss( $url, $site_config)
     #
     # Where:
     #     $url is the url of the feed
     #     $site_config is the configuration to use for this feed
     #
-    sub get_rss {
-        my $this        = shift;
+    sub __get_rss
+        {
         my $link        = shift;
         my $site_config = shift;
-        my $imap        = $this->{imap};
-        my ($folder)    = $this->apply_template( undef, undef, 1, $this->{'last-modified-folder'} );
+        my ($folder)    = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
         my $headers     = {};
 
         # start site processing....
         print "\r\nprocessing '$site_config->{'desc'}'...\n";
 
-        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "last update folder: $folder" );
-        $imap->select( $folder );
+        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "last update folder: $folder" );
+        $IMAP_CONNECT->select( $folder );
 
-        my $message_id = sprintf('%s@%s', $link, $this->{host} );
-        my @search = $imap->search( "HEADER message-id \"$message_id\"" );
-        Debug::OutputDebug( 2, "HEADER message-id \"$message_id\"" );
+        my $message_id = sprintf('%s@%s', $link, $GLOBAL_CONFIG->{host} );
+        my @search = $IMAP_CONNECT->search( "HEADER message-id \"$message_id\"" );
+        RLDebug::OutputDebug( 2, "HEADER message-id \"$message_id\"" );
 
-        if( $this->is_error() )
+        if( RLCommon::is_error() )
             {
             print "WARNING: $@\n";
             }
 
         my $latest = undef;
         my $lmsg = undef;
-        ( $latest, $lmsg ) = $this->get_latest_date( \@search );
-        Debug::OutputDebug( 2, "Message search: ", \@search );
-        Debug::OutputDebug( 2, "Latest message: $lmsg" );
+        ( $latest, $lmsg ) = RLIMAP::get_latest_date( $IMAP_CONNECT, \@search );
+        RLDebug::OutputDebug( 2, "Message search: ", \@search );
+        RLDebug::OutputDebug( 2, "Latest message: $lmsg" );
 
         # First, let's see if any TTL has been idenfitifed for this feed
         my $rss_ttl = 0;
 
         if( $lmsg && ( $site_config->{'force-ttl'} == -1 ) )
             {
-            $rss_ttl = $imap->get_header( $lmsg, "X-RSS-TTL" );
-            Debug::OutputDebug( 1, "Cached TTL = $rss_ttl" );
+            $rss_ttl = $IMAP_CONNECT->get_header( $lmsg, "X-RSS-TTL" );
+            RLDebug::OutputDebug( 1, "Cached TTL = $rss_ttl" );
 
             # The RSS TTL is expressed in minutes, and the latest is expressed
             # in seconds, so take the latest and add the ttl in seconds to it
             # for use later in get_rss_and_response
             $rss_ttl = $latest + ( $rss_ttl * 60 );
-            Debug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
+            RLDebug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
             }
         else
             {
@@ -275,8 +184,8 @@ package RIGELLIB::Rigel;
                 {
                 $rss_ttl = $latest + ( $site_config->{'force-ttl'} * 60 );
                 }
-            Debug::OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
-            Debug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
+            RLDebug::OutputDebug( 1, "TTL forced to " . $site_config->{'force-ttl'} );
+            RLDebug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
             }
 
         if( $latest )
@@ -289,7 +198,7 @@ package RIGELLIB::Rigel;
         my $ctime = time();
         my @rss_and_response;
 
-        Debug::OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
+        RLDebug::OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
         if( $rss_ttl > $ctime )
             {
             # Not time to update
@@ -299,7 +208,7 @@ package RIGELLIB::Rigel;
         else
             {
             # We're good to go, get the update
-            @rss_and_response = Common::getrss_and_response( $link, $headers, $rss_ttl );
+            @rss_and_response = RLCommon::getrss_and_response( $link, $headers, $rss_ttl );
 
             # If we didn't actually get an update from the feed, just return undef's
             if( scalar(@rss_and_response) == 0 )
@@ -322,7 +231,7 @@ package RIGELLIB::Rigel;
             my $e;
             my $subject_glob;
 
-            Debug::OutputDebug( 1, "Enabled subject caching" );
+            RLDebug::OutputDebug( 1, "Enabled subject caching" );
 
             # setup the message parser so we don't get any errors and we
             # automatically decode messages
@@ -331,7 +240,7 @@ package RIGELLIB::Rigel;
 
             if( $lmsg )
                 {
-                eval { $e = $mp->parse_data( $imap->message_string( $lmsg ) ); };
+                eval { $e = $mp->parse_data( $IMAP_CONNECT->message_string( $lmsg ) ); };
 
                 my $error = ($@ || $mp->last_error);
 
@@ -343,7 +252,7 @@ package RIGELLIB::Rigel;
                     {
                     # get_mime_text_body will retrevie all the plain text peices of the
                     # message and return it as one string.
-                    $subject_glob = Common::str_trim( get_mime_text_body( $e ) );
+                    $subject_glob = RLCommon::str_trim( __get_mime_text_body( $e ) );
                     $mp->filer->purge;
                     }
                 }
@@ -352,7 +261,7 @@ package RIGELLIB::Rigel;
                 $subject_glob = "";
                 }
 
-            Debug::OutputDebug( 1, "subject glob = $subject_glob" );
+            RLDebug::OutputDebug( 1, "subject glob = $subject_glob" );
 
             # Now that we have the last updated subject list in a big string, time
             # to prase it in to an array.
@@ -362,7 +271,7 @@ package RIGELLIB::Rigel;
                 if( $beyond_headers == 1 )
                     {
                     push @subject_lines, $subject;
-                    Debug::OutputDebug( 1, "subject line = $subject" );
+                    RLDebug::OutputDebug( 1, "subject line = $subject" );
                     }
 
                 if( $subject eq "" ) { $beyond_headers = 1; }
@@ -375,22 +284,22 @@ package RIGELLIB::Rigel;
         my $ttl = 0;
 
         # Do some rudimentary checks/fixes on the feed before parsing it
-        Debug::OutputDebug( 1, "Fix feed for common errors..." );
+        RLDebug::OutputDebug( 1, "Fix feed for common errors..." );
         $content = __fix_feed( $content );
-        Debug::OutputDebug( 1, "Fix feed complete." );
+        RLDebug::OutputDebug( 1, "Fix feed complete." );
 
         # As FeedPP doesn't understand TTL values in the feed, check to see
         # if one exists and get it for later use
         if( $content =~ /.*\<ttl\>(.*)\<\/ttl\>.*/i)
             {
             $ttl = $1;
-            Debug::OutputDebug( 1, "Feed has TTL! Set to: " . $ttl );
+            RLDebug::OutputDebug( 1, "Feed has TTL! Set to: " . $ttl );
             }
 
         # Parse the feed
         eval { $rss = XML::FeedPP->new($content); };
 
-        if( $this->is_error() )
+        if( RLCommon::is_error() )
             {
             print "\tFeed error, content will not be created.\n";
             return ( undef, $ttl, @subject_lines );
@@ -410,12 +319,12 @@ package RIGELLIB::Rigel;
         # delete the last update info from the IMAP server
         foreach my $MessageToDelete (@search )
             {
-            Debug::OutputDebug( 2, "Delete meesage: " . $MessageToDelete );
-            $imap->delete_message( $MessageToDelete ); # delete other messages;
+            RLDebug::OutputDebug( 2, "Delete meesage: " . $MessageToDelete );
+            $IMAP_CONNECT->delete_message( $MessageToDelete ); # delete other messages;
             }
 
-        Debug::OutputDebug( 2, "Expunge the mailbox!" );
-        $imap->expunge();
+        RLDebug::OutputDebug( 2, "Expunge the mailbox!" );
+        $IMAP_CONNECT->expunge();
 
         # copy session information
         $rss->{'Rigel:last-modified'} = HTTP::Date::time2str ($response->last_modified);
@@ -430,7 +339,7 @@ package RIGELLIB::Rigel;
     # server as well as cleaning up old articles if required and updating the last
     # update information.
     #
-    #     RIGELLIB::Rigel->send( $rss, $site_config, $ttl, $subjects )
+    #     RLCore::send( $rss, $site_config, $ttl, $subjects )
     #
     # Where:
     #     $rss is the feed as a string
@@ -438,14 +347,12 @@ package RIGELLIB::Rigel;
     #     $ttl is the current time to live for the feed
     #     $subjects is the currnet list of subjects from the lastupdate
     #
-    sub send
+    sub __send_feed
         {
-        my $this        = shift;
         my $rss         = shift;
         my $site_config = shift;
         my $ttl         = shift;
         my $subjects    = shift;
-        my $imap        = $this->{imap};
 
         my @items;
         my @subject_lines;
@@ -462,8 +369,8 @@ package RIGELLIB::Rigel;
                 }
             }
 
-        Debug::OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
-        my $type = $this->{site_config}->{type};
+        RLDebug::OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
+        my $type = $site_config->{type};
 
         if( $type eq "channel" )
             {
@@ -482,10 +389,10 @@ package RIGELLIB::Rigel;
             return;
             }
 
-        my ($folder) = $this->apply_template( $rss, undef, 1, $this->{site_config}->{folder} );
-        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 1, "IMAP folder to use = $folder" );
-        $this->select( $folder );
+        my ($folder) = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder} );
+        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 1, "IMAP folder to use = $folder" );
+        RLIMAP::imap_select_folder( $IMAP_CONNECT, $folder );
 
         my @append_items;
         my @delete_mail;
@@ -495,7 +402,7 @@ package RIGELLIB::Rigel;
         my $increment;
         my $end;
 
-        if( $this->{site_config}->{'article-order'} != 1 )
+        if( $site_config->{'article-order'} != 1 )
             {
             $start = @items - 1;
             $increment = -1;
@@ -511,28 +418,28 @@ package RIGELLIB::Rigel;
         for( my $i = $start; $i != $end; $i = $i + $increment )
             {
             $item = $items[$i];
-            my $message_id  = $this->gen_message_id( $rss, $item );
+            my $message_id  = __gen_message_id( $rss, $item );
 
             # Get the subject line and add it to our cache for later, make sure we
             # strip any newlines so we can store it in the IMAP message properly
-            $subject = $this->rss_txt_convert( $item->title() );
+            $subject = __rss_txt_convert( $item->title() );
             $subject =~ s/\n//g;
-            Debug::OutputDebug( 2, "RSS Item Subject = $subject" );
+            RLDebug::OutputDebug( 2, "RSS Item Subject = $subject" );
             push @subject_lines, $subject;
 
             # Retreive the date from the item or feed for future work.
-            my $rss_date = $this->get_date ($rss, $item);
-            Debug::OutputDebug( 2, "RSS Item date = $rss_date" );
+            my $rss_date = __get_date ($rss, $item);
+            RLDebug::OutputDebug( 2, "RSS Item date = $rss_date" );
 
             # Convert the above date to a unix time code
             my $rss_time = HTTP::Date::str2time( $rss_date );
-            Debug::OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
+            RLDebug::OutputDebug( 2, "RSS Item unix timestamp = $rss_time" );
 
             # if expire enabled, get lastest-modified time of rss.
-            if( $this->{site_config}->{expire} > 0 )
+            if( $site_config->{expire} > 0 )
                 {
                 # really expired?
-                if( time() - $rss_time > $this->{site_config}->{expire} * 60 * 60 * 24 )
+                if( time() - $rss_time > $site_config->{expire} * 60 * 60 * 24 )
                     {
                     next;
                     };
@@ -540,16 +447,16 @@ package RIGELLIB::Rigel;
 
             # Check to see if the rss item is older than the last update, in otherwords, the user
             # deleted it so we shouldn't add it back in.
-            Debug::OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
-            Debug::OutputDebug( 2, "Or is '$rss_date' = '' ?" );
+            RLDebug::OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
+            RLDebug::OutputDebug( 2, "Or is '$rss_date' = '' ?" );
             if( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" )
                 {
                 # message id is "rss url@host" AND x-rss-aggregator field is "Rigel"
                 # and not deleted.
-                Debug::OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
-                my @search = $imap->search( "NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
+                RLDebug::OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
+                my @search = $IMAP_CONNECT->search( "NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
 
-                if( $this->is_error() )
+                if( RLCommon::is_error() )
                     {
                     print "WARNING: $@\n";
                     next;
@@ -565,13 +472,13 @@ package RIGELLIB::Rigel;
                         # in the match with \Q and \E
                         if( $old_subject_glob !~ m/\Q$subject\E/ )
                             {
-                            Debug::OutputDebug( 2, "Subject not found in glob, adding item!" );
+                            RLDebug::OutputDebug( 2, "Subject not found in glob, adding item!" );
                             push @append_items, $item;
                             }
                         }
                     else
                         {
-                        Debug::OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
+                        RLDebug::OutputDebug( 2, "Search retruned no items, subject cache not used, adding item" );
                         push @append_items, $item;
                         }
 
@@ -583,17 +490,17 @@ package RIGELLIB::Rigel;
                         next ; # date field is not found, we ignore it.
                         }
 
-                    Debug::OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
+                    RLDebug::OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
-                    my ( $latest, $lmsg ) = $this->get_latest_date( \@search );
-                    Debug::OutputDebug( 2, "latest date = $latest" );
+                    my ( $latest, $lmsg ) = RLIMAP::get_latest_date( $IMAP_CONNECT, \@search );
+                    RLDebug::OutputDebug( 2, "latest date = $latest" );
 
                     # if rss date is newer, delete search result and add rss items.
                     # by this, duplicate message is replaced with lastest one.
                     if( $rss_time > $latest )
                         {
-                        Debug::OutputDebug( 2, "updating items!" );
+                        RLDebug::OutputDebug( 2, "updating items!" );
                         push @delete_mail, @search;
                         push @append_items, $item;
                         }
@@ -602,9 +509,9 @@ package RIGELLIB::Rigel;
             }
 
         # delete items, if sync functionality is enabled
-        if( $this->{site_config}->{'sync'} eq "yes" )
+        if( $site_config->{'sync'} eq "yes" )
             {
-            Debug::OutputDebug( 2, "Sync mode enabled for this feed." );
+            RLDebug::OutputDebug( 2, "Sync mode enabled for this feed." );
             my %found = ();
             for my $item (@items)
                 {
@@ -612,11 +519,11 @@ package RIGELLIB::Rigel;
                 }
 
             my $link = $rss->{'Rigel:rss-link'};
-            my @search = $imap->search( "HEADER x-rss-link \"$link\" HEADER x-rss-aggregator \"Rigel\"" );
+            my @search = $IMAP_CONNECT->search( "HEADER x-rss-link \"$link\" HEADER x-rss-aggregator \"Rigel\"" );
 
             for my $msg (@search)
                 {
-                my $link2 = $imap->get_header( $msg, "x-rss-item-link" );
+                my $link2 = $IMAP_CONNECT->get_header( $msg, "x-rss-item-link" );
 
                 # must trim spaces, bug of IMAP server?
                 $link2 =~ s/^\s*//g; $link2 =~ s/\s*$//g;
@@ -631,16 +538,16 @@ package RIGELLIB::Rigel;
         # messed up the above loop
         foreach my $MessageToDelete (@delete_mail)
             {
-            $imap->delete_message( $MessageToDelete );
+            $IMAP_CONNECT->delete_message( $MessageToDelete );
             }
 
         # Expunge the folder to actually get rid of the messages we just deleted
-        $imap->expunge( $folder );
+        $IMAP_CONNECT->expunge( $folder );
 
         # Now we actually append the new items to the folder
         for my $item (@append_items)
             {
-            $this->send_item( $folder, $rss, $item );
+            __send_item( $site_config, $folder, $rss, $item );
             }
 
         # Find out how many items we added and give the user some feedback about it
@@ -660,11 +567,11 @@ package RIGELLIB::Rigel;
         # want to happen
         if( scalar( @subject_lines ) < 1 )
             {
-            $this->send_last_update( $rss, $ttl, \@old_subject_lines );
+            __send_last_update( $rss, $ttl, \@old_subject_lines );
             }
         else
             {
-            $this->send_last_update( $rss, $ttl, \@subject_lines );
+            __send_last_update( $rss, $ttl, \@subject_lines );
             }
 
         return;
@@ -674,41 +581,41 @@ package RIGELLIB::Rigel;
     # This function does the grunt work of expiring feed items on the IMAP
     # server.
     #
-    #     RIGELLIB::Rigel->expire( $rss)
+    #     RLCore::__expire_feed( $rss, $site)
     #
     # Where:
     #     $rss is the feed as a string
+    #     $site is the site configuration array
     #
-    sub expire
+    sub __expire_feed
         {
-        my $this   = shift;
-        my $rss    = shift;
-        my $expire = $this->{site_config}->{expire} || -1;
-        my $imap   = $this->{imap};
+        my $rss                = shift;
+        my $site_config     = shift;
+        my $expire             = $site_config->{expire} || -1;
 
         if( $expire <= 0 )
             {
-            Debug::OutputDebug( 2, "Expire disabled for this feed." );
+            RLDebug::OutputDebug( 2, "Expire disabled for this feed." );
             return;
             }
 
-        my ($folder, $expire_folder) = $this->apply_template( $rss, undef, 1, $this->{site_config}->{folder}, $this->{site_config}->{'expire-folder'} );
-        $folder        = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        $expire_folder = $this->get_real_folder_name( $expire_folder, $this->{'directory_separator'} );
+        my ($folder, $expire_folder) = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder}, $site_config->{'expire-folder'} );
+        $folder        = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $expire_folder = RLIMAP::get_real_folder_name( $expire_folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
 
-        Debug::OutputDebug( 2, "RSS Folder:" . $folder );
-        Debug::OutputDebug( 2, "Expire Folder:" . $expire_folder );
+        RLDebug::OutputDebug( 2, "RSS Folder:" . $folder );
+        RLDebug::OutputDebug( 2, "Expire Folder:" . $expire_folder );
 
         my $key = Mail::IMAPClient->Rfc2060_date( time() - $expire * 60 * 60 * 24 );
 
-        my $query = (defined $this->{site_config}->{'expire-unseen'}) ? "SENTBEFORE $key" : "SEEN SENTBEFORE $key";
+        my $query = (defined $site_config->{'expire-unseen'}) ? "SENTBEFORE $key" : "SEEN SENTBEFORE $key";
         $query .= " HEADER x-rss-aggregator \"Rigel\"";
-        Debug::OutputDebug( 2, "Expire query:" . $query );
+        RLDebug::OutputDebug( 2, "Expire query:" . $query );
 
-        $this->select( $folder );
-        my @search = $imap->search( $query );
+        RLIMAP::imap_select_folder( $IMAP_CONNECT, $folder );
+        my @search = $IMAP_CONNECT->search( $query );
 
-        if( $this->is_error() )
+        if( RLCommon::is_error() )
             {
             print "WARNING: $@\n";
             return;
@@ -716,80 +623,34 @@ package RIGELLIB::Rigel;
 
         if( @search == 0 ) { return; }
 
-        if( $this->{site_config}->{'expire-folder'} && $expire_folder )
+        if( $site_config->{'expire-folder'} && $expire_folder )
             {
-            $this->create_folder( $expire_folder );
+            RLIMAP::imap_create_folder( $IMAP_CONNECT, $expire_folder );
             for my $msg (@search) {
                 print "  moving: $msg -> $expire_folder\n";
-                $imap->move( $expire_folder, $msg );
+                $IMAP_CONNECT->move( $expire_folder, $msg );
                 }
             }
         else
             {
             print "  deleting: [@search]\n";
-            $imap->delete_message( @search );
+            $IMAP_CONNECT->delete_message( @search );
             }
-        }
-
-    #
-    # This function compares IMAP message dates and returns the latest one
-    #
-    #     RIGELLIB::Rigel->get_latest_date(  @messages, $date )
-    #
-    # Where:
-    #     @messages is an array of message ID's to compare
-    #     $date is the date to use, if omitted, the current date is used
-    #
-    sub get_latest_date
-        {
-        my $this   = shift;
-        my $list   = shift;
-        my $header = shift || 'date';
-
-        my $imap   = $this->{imap};
-        my $lmsg   = undef;
-        my $latest = -1;
-
-        for my $msg (@{$list})
-            {
-            my $date = $imap->get_header( $msg, $header );
-
-            if( !$date )
-                {
-                next;
-                }
-
-            $date = HTTP::Date::str2time( $date );
-            if( $date > $latest )
-                {
-                $latest = $date;
-                $lmsg = $msg;
-                }
-            }
-
-        if( $latest == -1 )
-            {
-            $latest = undef;
-            $lmsg = undef;
-            }
-
-        return ($latest, $lmsg);
         }
 
     #
     # This function stores the last update message on the IMAP server for
     # a feed
     #
-    #     RIGELLIB::Rigel->send_last_update(  $rss, $ttl, $subjects )
+    #     RLCore::__send_last_update(  $rss, $ttl, $subjects )
     #
     # Where:
     #     $rss is the rss feed
     #     $ttl is the time to live for the feed
     #     $subjects is the new subject cache to store
     #
-    sub send_last_update
+    sub __send_last_update
         {
-        my $this          = shift;
         my $rss           = shift;
         my $ttl           = shift;
         my $subject_lines = shift;
@@ -831,123 +692,125 @@ BODY
             $body = $body . $subject . "\n";
             }
 
-        my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:lastmod}" );
-        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "last update folder: $folder" );
-        $this->{imap}->select( $folder );
-        my $uid = $this->{imap}->append_string( $folder, $body, "Seen" );
+        my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
+        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "last update folder: $folder" );
+        $IMAP_CONNECT->select( $folder );
+        my $uid = $IMAP_CONNECT->append_string( $folder, $body, "Seen" );
 
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        __mark_folder_read( $this->{imap}, $folder );
+        RLIMAP::mark_folder_read( $IMAP_CONNECT, $folder );
         }
 
     #
     # This function stores a single article on the IMAP server in the
     # appropriate format.
     #
-    #     RIGELLIB::Rigel->send_item(  $folder, $rss, $item )
+    #     RLCore::__send_item(  $site, $folder, $rss, $item )
     #
     # Where:
+    #     $site is the site configuration array
     #     $folder is the IMAP folder to store the item in
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub send_item
+    sub __send_item
         {
-        my $this        = shift;
+        my $site_config = shift;
         my $folder      = shift;
         my $rss         = shift;
         my $item        = shift;
         my $headers     = "";
         my $body        = "";
 
-        my $headers = $this->get_headers( $rss, $item );
+        my $headers = __get_headers( $site_config, $rss, $item );
 
-        if( $this->{site_config}->{'delivery-mode'} eq 'embedded' )
+        if( $site_config->{'delivery-mode'} eq 'embedded' )
             {
-            $body = RIGELLIB::MHTML->CropBody( $this->get_embedded_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RLMHTML::CropBody( __get_embedded_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
-        elsif( $this->{site_config}->{'delivery-mode'} eq 'text' )
+        elsif( $site_config->{'delivery-mode'} eq 'text' )
             {
-            $body = RIGELLIB::MHTML->CropBody( $this->get_text_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RLMHTML::CropBody( __get_text_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
-        elsif( $this->{site_config}->{'delivery-mode'} eq 'mhtmllink' )
+        elsif( $site_config->{'delivery-mode'} eq 'mhtmllink' )
             {
             # The MHTML code returns both headers and the body in a single string, we need to split them up
             # Also, since the cropping of the original HTML message could make a significant difference
             # to the resulting MHTML file size, let the MHTML library do the cropping for us instead of call
             # CropBody later.
             my $tempheaders = "";
-            ( $tempheaders, $body ) = split( /\r\n\r\n/, $this->get_mhtml_body( $rss, $item, $this->{site_config} ), 2 );
+            ( $tempheaders, $body ) = split( /\r\n\r\n/, __get_mhtml_body( $rss, $item, $GLOBAL_CONFIG->{site_config} ), 2 );
             $headers .= $tempheaders;
             }
-        elsif( $this->{site_config}->{'delivery-mode'} eq 'htmllink' )
+        elsif( $site_config->{'delivery-mode'} eq 'htmllink' )
             {
-            $body = RIGELLIB::MHTML->CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RLMHTML::CropBody( __get_html_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
-        elsif( $this->{site_config}->{'delivery-mode'} eq 'textlink' )
+        elsif( $site_config->{'delivery-mode'} eq 'textlink' )
             {
-            $body = RIGELLIB::MHTML->CropBody( $this->get_html_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RLMHTML::CropBody( __get_html_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
             }
-        elsif( $this->{site_config}->{'delivery-mode'} eq 'thtmllink' )
+        elsif( $site_config->{'delivery-mode'} eq 'thtmllink' )
             {
-            $body = $this->get_html_body( $rss, $item );
-            $body = RIGELLIB::MHTML->CropBody( $body, $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = __get_html_body( $site_config, $rss, $item );
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
             }
         else
             {
-            $body = RIGELLIB::MHTML->CropBody( $this->get_raw_body( $rss, $item ), $this->{site_config}->{'crop-start'}, $this->{site_config}->{'crop-end'} );
+            $body = RLMHTML::CropBody( __get_raw_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
 
         my $message = $headers . "\r\n" . $body;
 
         utf8::encode( $message );  # uft8 flag off.
 
-        $this->{imap}->append_string( $folder, $message );
+        $IMAP_CONNECT->append_string( $folder, $message );
         }
 
     #
     # This function creates a header string for a mail message based upon the
     # contents of the rss item to store
     #
-    #     RIGELLIB::Rigel->get_headers(  $rss, $item )
+    #     RLCore::__get_headers(  $site, $rss, $item )
     #
     # Where:
+    #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub get_headers
+    sub __get_headers
         {
-        my $this        = shift;
+        my $site_config = shift;
         my $rss         = shift;
         my $item        = shift;
 
-        my $date       = $this->get_date( $rss, $item );
-        my $rss_date   = $this->get_rss_date( $rss, $item ) || "undef";
+        my $date       = __get_date( $rss, $item );
+        my $rss_date   = __get_rss_date( $rss, $item ) || "undef";
 
-        my $subject    = $this->{site_config}->{subject};
-        my $from       = $this->{site_config}->{from};
-        my $to         = $this->{site_config}->{to};
-        my $message_id = $this->gen_message_id( $rss, $item );
+        my $subject    = $site_config->{subject};
+        my $from       = $site_config->{from};
+        my $to         = $site_config->{to};
+        my $message_id = __gen_message_id( $rss, $item );
 
-        ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
+        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
         my $mime_type;
 
-        if( $this->{site_config}->{'delivery-mode'} eq 'text'
-                or $this->{site_config}->{'delivery-mode'} eq 'textlink'
-                or $this->{site_config}->{'delivery-mode'} eq 'thtmllink')
+        if( $site_config->{'delivery-mode'} eq 'text'
+                or $site_config->{'delivery-mode'} eq 'textlink'
+                or $site_config->{'delivery-mode'} eq 'thtmllink')
             {
             $mime_type = 'text/plain';
 
             # Since we're delivering in plain text, make sure that
             # the subject line didn't get poluted with html from the
             # rss feed.
-            $subject = $this->rss_txt_convert( $subject );
+            $subject = __rss_txt_convert( $subject );
             }
         else
             {
@@ -957,9 +820,9 @@ BODY
         # if line feed character include, some mailer make header broken.. :<
         $subject =~ s/\n//g;
 
-        my $m_from    = RIGELLIB::Unicode::to_mime( $from );
-        my $m_subject = RIGELLIB::Unicode::to_mime( $subject );
-        my $m_to      = RIGELLIB::Unicode::to_mime( $to );
+        my $m_from    = RLUnicode::to_mime( $from );
+        my $m_subject = RLUnicode::to_mime( $subject );
+        my $m_to      = RLUnicode::to_mime( $to );
         my $a_date    = scalar( localtime() );
         my $l_date    = $rss->{'Rigel:last-modified'} || $a_date;
         my $link      = $rss->{'Rigel:rss-link'} || "undef";
@@ -981,7 +844,7 @@ BODY
 ;
 
         # If we're going to deliver in MHTML mode, then the mime headers will be construted by the MHTML library.
-        if( $this->{site_config}->{'delivery-mode'} ne 'mhtmllink' )
+        if( $site_config->{'delivery-mode'} ne 'mhtmllink' )
             {
             $return_headers .=<<"BODY"
 MIME-Version: 1.0
@@ -998,27 +861,28 @@ BODY
     #
     # This function returns a text only version of an rss item
     #
-    #     RIGELLIB::Rigel->get_text_body(  $rss, $item)
+    #     RLCore::__get_text_body(  $site, $rss, $item)
     #
     # Where:
+    #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub get_text_body
+    sub __get_text_body
         {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
+        my $site_config = shift;
+        my $rss            = shift;
+        my $item           = shift;
 
-        my $subject    = $this->{site_config}->{subject};
-        my $from       = $this->{site_config}->{from};
+        my $subject    = $site_config->{subject};
+        my $from       = $site_config->{from};
         my $desc       = $item->description();
 
-        ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
+        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
         # convert html tag to appropriate text.
-        $subject = $this->rss_txt_convert( $subject );
-        $desc    = $this->rss_txt_convert( $desc );
+        $subject = __rss_txt_convert( $subject );
+        $desc    = __rss_txt_convert( $desc );
 
         my $link = $item->link();
 
@@ -1043,23 +907,24 @@ BODY
     #
     # This function returns the raw version of an rss item
     #
-    #     RIGELLIB::Rigel->get_raw_body(  $rss, $item)
+    #     RLCore::__get_raw_body(  $site, $rss, $item)
     #
     # Where:
+    #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub get_raw_body
+    sub __get_raw_body
         {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
+        my $site_config = shift;
+        my $rss            = shift;
+        my $item           = shift;
 
-        my $subject    = $this->{site_config}->{subject};
-        my $from       = $this->{site_config}->{from};
+        my $subject    = $site_config->{subject};
+        my $from       = $site_config->{from};
         my $desc       = $item->description();
 
-        ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
+        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
         my $link = $item->link();
 
@@ -1079,23 +944,24 @@ BODY
     #
     # This function returns an HTML embedded version of an rss item
     #
-    #     RIGELLIB::Rigel->get_embedded_body(  $rss, $item)
+    #     RLCore::__get_embedded_body(  $site, $rss, $item)
     #
     # Where:
+    #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub get_embedded_body
+    sub __get_embedded_body
         {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
+        my $site_config = shift;
+        my $rss            = shift;
+        my $item           = shift;
 
-        my $subject    = $this->{site_config}->{subject};
-        my $from       = $this->{site_config}->{from};
+        my $subject    = $site_config->{subject};
+        my $from       = $site_config->{from};
         my $desc       = $item->description();
 
-        ($subject, $from) = $this->apply_template( $rss, $item, undef, $subject, $from );
+        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
         my $link = $item->link();
 
@@ -1134,52 +1000,51 @@ BODY
     #
     # This function returns a MIME HTML version of an rss item's linked web site
     #
-    #     RIGELLIB::Rigel->get_mhtml_body(  $rss, $item, $site_config)
+    #     RLCore::__get_mhtml_body(  $rss, $item, $site_config)
     #
     # Where:
     #     $rss is the feed
     #     $item is the item to store
     #     $site_config is used to get the cropping marks so we only MIME encode what is required
     #
-    sub get_mhtml_body
+    sub __get_mhtml_body
         {
-        my $this        = shift;
         my $rss         = shift;
         my $item        = shift;
         my $site_config = shift;
 
-        return RIGELLIB::MHTML->GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+        return RLMHTML::GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
         }
 
     #
     # This function returns an HTML version of an rss item's linked web site
     #
-    #     RIGELLIB::Rigel->get_html_body(  $rss, $item)
+    #     RLCore::__get_html_body(  $site, $rss, $item)
     #
     # Where:
+    #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub get_html_body
+    sub __get_html_body
         {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
+        my $site_config = shift;
+        my $rss            = shift;
+        my $item           = shift;
 
-        return RIGELLIB::MHTML->GetHTML( $item->link() );
+        return RLMHTML::GetHTML( $item->link() );
         }
 
     #
     # This function converts an rss item with HTML markup in it to plain text
     #
-    #     RIGELLIB::Rigel->rss_txt_convert(  $string)
+    #     RLCore::__rss_txt_convert(  $string)
     #
     # Where:
     #     $string is the string to convert
     #
-    sub rss_txt_convert
+    sub __rss_txt_convert
         {
-        my $this = shift;
         my $string = shift;
 
         if ( !$string ) { return "" };
@@ -1234,7 +1099,7 @@ BODY
             $result .= $1;
             my $tag_tmp = $2;
 
-            if($tag_tmp =~ /^<(XMP|PLAINTEXT|SCRIPT)(?![0-9A-Za-z])/i)
+            if( $tag_tmp =~ /^<(XMP|PLAINTEXT|SCRIPT)(?![0-9A-Za-z])/i )
                 {
                 $string =~ /(.*?)(?:<\/$1(?![0-9A-Za-z])$tag_regex_|$)/gsi;
                 (my $text_tmp = $1) =~ s/</&lt;/g;
@@ -1258,88 +1123,34 @@ BODY
         }
 
     #
-    # This function selects an IMAP folder, creating it if required
-    #
-    #     RIGELLIB::Rigel->select(  $folder)
-    #
-    # Where:
-    #     $folder is the folder to create/select
-    #
-    sub select
-        {
-        my $this   = shift;
-        my $folder = shift;
-
-        $this->create_folder( $folder );
-        $this->{imap}->select( $folder ) || print "@!\n";
-        }
-
-    #
-    # This function creates an IMAP folder
-    #
-    #     RIGELLIB::Rigel->create_folder(  $folder)
-    #
-    # Where:
-    #     $folder is the folder to create
-    #
-    sub create_folder
-        {
-        my $this       = shift;
-        my $folder     = shift;
-        my $imap     = $this->{imap};
-
-        if( !$imap->exists( $folder ) )
-            {
-            $imap->create( $folder ) || print "WARNING: $@\n";
-            }
-        }
-
-    #
     # This function creates a message id to be used in the IMAP messages
     #
-    #     RIGELLIB::Rigel->gen_message_id(  $rss, $item)
+    #     RLCore::__gen_message_id(  $rss, $item)
     #
     # Where:
     #     $rss is the feed (unused)
     #     $item is the feed item
     #
-    sub gen_message_id
+    sub __gen_message_id
         {
-        my $this = shift;
         my $rss  = shift;
         my $item = shift;
 
-        return sprintf( '%s@%s', Common::str_trim( $item->link() ), $this->{host} );
+        return sprintf( '%s@%s', RLCommon::str_trim( $item->link() ), $GLOBAL_CONFIG->{host} );
         }
 
-    #
-    # This function determines if an error as occured
-    #
-    #     RIGELLIB::Rigel->is_error( )
-    #
-    sub is_error
-        {
-        # if you use windows, FCNTL error will be ignored.
-        if( !$@ || ( $^O =~ /Win32/ && $@ =~ /fcntl.*?f_getfl/ ) )
-            {
-            return 0;
-            }
-
-        return 1;
-        }
 
     #
     # This function returns the last modified date for an rss item
     #
-    #     RIGELLIB::Rigel->get_rss_Date(  $rss, $item)
+    #     RLCore::__get_rss_date(  $rss, $item)
     #
     # Where:
     #     $rss is the feed (unused)
     #     $item is the feed item
     #
-    sub get_rss_date
+    sub __get_rss_date
         {
-        my $this = shift;
         my $rss  = shift;
         my $item = shift;
 
@@ -1356,69 +1167,29 @@ BODY
     #
     # This function returns a HTTP formated time for an rss item
     #
-    #     RIGELLIB::Rigel->get_date( $rss, $item)
+    #     RLCore::__get_date( $rss, $item)
     #
     # Where:
     #     $rss is the feed (unused)
     #     $item is the feed item
     #
-    sub get_date
+    sub __get_date
         {
-        my $this = shift;
         my $rss  = shift;
         my $item = shift;
-        my $date = $this->get_rss_date( $rss, $item ) || "";
+        my $date = __get_rss_date( $rss, $item ) || "";
 
         return HTTP::Date::time2str(HTTP::Date::str2time( $date ) );
-        }
-
-    #
-    # This function returns the full IMAP path to a folder, incuding any prefix
-    # and directory seperatores
-    #
-    #     RIGELLIB::Rigel->get_real_folder_name(  $folder, $dirsep)
-    #
-    # Where:
-    #     $folder is the folder you want to get
-    #     $dirsep is the directory seperator to use
-    #
-    sub get_real_folder_name
-        {
-        my $this   = shift;
-        my $str    = shift;
-        my $dirsep = shift;
-
-        if( $this->{prefix} )
-            {
-            $str = sprintf ("%s%s%s",
-                            RIGELLIB::Unicode::to_utf8( $this->{prefix} ),
-                            $dirsep,
-                            $str);
-            }
-        else
-            {
-            $str =~ s#\.#$dirsep#g;
-            }
-
-        # omit last separator.
-        if( $str ne $dirsep )
-            {
-            $str =~ s#$dirsep$##;
-            }
-
-        return RIGELLIB::Unicode::to_utf7( $str );
         }
 
     #
     # This function returns an array of feed site configurations from the
     # IMAP server
     #
-    #     RIGELLIB::Rigel->get_feeds_from_imap( )
+    #     RLCore::__get_feeds_from_imap( )
     #
-    sub get_feeds_from_imap
+    sub __get_feeds_from_imap
         {
-        my $this = shift;
-
         my $message;
         my $feedconf;
         my $feeddesc;
@@ -1426,7 +1197,7 @@ BODY
         my @messages;
         my @config_list;
         my %config;
-        my ($folder) = $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+        my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
         my $mp       = new MIME::Parser;
 
         # setup the message parser so we don't get any errors and we
@@ -1434,16 +1205,16 @@ BODY
         $mp->ignore_errors( 1 );
         $mp->extract_uuencode( 1 );
 
-        $folder = $this->get_real_folder_name( $folder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "config folder: $folder" );
-        $this->{imap}->select( $folder );
+        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "config folder: $folder" );
+        $IMAP_CONNECT->select( $folder );
 
-        @messages = $this->{imap}->messages();
+        @messages = $IMAP_CONNECT->messages();
 
         foreach $message (@messages)
             {
             # Retreive the complete message and run it through the MIME parser
-            eval { $e = $mp->parse_data( $this->{imap}->message_string( $message ) ); };
+            eval { $e = $mp->parse_data( $IMAP_CONNECT->message_string( $message ) ); };
             my $error = ($@ || $mp->last_error);
 
             if( $error )
@@ -1454,13 +1225,13 @@ BODY
                 {
                 # get_mime_text_body will retrevie all the plain text peices of the
                 # message and return it as one string.
-                $feedconf = Common::str_trim( get_mime_text_body( $e ) );
-                $feeddesc = $this->{imap}->subject( $message );
+                $feedconf = RLCommon::str_trim( __get_mime_text_body( $e ) );
+                $feeddesc = $IMAP_CONNECT->subject( $message );
                 $mp->filer->purge;
                 }
 
             # parse the configuration options in to a configuration object
-            %config = Configuration::parse_url_list_from_string( $feedconf, $feeddesc );
+            %config = RLConfig::parse_url_list_from_string( $feedconf, $feeddesc );
             push @config_list, { %config };
             }
 
@@ -1471,12 +1242,12 @@ BODY
     # This function returns the textual version of the message body in a
     # MIME message
     #
-    #     get_mime_text_body(  $mime)
+    #     __get_mime_text_body(  $mime)
     #
     # Where:
     #     $mime is the mime encoded message to retreive
     #
-    sub get_mime_text_body
+    sub __get_mime_text_body
         {
         my $ent = shift;
 
@@ -1485,7 +1256,7 @@ BODY
 
         if( my @parts = $ent->parts )
             {
-            return get_mime_text_body( $_ ) for @parts;
+            return __get_mime_text_body( $_ ) for @parts;
             }
         elsif( my $body = $ent->bodyhandle )
             {
@@ -1503,98 +1274,19 @@ BODY
                     $wd = supported MIME::WordDecoder "ISO-8859-1";
                     }
 
-                return $text .  RIGELLIB::Unicode::to_utf8( $wd->decode( $body->as_string || '' ) );
+                return $text .  RLUnicode::to_utf8( $wd->decode( $body->as_string || '' ) );
                 }
             }
-        }
-
-    #
-    # This function applies the Rigel configuration templates to a string
-    #
-    #     RIGELLIB::Rigel->apply_template(  $rss, $item, $folder)
-    #
-    # Where:
-    #     $rss is the feed (optional)
-    #     $item is the feed item (optional)
-    #     $folder is a flag (t/f) (optional)
-    #
-    sub apply_template {
-        my $this       = shift;
-        my $rss        = shift;
-        my $item       = shift;
-        my $folder_flg = shift;
-
-        my @from       = @_;
-        my %cnf;
-
-        if( $rss )
-            {
-            $cnf{'channel:title'}       = $rss->title();
-            $cnf{'channel:link'}        = $rss->link();
-            $cnf{'channel:description'} = $rss->description();
-            $cnf{'channel:dc:date'}     = $rss->pubDate() || "";
-
-            $cnf{'dashline:channel:title'} = "-" x length( $cnf{'channel:title'} );
-            }
-
-        if( $item )
-            {
-            $cnf{'item:description'}  = $item->description();
-            $cnf{'item:link'}         = $item->link();
-            $cnf{'item:title'}        = $item->title();
-            $cnf{'item:dc:date'}      = $item->pubDate();
-            $cnf{'item:dc:subject'}   = $item->category();
-            $cnf{'item:dc:creator'}   = $item->author();
-
-            $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
-            }
-
-        $cnf{host}            = $this->{host};
-        $cnf{user}            = $this->{user};
-        $cnf{'last-modified'} = $rss->{'Rigel:last-modified'};
-        $cnf{'rss-link'}      = $rss->{'Rigel:rss-link'};
-        $cnf{'dir:sep'}       = $this->{'directory_separator'};
-        $cnf{'dir:manage'}    = $this->{'management-folder'};
-        $cnf{'dir:lastmod'}   = $this->{'last-modified-folder'};
-        $cnf{'newline'}       = "\n";
-
-        my @result;
-        for my $from (@from)
-            {
-            if( $from )
-                {
-                for my $key (keys %cnf)
-                    {
-                    if( !$cnf{$key} ) { next; }
-
-                    if( $folder_flg )
-                        {
-                        $cnf{$key} =~ s/\./:/g ;
-                        }
-
-                    my $key2 = "%{" . $key . "}";
-                    $from =~ s/$key2/$cnf{$key}/eg;
-                    }
-
-                $from =~ s/%{.*}//g;
-                }
-
-            push @result, $from;
-            }
-
-        return @result;
         }
 
     #
     # This function processes and add/delete messages on the IMAP server
     #
-    #     RIGELLIB::Rigel->process_change+_requests( )
+    #     RLCore::process_change+_requests( )
     #
-    sub process_change_requests()
+    sub __process_change_requests
         {
-        my $this = shift;
-
-        my $site_config = Configuration::get_site_configall();
+        my $site_config = RLConfig::get_site_configall();
         my @messages;
         my $message;
         my $feedconf;
@@ -1602,10 +1294,10 @@ BODY
         my %config;
         my $siteurl;
         my $uid;
-        my ($AddFolder)     = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" ) );
-        my ($DeleteFolder)  = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" ) );
-        my ($ConfigFolder)  = join( '', $this->apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" ) );
-        my ($LastModFolder) = join( '', $this->apply_template( undef, undef, 1, "%{dir:lastmod}" ) );
+        my ($AddFolder)     = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" ) );
+        my ($DeleteFolder)  = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" ) );
+        my ($ConfigFolder)  = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" ) );
+        my ($LastModFolder) = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" ) );
         my $e;
         my $mp              = new MIME::Parser;
 
@@ -1614,38 +1306,38 @@ BODY
         $mp->ignore_errors( 1 );
         $mp->extract_uuencode( 1 );
 
-        $AddFolder = $this->get_real_folder_name( $AddFolder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "Add folder: $AddFolder" );
-        $this->create_folder( $AddFolder );
+        $AddFolder = RLIMAP::get_real_folder_name( $AddFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "Add folder: $AddFolder" );
+        RLIMAP::imap_create_folder( $IMAP_CONNECT, $AddFolder );
 
-        $DeleteFolder = $this->get_real_folder_name( $DeleteFolder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "Delete folder: $DeleteFolder" );
-        $this->create_folder( $DeleteFolder );
+        $DeleteFolder = RLIMAP::get_real_folder_name( $DeleteFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "Delete folder: $DeleteFolder" );
+        RLIMAP::imap_create_folder( $IMAP_CONNECT, $DeleteFolder );
 
-        $ConfigFolder = $this->get_real_folder_name( $ConfigFolder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "Config folder: $ConfigFolder" );
-        $this->create_folder( $ConfigFolder );
+        $ConfigFolder = RLIMAP::get_real_folder_name( $ConfigFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "Config folder: $ConfigFolder" );
+        RLIMAP::imap_create_folder( $IMAP_CONNECT, $ConfigFolder );
 
-        $LastModFolder = $this->get_real_folder_name( $LastModFolder, $this->{'directory_separator'} );
-        Debug::OutputDebug( 2, "last update folder: $LastModFolder" );
-        $this->create_folder( $LastModFolder );
+        $LastModFolder = RLIMAP::get_real_folder_name( $LastModFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "last update folder: $LastModFolder" );
+        RLIMAP::imap_create_folder( $IMAP_CONNECT, $LastModFolder );
 
-        $this->{imap}->select( $AddFolder );
-        @messages = $this->{imap}->messages();
+        $IMAP_CONNECT->select( $AddFolder );
+        @messages = $IMAP_CONNECT->messages();
 
         foreach $message (@messages)
             {
             # Retreive the complete message and run it through the MIME parser
-            eval { $e = $mp->parse_data( $this->{imap}->message_string( $message) ); };
+            eval { $e = $mp->parse_data( $IMAP_CONNECT->message_string( $message) ); };
             my $error = ($@ || $mp->last_error);
 
-            my $feeddesc = $this->{imap}->subject( $message );
+            my $feeddesc = $IMAP_CONNECT->subject( $message );
 
             $feedconf = "";
-            $feedconf = Common::str_trim( get_mime_text_body( $e ) );
+            $feedconf = RLCommon::str_trim( __get_mime_text_body( $e ) );
             $mp->filer->purge;
 
-            %config = Configuration::parse_url_list_from_string( $feedconf );
+            %config = RLConfig::parse_url_list_from_string( $feedconf );
 
             $siteurl = "";
             foreach my $site (@{$config{url}})
@@ -1653,7 +1345,7 @@ BODY
                 $siteurl = $siteurl . $site;
                 }
 
-            $siteurl = Common::str_trim( $siteurl );
+            $siteurl = RLCommon::str_trim( $siteurl );
 
             if( $feeddesc eq "" ) { $feeddesc = $siteurl; }
 
@@ -1670,8 +1362,8 @@ BODY
 ;
                 print "Adding feed: " . $siteurl . "\r\n";
 
-                $this->{imap}->append_string( $ConfigFolder, $headers . "\n" . $feedconf, "Seen" );
-                $this->{imap}->delete_message( $message );
+                $IMAP_CONNECT->append_string( $ConfigFolder, $headers . "\n" . $feedconf, "Seen" );
+                $IMAP_CONNECT->delete_message( $message );
                 }
             }
 
@@ -1682,121 +1374,28 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        __mark_folder_read( $this->{imap}, $ConfigFolder );
+        RLIMAP::mark_folder_read( $IMAP_CONNECT, $ConfigFolder );
 
         # Now expunge any deleted messages
-        $this->{imap}->select( $AddFolder );
-        $this->{imap}->expunge( $AddFolder );  # For some reason the folder has to be passed here otherwise the expunge fails
+        $IMAP_CONNECT->select( $AddFolder );
+        $IMAP_CONNECT->expunge( $AddFolder );  # For some reason the folder has to be passed here otherwise the expunge fails
 
         # Now fill in any extra template messages we need
-        my $template_message =<<"BODY"
-From: Rigel@
-Subject: Template feed
-MIME-Version: 1.0
-Content-Type: text/plain;
-Content-Transfer-Encoding: 7bit
-User-Agent: Rigel version $VERSION
+        my $template_message = RLTemplates::AddFeed( $VERSION, $site_config );
 
-http://template
-
-# See end of message for macro definitions
-#
-# Specify the delivery folder:
-#folder = $site_config->{'folder'}
-#
-# Specify how to deliver every RSS feed: items/channel
-#type = $site_config->{'type'}
-#
-# Destination mail address, the "To:" header will be set to this value
-#to = $site_config->{'to'}
-#
-# Subject line for the messages
-#subject = $site_config->{'subject'}
-#
-# Source mail address, the "From:" header will be set to this value
-#from = $site_config->{'from'}
-#
-# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink
-# textlink or thtmllink
-#delivery-mode = $site_config->{'delivery-mode'}
-#
-# Cropping of the source file: these are regular expressions that match content
-# in the body of the rss item or the linked item depending on the delivery mode.
-#
-#crop-start =
-#crop-end =
-#
-# The order articles come in from the feed: 1 = oldest to newest,
-# -1 = newest to oldest
-#article-order = $site_config->{'article-order'}
-#
-# Delete item which are "N" days old: -1 = disabled
-#expire = $site_config->{'expire'}
-#
-# Should RIGEL expire messages that have not yet been read?: yes/no
-#expire-unseen = $site_config->{'expire-unseen'}
-#
-# Folder to move expired mail to: undef = delete mail
-#expire-folder = $site_config->{'expire-folder'}
-#
-# Specify if Rigel syncs mail in folder with RSS items: yes/no
-#sync = $site_config->{'sync'}
-#
-# Use subject line based tracking: yes/no
-#use-subjects = $site_config->{'use-subjects'}
-#
-# Define a user set time to live for a feed: -1 = disabled, 0 = ignore TTLs or
-# >0 TTL in minutes
-#force-ttl = $site_config->{'force-ttl'}
-#
-###############################################################################
-#   Some of the values can use macros to substitute run time values, these
-#   macros are as follows:
-#
-#   %{channel:dc:date}                 The channel date
-#   %{channel:description}             The channel description
-#   %{channel:link}                    The channel URL
-#   %{channel:title}                   The channel title
-#   %{dashline:channel:title}          A line of "-"'s equal to the length
-#                                      of the channel title
-#   %{dashline:item:title}             A line of "-"'s equal to the length
-#                                      of the item title
-#   %{dir:lastmod}                     The last modified folder
-#   %{dir:manage}                      The management folder
-#   %{dir:sep}                         The character used to seperate folder
-#                                      names on the IMAP server
-#   %{host}                            The IMAP server name
-#   %{item:dc:creator}                 The item author
-#   %{item:dc:date}                    The item date
-#   %{item:dc:subject}                 The item subject
-#   %{item:description}                The item description
-#   %{item:link}                       The item URL
-#   %{item:title}                      The item title
-#   %{last-modified}                   The time the feed was last updated
-#   %{newline}                         The newline character
-#   %{rss-link}                        The URL of the feed
-#   %{user}                            The IMAP user name
-#
-#   Note that not all items may be available at all times, ie. during folder
-#   creation only the channel items are available as the item information has
-#   not yet been proceeded.  Items not available or not recognized will be
-#   replaced with blanks.
-###############################################################################
-BODY
-;
-        my $i = 10 - $this->{imap}->message_count( $AddFolder );
+        my $i = 10 - $IMAP_CONNECT->message_count( $AddFolder );
         for( ; $i != 0; $i-- )
             {
-            $uid = $this->{imap}->append_string( $AddFolder, $template_message, "Seen" );
+            $uid = $IMAP_CONNECT->append_string( $AddFolder, $template_message, "Seen" );
             }
 
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        __mark_folder_read( $this->{imap}, $AddFolder );
+        RLIMAP::mark_folder_read( $IMAP_CONNECT, $AddFolder );
 
-        $this->{imap}->select( $DeleteFolder );
-        @messages = $this->{imap}->messages();
+        $IMAP_CONNECT->select( $DeleteFolder );
+        @messages = $IMAP_CONNECT->messages();
 
         my $Subject;
         my $message_id;
@@ -1806,31 +1405,27 @@ BODY
 
         foreach $message (@messages)
             {
-            push @FeedsToDelete, $this->{imap}->subject( $message );
-            $this->{imap}->delete_message( $message );
-            $this->{imap}->expunge( $DeleteFolder );
+            push @FeedsToDelete, $IMAP_CONNECT->subject( $message );
+            $IMAP_CONNECT->delete_message( $message );
+            $IMAP_CONNECT->expunge( $DeleteFolder );
             }
 
-        $this->{imap}->select( $LastModFolder );
+        $IMAP_CONNECT->select( $LastModFolder );
         foreach $Subject (@FeedsToDelete)
             {
             print "Deleting feed: " . $Subject . "\r\n";
-            $message_id = sprintf( '%s@%s', $Subject, $this->{host} );
-            @search = $this->{imap}->search( "UNDELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel-checker\"" );
+            $message_id = sprintf( '%s@%s', $Subject, $GLOBAL_CONFIG->{host} );
+            @search = $IMAP_CONNECT->search( "UNDELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel-checker\"" );
 
             foreach $modified (@search)
                 {
-                $this->{imap}->delete_message( $modified );
-                $this->{imap}->expunge();
+                $IMAP_CONNECT->delete_message( $modified );
+                $IMAP_CONNECT->expunge();
                 }
             }
 
         return;
         }
-
-    ###########################################################################
-    #  Internal Functions only from here
-    ###########################################################################
 
     #
     # This function 'fixes' some common feeds errors
@@ -1848,20 +1443,20 @@ BODY
         my $count;
 
         # First, strip any spaces from feed
-        $fixed = Common::str_trim( $content );
+        $fixed = RLCommon::str_trim( $content );
 
         # Some feeds seem to have some crap charaters in them (either at the begining or the end)
         # which need to get stripped out, so build a hash that contains the ASCII values of all the
         # characters we want to keep (\r, \n, a-Z, etc.).  Then run a regex to process the change.
-        Debug::OutputDebug( 2, "Remove unwanted characters..." );
+        RLDebug::OutputDebug( 2, "Remove unwanted characters..." );
         #    my %CharatersToKeep = map {$_=>1} (9,10,13,32..127);
         #    $fixed =~ s/(.)/$CharatersToKeep{ord($1)} ? $1 : ' '/eg;
         $fixed =~ s/[^[:ascii:]]/ /eg;
-        Debug::OutputDebug( 2, "Finished." );
+        RLDebug::OutputDebug( 2, "Finished." );
 
         # if the opening xml tag is missing, add it
         $count = 0;
-        Debug::OutputDebug( 2, "Add missing XML tag..." );
+        RLDebug::OutputDebug( 2, "Add missing XML tag..." );
 
         while( $fixed =~ /\<\?xml/gi )
             {
@@ -1875,7 +1470,7 @@ BODY
 
         # Make sure we don't have duplicate closing channel tags
         $count = 0;
-        Debug::OutputDebug( 2, "Remove duplicate closing channel tags..." );
+        RLDebug::OutputDebug( 2, "Remove duplicate closing channel tags..." );
         while( $fixed =~ /\<\/channel\>/gi )
             {
             $count++;
@@ -1891,7 +1486,7 @@ BODY
 
         # Make sure we don't have duplicate closing rss tags
         $count = 0;
-        Debug::OutputDebug( 2, "Remove duplicate closing rss tags..." );
+        RLDebug::OutputDebug( 2, "Remove duplicate closing rss tags..." );
         while( $fixed =~ /\<\/rss\>/gi )
             {
             $count++;
@@ -1906,29 +1501,6 @@ BODY
             }
 
         return $fixed;
-        }
-
-    #
-    # This function marks all items in and IMAP folder as seen.
-    #
-    #     __mark_folder_read( $imap, $folder )
-    #
-    # Where:
-    #     $imap is the connection to use
-    #     $folder is the folder to work on (unused)
-    #
-    sub __mark_folder_read()
-        {
-        my $imap = shift;
-        my $folder = shift;
-        my $message;
-
-        $imap->select( $folder );
-
-        foreach $message ($imap->messages())
-            {
-            $imap->see( $message );
-            }
         }
     }
 
