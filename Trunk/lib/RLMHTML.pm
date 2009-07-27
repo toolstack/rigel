@@ -22,31 +22,38 @@
 
 use strict;
 
-package MHTML;
+package RIGELLIB::MHTML;
     {
     use LWP::UserAgent;
     use HTML::TreeBuilder;
     use File::Basename;
     use MIME::Base64;
     use MIME::Types;
-    use Exporter;
 
-    our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(GetMHTML GetHTML CropBody);
+    our %config = undef;
+
+    sub new
+        {
+        my $pkg_name     = shift;
+        my (%conf)         = %{(shift)};
+
+        %config = %conf;
+
+        bless {}, $pkg_name;
+        }
 
     #
     # This function returns a character string that represents the web page
     # as an MHTML file
     #
-    #     RIGELLIB::MHTML::GetMHTML(  $url )
+    #     RIGELLIB::MHTML->GetMHTML(  $url )
     #
     # Where:
     #     $url is the web site to retreive
     #
     sub GetMHTML
         {
-        my ( $sitename, $crop_start, $crop_end ) = @_;
+        my ( $this, $sitename, $crop_start, $crop_end ) = @_;
         my $result = "";
 
         # Define the content id for the starting mime part
@@ -84,7 +91,7 @@ package MHTML;
 
         my $sitebody = __get_http_body( $sitename );
 
-        $sitebody = CropBody( $sitebody, $crop_start, $crop_end );
+        $sitebody = $this->CropBody( $sitebody, $crop_start, $crop_end );
 
         $result .= $sitebody;
         $result .= "\r\n";
@@ -152,14 +159,14 @@ package MHTML;
     # This function returns a character string that represents the web page
     # as an HTML file
     #
-    #     RIGELLIB::MHTML::GetHTML(  $url )
+    #     RIGELLIB::MHTML->GetHTML(  $url )
     #
     # Where:
     #     $url is the web site to retreive
     #
     sub GetHTML
         {
-        my ( $url ) = @_;
+        my ( $this, $url ) = @_;
 
         return __get_http_body( $url );
         }
@@ -168,7 +175,7 @@ package MHTML;
     # This function crops a string at the first occurance of $crop_start and
     # the first occurance of $crop_end after $crop_start.
     #
-    #     RIGELLIB::MHTML::CropyBody(  $site_body, $crop_start, $crop_end )
+    #     RIGELLIB::MHTML->CropyBody(  $site_body, $crop_start, $crop_end )
     #
     # Where:
     #     $site_body is the string to crop
@@ -177,7 +184,7 @@ package MHTML;
     #
     sub CropBody
         {
-        my ( $sitebody, $crop_start, $crop_end ) = @_;
+        my ( $this, $sitebody, $crop_start, $crop_end ) = @_;
         my $junk = "";
 
         if( $crop_start ne "" )
