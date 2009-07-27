@@ -20,17 +20,17 @@
 #     - Retreiving the username/password info if required
 #
 
-package Common;
+package RLCommon;
     {
     use strict;
-    use RIGELLIB::UserAgent;
-    use RIGELLIB::Unicode;
-    use Debug;
+    use RLUserAgent;
+    use RLUnicode;
+    use RLDebug;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim);
+    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim is_error);
 
     our %config = undef;
 
@@ -56,10 +56,10 @@ package Common;
         my $headers          = shift;
         my $rss_ttl          = shift;
         my %header_hash      = %{$headers};
-        my $ua               = RIGELLIB::UserAgent->new( \%config );
+        my $ua               = RLUserAgent->new( \%config );
         my @rss_and_response = ();
 
-        Debug::OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
+        RLDebug::OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
 
         if( %config->{'proxy'} )
             {
@@ -68,25 +68,25 @@ package Common;
 
         my $request = HTTP::Request->new( 'GET' );
 
-        Debug::OutputDebug( 1, "uri = " . $uri );
+        RLDebug::OutputDebug( 1, "uri = " . $uri );
         $request->url( $uri );
 
         # set header if any.
         while( my ($key,$value) = each %header_hash )
             {
-            Debug::OutputDebug( 1, "Header[$key] = $value" );
+            RLDebug::OutputDebug( 1, "Header[$key] = $value" );
             $request->header( $key => $value );
             }
 
         # finally send request.
         my $response = $ua->request( $request );
 
-        Debug::OutputDebug( 1, "response code :" . $response->code );
+        RLDebug::OutputDebug( 1, "response code :" . $response->code );
 
         # Not Modified
         if( $response->code eq '304' )
             {
-            Debug::OutputDebug( 1, "received 304 code from RSS Server, not modified" );
+            RLDebug::OutputDebug( 1, "received 304 code from RSS Server, not modified" );
 
             return @rss_and_response;
             }
@@ -94,7 +94,7 @@ package Common;
         # Connection Error.
         unless( $response->is_success )
             {
-            Debug::OutputDebug( 1, "connection error" );
+            RLDebug::OutputDebug( 1, "connection error" );
 
             return @rss_and_response;
             }
@@ -106,7 +106,7 @@ package Common;
         # force all contents to UTF-8
         if( $header =~ /encoding="([^<>]*?)"/i )
             {
-            $content = RIGELLIB::Unicode::to_utf8( $content, $1 );
+            $content = RLUnicode::to_utf8( $content, $1 );
             }
 
         # Replace the opening xml tag if it does not have the version/encoding in it
@@ -122,8 +122,8 @@ package Common;
                         );
                     /eig;
 
-        Debug::OutputDebug( 2, "content = $content" );
-        Debug::OutputDebug( 2, "response = $response" );
+        RLDebug::OutputDebug( 2, "content = $content" );
+        RLDebug::OutputDebug( 2, "response = $response" );
 
         push @rss_and_response, $content;
         push @rss_and_response, $response;
@@ -280,6 +280,22 @@ package Common;
         $str =~ s/\s*$//;
 
         return $str;
+        }
+
+    #
+    # This function determines if an error as occured
+    #
+    #     RIGELLIB::Rigel->__is_error( )
+    #
+    sub is_error
+        {
+        # if you use windows, FCNTL error will be ignored.
+        if( !$@ || ( $^O =~ /Win32/ && $@ =~ /fcntl.*?f_getfl/ ) )
+            {
+            return 0;
+            }
+
+        return 1;
         }
     }
 
