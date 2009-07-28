@@ -723,52 +723,24 @@ BODY
         my $rss         = shift;
         my $item        = shift;
         my $headers     = "";
+        my $optheaders  = "";
         my $body        = "";
+        my $message        = "";
 
-        my $headers = __get_headers( $site_config, $rss, $item );
+        # Generate the message headers
+        $headers = __get_headers( $site_config, $rss, $item );
 
-        if( $site_config->{'delivery-mode'} eq 'embedded' )
-            {
-            $body = RLMHTML::CropBody( __get_embedded_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'text' )
-            {
-            $body = RLMHTML::CropBody( __get_text_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'mhtmllink' )
-            {
-            # The MHTML code returns both headers and the body in a single string, we need to split them up
-            # Also, since the cropping of the original HTML message could make a significant difference
-            # to the resulting MHTML file size, let the MHTML library do the cropping for us instead of call
-            # CropBody later.
-            my $tempheaders = "";
-            ( $tempheaders, $body ) = split( /\r\n\r\n/, __get_mhtml_body( $rss, $item, $GLOBAL_CONFIG->{site_config} ), 2 );
-            $headers .= $tempheaders;
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'htmllink' )
-            {
-            $body = RLMHTML::CropBody( __get_html_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'textlink' )
-            {
-            $body = RLMHTML::CropBody( __get_html_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'thtmllink' )
-            {
-            $body = __get_html_body( $site_config, $rss, $item );
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
-            }
-        else
-            {
-            $body = RLMHTML::CropBody( __get_raw_body( $site_config, $rss, $item ), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
+        # Format the body and generate any addditional headers that are type dependent (like MHTMLLINK)
+        ( $optheaders, $body ) = __get_body( $site_config, $rss, $item );
+        $headers .= $optheaders;
 
-        my $message = $headers . "\r\n" . $body;
+        # append the message together
+        $message = $headers . "\r\n" . $body;
 
+        # Encode the message
         utf8::encode( $message );  # uft8 flag off.
 
+        # Store the new message on the IMAP server in the desired folder
         $IMAP_CONNECT->append_string( $folder, $message );
         }
 
@@ -858,114 +830,35 @@ BODY
         return $return_headers;
         }
 
+
     #
-    # This function returns a text only version of an rss item
+    # This function returns the formated body of an rss item's
+    # conetents, whether linked or contained
     #
-    #     RLCore::__get_text_body(  $site, $rss, $item)
+    #     RLCore::__get_body(  $site, $rss, $item)
     #
     # Where:
     #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub __get_text_body
+    sub __get_body
         {
         my $site_config = shift;
-        my $rss            = shift;
-        my $item           = shift;
-
-        my $subject    = $site_config->{subject};
-        my $from       = $site_config->{from};
-        my $desc       = $item->description();
+        my $rss         = shift;
+        my $item        = shift;
+        my $headers        = "";
+        my $body         = "";
+        my $subject     = $site_config->{subject};
+        my $from        = $site_config->{from};
+        my $desc        = $item->description();
+        my $link         = $item->link();
 
         ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
-        # convert html tag to appropriate text.
-        $subject = __rss_txt_convert( $subject );
-        $desc    = __rss_txt_convert( $desc );
-
-        my $link = $item->link();
-
-        # Get rid of any newlines in the subject or link
-        $subject =~ s/\n//g;
-        $link =~ s/\n//g;
-
-        my $return_text_body = $subject . "\n";
-
-        # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
-        if( $subject ne $desc )
+        if( $site_config->{'delivery-mode'} eq 'embedded' )
             {
-            $return_text_body .= "-" x length( $subject ) . "\n";
-            $return_text_body .= "$desc\n" if ($desc);
-            }
-
-        $return_text_body .= "\n$link";
-
-        return $return_text_body;
-        }
-
-    #
-    # This function returns the raw version of an rss item
-    #
-    #     RLCore::__get_raw_body(  $site, $rss, $item)
-    #
-    # Where:
-    #     $site is the site configuration array
-    #     $rss is the feed
-    #     $item is the item to store
-    #
-    sub __get_raw_body
-        {
-        my $site_config = shift;
-        my $rss            = shift;
-        my $item           = shift;
-
-        my $subject    = $site_config->{subject};
-        my $from       = $site_config->{from};
-        my $desc       = $item->description();
-
-        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
-
-        my $link = $item->link();
-
-        my $return_body = $subject . "\r\n<hr>\r\n";
-
-        # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
-        if( $subject ne $desc )
-            {
-            $return_body = $return_body . $desc ."\r\n<hr>\r\n";
-            }
-
-        $return_body = $return_body . "<hr>\r\n" . $link . "\r\n";
-
-        return $return_body;
-        }
-
-    #
-    # This function returns an HTML embedded version of an rss item
-    #
-    #     RLCore::__get_embedded_body(  $site, $rss, $item)
-    #
-    # Where:
-    #     $site is the site configuration array
-    #     $rss is the feed
-    #     $item is the item to store
-    #
-    sub __get_embedded_body
-        {
-        my $site_config = shift;
-        my $rss            = shift;
-        my $item           = shift;
-
-        my $subject    = $site_config->{subject};
-        my $from       = $site_config->{from};
-        my $desc       = $item->description();
-
-        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
-
-        my $link = $item->link();
-
-        my $return_body =<<"BODY"
+            $body =<<"BODY"
 <html>
 <head>
 <title>$subject</title>
@@ -994,45 +887,74 @@ $desc
 BODY
 ;
 
-        return $return_body;
-        }
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+            }
+        elsif( $site_config->{'delivery-mode'} eq 'text' )
+           {
+            # convert html tag to appropriate text.
+            $subject = __rss_txt_convert( $subject );
+            $desc    = __rss_txt_convert( $desc );
 
-    #
-    # This function returns a MIME HTML version of an rss item's linked web site
-    #
-    #     RLCore::__get_mhtml_body(  $rss, $item, $site_config)
-    #
-    # Where:
-    #     $rss is the feed
-    #     $item is the item to store
-    #     $site_config is used to get the cropping marks so we only MIME encode what is required
-    #
-    sub __get_mhtml_body
-        {
-        my $rss         = shift;
-        my $item        = shift;
-        my $site_config = shift;
+            # Get rid of any newlines in the subject or link
+            $subject =~ s/\n//g;
+            $link =~ s/\n//g;
 
-        return RLMHTML::GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-        }
+            $body = $subject . "\n";
 
-    #
-    # This function returns an HTML version of an rss item's linked web site
-    #
-    #     RLCore::__get_html_body(  $site, $rss, $item)
-    #
-    # Where:
-    #     $site is the site configuration array
-    #     $rss is the feed
-    #     $item is the item to store
-    #
-    sub __get_html_body
-        {
-        my $site_config = shift;
-        my $rss            = shift;
-        my $item           = shift;
+            # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
+            if( $subject ne $desc )
+                {
+                $body .= "-" x length( $subject ) . "\n";
+                $body .= "$desc\n" if ($desc);
+                }
 
-        return RLMHTML::GetHTML( $item->link() );
+            $body .= "\n$link";
+
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+            }
+        elsif( $site_config->{'delivery-mode'} eq 'mhtmllink' )
+            {
+            # Since the cropping of the original HTML message could make a significant difference
+            # to the resulting MHTML file size, let the MHTML library do the cropping for us instead of calling
+            # CropBody later.
+            $body = RLMHTML::GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+
+            # The MHTML code returns both headers and the body in a single string, we need to split them up
+            ( $headers, $body ) = split( /\r\n\r\n/, $body, 2 );
+            }
+        elsif( $site_config->{'delivery-mode'} eq 'htmllink' )
+            {
+            $body = RLMHTML::GetHTML( $item->link() );
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+            }
+        elsif( $site_config->{'delivery-mode'} eq 'textlink' )
+            {
+            $body = RLMHTML::GetHTML( $item->link() );
+            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+            }
+        elsif( $site_config->{'delivery-mode'} eq 'thtmllink' )
+            {
+            $body = RLMHTML::GetHTML( $item->link() );
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
+            }
+        else
+            {
+            $body = $subject . "\r\n<hr>\r\n";
+
+            # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
+            if( $subject ne $desc )
+                {
+                $body = $body . $desc ."\r\n<hr>\r\n";
+                }
+
+            $body = $body . "<hr>\r\n" . $link . "\r\n";
+
+            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
+            }
+
+        return ($headers, $body );
         }
 
     #
