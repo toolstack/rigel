@@ -93,6 +93,9 @@ package RLCore;
         # First, connect to the IMAP server
         $IMAP_CONNECT = RLIMAP::imap_connect( $GLOBAL_CONFIG );
 
+        # Next, verify that the help messages exist and are up to date
+        __verify_help();
+
         # Next, check to see if there are any Add/Delete's to process
         __process_change_requests();
 
@@ -339,7 +342,7 @@ package RLCore;
     # server as well as cleaning up old articles if required and updating the last
     # update information.
     #
-    #     RLCore::send( $rss, $site_config, $ttl, $subjects )
+    #     RLCore::__send_feed( $rss, $site_config, $ttl, $subjects )
     #
     # Where:
     #     $rss is the feed as a string
@@ -1204,7 +1207,7 @@ BODY
     #
     # This function processes and add/delete messages on the IMAP server
     #
-    #     RLCore::process_change+_requests( )
+    #     RLCore::__process_change_requests( )
     #
     sub __process_change_requests
         {
@@ -1344,6 +1347,54 @@ BODY
                 $IMAP_CONNECT->delete_message( $modified );
                 $IMAP_CONNECT->expunge();
                 }
+            }
+
+        return;
+        }
+
+    #
+    # This function checks the help folder and updates messages
+    # as required.
+    #
+    #     RLCore::__verify_help( )
+    #
+    sub __verify_help
+        {
+        my $site_config = RLConfig::get_site_configall();
+        my @messages;
+        my ($HelpFolder)    = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Help" ) );
+
+        $HelpFolder = RLIMAP::get_real_folder_name( $HelpFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        RLDebug::OutputDebug( 2, "Help folder: $HelpFolder" );
+        RLIMAP::imap_create_folder( $IMAP_CONNECT, $HelpFolder );
+
+        $IMAP_CONNECT->select( $HelpFolder );
+        @messages = $IMAP_CONNECT->messages();
+
+        # If the help folder is empty, append the help message and samples
+        if( scalar( @messages ) == 0 )
+            {
+            RLDebug::OutputDebug( 2, "Creating help messages..." );
+            my $message = "";
+            my @samples = RLTemplates::SampleList();
+            my $sample = "";
+
+            # Add the samples first so that the help message show at the top
+            # of the list of messagse as most mail readers will sort by received
+            # date.
+            foreach $sample (@samples)
+                {
+                $message = RLTemplates::AddSample( $VERSION, $site_config, $sample );
+                $IMAP_CONNECT->append_string( $HelpFolder, $message, "Seen" );
+                }
+
+            $message = RLTemplates::AddHelp( $VERSION, $site_config );
+            $IMAP_CONNECT->append_string( $HelpFolder, $message, "Seen" );
+
+            # As we cannot count on the above addpend_string to actually mark the
+            # messages as seen and $uid may or may not acutall contain the message
+            # make sure they're marked as read
+            RLIMAP::mark_folder_read( $IMAP_CONNECT, $HelpFolder );
             }
 
         return;
