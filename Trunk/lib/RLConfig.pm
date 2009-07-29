@@ -81,6 +81,7 @@ package RLConfig;
         'crop-start'    => "",
         'crop-end'      => "",
         'article-order' => 1,
+        'ignore-dates'  => 'no',
         };
 
     # opml parse result.
@@ -120,23 +121,23 @@ package RLConfig;
         # parameter check.
         if( !defined $filename )
             {
-            print "import : you should spefify opml filename after [-I|--import] option.\n";
+            print "import : you should spefify opml filename after [-I|--import] option.\r\n";
             }
 
         if( !defined $output_file )
             {
-            print "import : you should spefify output filename after [-O] option.\n";
+            print "import : you should spefify output filename after [-O] option.\r\n";
             }
 
         if( !defined $filename || !defined $output_file )
             {
-            print "Usage: ./Rigel [-I|--import] [opml filename] -O [site filename].\n";
+            print "Usage: ./Rigel [-I|--import] [opml filename] -O [site filename].\r\n";
             exit();
             }
 
         if( !$filename || !(-e $filename) )
             {
-            print "import: File does not exist : $filename\n";
+            print "import: File does not exist : $filename\r\n";
             exit();
             }
 
@@ -149,7 +150,7 @@ package RLConfig;
 
         $opml_parse = {};
 
-        print "parsing opml file...: $filename\n";
+        print "parsing opml file...: $filename\r\n";
 
         # parse opml file.
         eval{ $parser->parsefile( $filename ); };
@@ -163,7 +164,7 @@ package RLConfig;
         # output result here.
         __print_config_file( $output_file );
 
-        print "finished generating site file successfully -> $output_file\n";
+        print "finished generating site file successfully -> $output_file\r\n";
         exit();
         }
 
@@ -185,7 +186,7 @@ package RLConfig;
 
         for my $filename (@filenames)
             {
-            open( F, $filename ) || die "$! : $filename\n";
+            open( F, $filename ) || die "$! : $filename\r\n";
 
             while( <F> )
                 {
@@ -205,7 +206,7 @@ package RLConfig;
 
                     if( !exists $config{$key} )
                         {
-                        print "WARNING: key value [$1] is undefined!\n";
+                        print "WARNING: key value [$1] is undefined!\r\n";
                         next;
                         }
 
@@ -223,7 +224,7 @@ package RLConfig;
                     }
                 else
                     {
-                    print "WARNING: parse error $_\n";
+                    print "WARNING: parse error $_\r\n";
                     }
                 }
 
@@ -278,7 +279,7 @@ package RLConfig;
 
                 if( !exists $config{$key} )
                     {
-                    print "WARNING: key value [$1] is undefined!\n";
+                    print "WARNING: key value [$1] is undefined!\r\n";
                     next;
                     }
 
@@ -292,7 +293,7 @@ package RLConfig;
                 }
             else
                 {
-                print "WARNING: parse error $_\n";
+                print "WARNING: parse error $_\r\n";
                 }
             }
 
@@ -316,17 +317,17 @@ package RLConfig;
         # parameter check.
         if( !@filenames || !defined $filenames[0] )
             {
-            print "export : you should spefify site filename after [-E|--export] option.\n";
+            print "export : you should spefify site filename after [-E|--export] option.\r\n";
             }
 
         if( !defined $output_file )
             {
-            print "export : you should spefify output file with [-O] option.\n";
+            print "export : you should spefify output file with [-O] option.\r\n";
             }
 
         if( !defined $filenames[0] || !defined $output_file )
             {
-            print "Usage: ./Rigel [-E|--export] [site filename] -O [opml filename].\n";
+            print "Usage: ./Rigel [-E|--export] [site filename] -O [opml filename].\r\n";
             exit();
             }
 
@@ -339,14 +340,14 @@ package RLConfig;
         # get config list.
         # this array is composed of ${DEFAULT_SITE_CONFIG}
         # which value is overridden by url list.
-        print "export: parsing site file...\n";
+        print "export: parsing site file...\r\n";
         my @config_list = @{parse_url_list( @filenames )};
 
         # sort array by 'folder' key.
         @config_list = &__sort_array_byfolder( @config_list );
         if( scalar(@config_list) == 0 )
             {
-            print "No configuration found from your site file.\n";
+            print "No configuration found from your site file.\r\n";
             exit();
             }
 
@@ -402,7 +403,7 @@ package RLConfig;
             # print uris.
             foreach my $link (@{$config->{'url'}})
                 {
-                print "processing $link ....\n";
+                print "processing $link ....\r\n";
                 my @rss_and_response = RLCommon::getrss_and_response( $link, {} );
 
                 if ( scalar(@rss_and_response) == 0 )
@@ -417,7 +418,7 @@ package RLConfig;
 
                 if( $@ )
                     {
-                    print "WARNING: feed error, skip this url...\n";
+                    print "WARNING: feed error, skip this url...\r\n";
                     next;
                     }
 
@@ -447,7 +448,7 @@ package RLConfig;
 
         print $out_fh $opml_footer;
 
-        print "finished generating opml file successfully -> $output_file\n";
+        print "finished generating opml file successfully -> $output_file\r\n";
         exit();
         }
 
@@ -674,7 +675,7 @@ package RLConfig;
         my $filename   = shift;
         my %return_hash = ();
 
-        open( CONFFILE, $filename ) or die "$filename:Could not open configfile:$!\n";
+        open( CONFFILE, $filename ) or die "$filename:Could not open configfile:$!\r\n";
 
         while( my $line = <CONFFILE>)
             {
@@ -885,7 +886,7 @@ package RLConfig;
         # ask if overwrite, append, or abort.
         if( -e $output_file && $can_append )
             {
-            print "\n$output_file already exists! overwrite?[O], append?[A], or exit?[E] (O/A/E):";
+            print "\r\n$output_file already exists! overwrite?[O], append?[A], or exit?[E] (O/A/E):";
             my $answer = <STDIN>;
             chomp $answer;
 
@@ -901,14 +902,14 @@ package RLConfig;
                 }
             else
                 {
-                print "$cmdname aborted by user.\n";
+                print "$cmdname aborted by user.\r\n";
                 exit();
                 }
             }
 
         if( -e $output_file && !$can_append )
             {
-            print "\n$output_file already exists! overwrite? (y/N):";
+            print "\r\n$output_file already exists! overwrite? (y/N):";
             my $answer = <STDIN>;
             chomp $answer;
 
@@ -919,7 +920,7 @@ package RLConfig;
                 }
             else
                 {
-                print "$cmdname aborted by user.\n";
+                print "$cmdname aborted by user.\r\n";
                 exit();
                 }
             }

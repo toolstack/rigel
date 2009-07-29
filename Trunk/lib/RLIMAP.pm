@@ -53,8 +53,8 @@ package RLIMAP;
 
             if( RLCommon::is_error() )
                 {
-                print "you specify use SSL but dont install IO::Socket::SSL.\n";
-                print "please install it via cpan.\n";
+                print "you specify use SSL but dont install IO::Socket::SSL.\r\n";
+                print "please install it via cpan.\r\n";
 
                 exit();
                 }
@@ -81,7 +81,7 @@ package RLIMAP;
 
         if( !$imap )
             {
-             die "imap client initialize failed. maybe you dont specify proper option...\n";
+             die "imap client initialize failed. maybe you dont specify proper option...\r\n";
             }
 
         $GLOBAL_CONFIG->{'directory_separator'} = $imap->separator();
@@ -107,13 +107,13 @@ package RLIMAP;
         # authentication failure. sorry.
         if( !$imap->IsAuthenticated() )
             {
-            print "Authentication failure, sorry.\n";
-            print "connected to : $GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}\n";
+            print "Authentication failure, sorry.\r\n";
+            print "connected to : $GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}\r\n";
 
             exit();
             }
 
-        die "$@ $GLOBAL_CONFIG->{user}\@$GLOBAL_CONFIG->{host}\n" unless ($imap);
+        die "$@ $GLOBAL_CONFIG->{user}\@$GLOBAL_CONFIG->{host}\r\n" unless ($imap);
 
         return $imap;
         }
@@ -186,7 +186,7 @@ package RLIMAP;
         my $folder  = shift;
 
         imap_create_folder( $imap, $folder );
-        $imap->select( $folder ) || print "@!\n";
+        $imap->select( $folder ) || print "@!\r\n";
         }
 
     #
@@ -204,7 +204,7 @@ package RLIMAP;
 
         if( !$imap->exists( $folder ) )
             {
-            $imap->create( $folder ) || print "WARNING: $@\n";
+            $imap->create( $folder ) || print "WARNING: $@\r\n";
             }
         }
 

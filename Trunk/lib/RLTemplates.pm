@@ -81,6 +81,10 @@ http://template
 #crop-start = $site_config->{'crop-start'}
 #crop-end = $site_config->{'crop-end'}
 #
+# Ignore publication dates on items, yes/no.
+#
+#ignore-dates = $site_config->{'ignore-dates'}
+#
 # The order articles come in from the feed: 1 = oldest to newest,
 # -1 = newest to oldest
 #article-order = $site_config->{'article-order'}
@@ -343,19 +347,24 @@ BODY
         my $name = "Subject: Template feed";
         my $url = "http://template";
         my $folder = "#folder = $site_config->{'folder'}";
-        my $to = "#to = $site_config->{'to'}";
         my $subject = "#subject = $site_config->{'subject'}";
-        my $from = "#from = $site_config->{'from'}";
         my $delivery = "#delivery-mode = $site_config->{'delivery-mode'}";
         my $cropstart = "#crop-start = $site_config->{'crop-start'}";
         my $cropend = "#crop-end = $site_config->{'crop-end'}";
         my $order = "#article-order = $site_config->{'article-order'}";
-        my $expire = "#expire = $site_config->{'expire'}";
-        my $eunseen = "#expire-unseen = $site_config->{'expire-unseen'}";
-        my $efolder = "#expire-folder = $site_config->{'expire-folder'}";
-        my $sync = "#sync = $site_config->{'sync'}";
-        my $subcache = "#use-subjects = $site_config->{'use-subjects'}";
-        my $ttl = "#force-ttl = $site_config->{'force-ttl'}";
+
+		# The following lines are other items we may use in the future, included here for
+		# completness only.
+		#
+		#        my $to = "#to = $site_config->{'to'}";
+		#        my $from = "#from = $site_config->{'from'}";
+		#        my $expire = "#expire = $site_config->{'expire'}";
+		#        my $eunseen = "#expire-unseen = $site_config->{'expire-unseen'}";
+		#        my $efolder = "#expire-folder = $site_config->{'expire-folder'}";
+		#        my $sync = "#sync = $site_config->{'sync'}";
+		#        my $subcache = "#use-subjects = $site_config->{'use-subjects'}";
+		#        my $ttl = "#force-ttl = $site_config->{'force-ttl'}";
+		#	my $idates = "ignore-dates = $site_config->{'ignore-dates'}";
 
         if( $samplename eq "register.co.uk" )
             {

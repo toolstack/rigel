@@ -72,7 +72,7 @@ package RLUserAgent;
                 }
             else
                 {
-                print "Your Proxy Server Requires Authentication.\n";
+                print "Your Proxy Server Requires Authentication.\r\n";
                 return ( RLCommon::getUser( undef, $isproxy ), RLCommon::getPass( undef, $isproxy ) );
                 }
             }
