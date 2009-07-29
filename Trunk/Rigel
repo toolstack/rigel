@@ -90,7 +90,7 @@ sub main
     #    print version
     if( $config{version} )
         {
-        print "Rigel $version\n";
+        print "Rigel $version\r\n";
         exit();
         }
 
@@ -100,7 +100,7 @@ sub main
         }
 
     #   Welcome message.
-    print "* Welcome to Rigel $version!\n";
+    print "* Welcome to Rigel $version!\r\n";
 
     #   Import, export process.
     #   Option import accepts one filename
@@ -114,7 +114,7 @@ sub main
     #   Prompt for imap and proxy password if required
     if( !$config{'password'} )
         {
-        print "You require authentication ...\n";
+        print "You require authentication ...\r\n";
         RLCommon::getProxyPass_ifEnabled();
 
         RLConfig::set_global_config( 'password', RLCommon::getPass( 'IMAP password: ' ) );

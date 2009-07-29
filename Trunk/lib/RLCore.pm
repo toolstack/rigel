@@ -79,7 +79,7 @@ package RLCore;
         {
         my $cipher = Crypt::CBC->new( -key => 'rigel007', -cipher => 'DES_PP', -salt => "rigel007");
 
-        print "----Start Encrypted Data----\n", $cipher->encrypt_hex( $GLOBAL_CONFIG->{encrypt} ), "\n----End Encrpyted Data----\n";
+        print "----Start Encrypted Data----\r\n", $cipher->encrypt_hex( $GLOBAL_CONFIG->{encrypt} ), "\r\n----End Encrpyted Data----\r\n";
         }
 
     #
@@ -143,7 +143,7 @@ package RLCore;
         my $headers     = {};
 
         # start site processing....
-        print "\r\nprocessing '$site_config->{'desc'}'...\n";
+        print "\r\nprocessing '$site_config->{'desc'}'...\r\n";
 
         $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "last update folder: $folder" );
@@ -155,7 +155,7 @@ package RLCore;
 
         if( RLCommon::is_error() )
             {
-            print "WARNING: $@\n";
+            print "WARNING: $@\r\n";
             }
 
         my $latest = undef;
@@ -205,7 +205,7 @@ package RLCore;
         if( $rss_ttl > $ctime )
             {
             # Not time to update
-            print "\tTTL not yet expired, no update required.\n";
+            print "\tTTL not yet expired, no update required.\r\n";
             return ( undef, undef, undef );
             }
         else
@@ -216,7 +216,7 @@ package RLCore;
             # If we didn't actually get an update from the feed, just return undef's
             if( scalar(@rss_and_response) == 0 )
                 {
-                print "\tFeed not modified, no update required.\n";
+                print "\tFeed not modified, no update required.\r\n";
                 return ( undef, undef, undef );
                 }
             }
@@ -304,17 +304,17 @@ package RLCore;
 
         if( RLCommon::is_error() )
             {
-            print "\tFeed error, content will not be created.\n";
+            print "\tFeed error, content will not be created.\r\n";
             return ( undef, $ttl, @subject_lines );
             }
 
         if( $rss )
             {
-            print "\tModified, updating IMAP items.\n";
+            print "\tModified, updating IMAP items.\r\n";
             }
         else
             {
-            print "\tUnabled to retreive feed, not updating.\n";
+            print "\tUnabled to retreive feed, not updating.\r\n";
             return ( undef, $ttl, @subject_lines );
             }
 
@@ -372,7 +372,7 @@ package RLCore;
                 }
             }
 
-        RLDebug::OutputDebug( 2, "old subject glob = \n$old_subject_glob" );
+        RLDebug::OutputDebug( 2, "old subject glob = \r\n$old_subject_glob" );
         my $type = $site_config->{type};
 
         if( $type eq "channel" )
@@ -388,7 +388,7 @@ package RLCore;
             }
         else
             {
-            print "WARNING: unknown type [$type]!\n";
+            print "WARNING: unknown type [$type]!\r\n";
             return;
             }
 
@@ -449,10 +449,13 @@ package RLCore;
                 }
 
             # Check to see if the rss item is older than the last update, in otherwords, the user
-            # deleted it so we shouldn't add it back in.
+            # deleted it so we shouldn't add it back in.   There can be cases where the pubdate 
+            # provided in the rss feed on new items older than the last update so the 
+            # 'ignore-dates' is provided to override this behaviour.
             RLDebug::OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
             RLDebug::OutputDebug( 2, "Or is '$rss_date' = '' ?" );
-            if( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" )
+            RLDebug::OutputDebug( 2, "Ignore the item date?: $site_config->{'ignore-dates'}" );
+            if( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" || $site_config->{'ignore-dates'} == "yes" )
                 {
                 # message id is "rss url@host" AND x-rss-aggregator field is "Rigel"
                 # and not deleted.
@@ -461,7 +464,7 @@ package RLCore;
 
                 if( RLCommon::is_error() )
                     {
-                    print "WARNING: $@\n";
+                    print "WARNING: $@\r\n";
                     next;
                     }
 
@@ -557,11 +560,11 @@ package RLCore;
         my $ItemsUpdated = scalar( @append_items );
         if( $ItemsUpdated > 0 )
             {
-            print "\tAdded $ItemsUpdated articles.\n";
+            print "\tAdded $ItemsUpdated articles.\r\n";
             }
         else
             {
-            print "\tNo items found to add.\n";
+            print "\tNo items found to add.\r\n";
             }
 
         # If for some reason we don't have any items from the feed, we want to keep
@@ -620,7 +623,7 @@ package RLCore;
 
         if( RLCommon::is_error() )
             {
-            print "WARNING: $@\n";
+            print "WARNING: $@\r\n";
             return;
             }
 
@@ -630,13 +633,13 @@ package RLCore;
             {
             RLIMAP::imap_create_folder( $IMAP_CONNECT, $expire_folder );
             for my $msg (@search) {
-                print "  moving: $msg -> $expire_folder\n";
+                print "  moving: $msg -> $expire_folder\r\n";
                 $IMAP_CONNECT->move( $expire_folder, $msg );
                 }
             }
         else
             {
-            print "  deleting: [@search]\n";
+            print "  deleting: [@search]\r\n";
             $IMAP_CONNECT->delete_message( @search );
             }
         }
@@ -692,7 +695,7 @@ BODY
         # these articles if required on the next update
         foreach $subject (@{$subject_lines})
             {
-            $body = $body . $subject . "\n";
+            $body = $body . $subject . "\r\n";
             }
 
         my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
@@ -774,6 +777,8 @@ BODY
 
         ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
+        RLDebug::OutputDebug( 2, "Getting headers for item with subject: $subject" );
+		
         my $mime_type;
 
         if( $site_config->{'delivery-mode'} eq 'text'

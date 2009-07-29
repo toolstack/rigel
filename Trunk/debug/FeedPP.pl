@@ -31,14 +31,14 @@ my $feed;
 eval { $feed = XML::FeedPP->new( $source ) };
 
 # Output the Feed info
-print "Title: ", $feed->title(), "\n";
-print "Date: ", $feed->pubDate(), "\n";
+print "Title: ", $feed->title(), "\r\n";
+print "Date: ", $feed->pubDate(), "\r\n";
 
 # Output the Item info
 foreach my $item ( $feed->get_item() ) {
-       print "URL: ", $item->link(), "\n";
-       print "Title: ", $item->title(), "\n";
-       print "Date: ", $item->pubDate(), "\n";
-       print "Category: ", $item->category(), "\n";
+       print "URL: ", $item->link(), "\r\n";
+       print "Title: ", $item->title(), "\r\n";
+       print "Date: ", $item->pubDate(), "\r\n";
+       print "Category: ", $item->category(), "\r\n";
 }
 

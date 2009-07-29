@@ -204,7 +204,7 @@ package RLCommon;
             eval 'use Term::Getch';
             if( $@ )
                 {
-                print "Term::Getch is not installed, can not continue!\n";
+                print "Term::Getch is not installed, can not continue!\r\n";
                 die;
                 }
             else
@@ -220,14 +220,14 @@ package RLCommon;
                 $password = join( '' => @c );
                 }
 
-            print "\n";
+            print "\r\n";
             }
         else
             {
             system( "stty -echo" );
             $password = <STDIN>;
             system( "stty echo" );
-            print "\n";  # because we disabled echo
+            print "\r\n";  # because we disabled echo
             }
 
         chomp( $password );
