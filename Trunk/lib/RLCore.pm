@@ -455,7 +455,7 @@ package RLCore;
             RLDebug::OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
             RLDebug::OutputDebug( 2, "Or is '$rss_date' = '' ?" );
             RLDebug::OutputDebug( 2, "Ignore the item date?: $site_config->{'ignore-dates'}" );
-            if( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" || $site_config->{'ignore-dates'} == "yes" )
+            if( $rss_time > $site_config->{'last-updated'} || $rss_date eq "" || $site_config->{'ignore-dates'} eq "yes" )
                 {
                 # message id is "rss url@host" AND x-rss-aggregator field is "Rigel"
                 # and not deleted.
