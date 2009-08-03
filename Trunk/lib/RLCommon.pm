@@ -43,7 +43,7 @@ package RLCommon;
     # This function returns an array with two entires, the rss feed as a
     # string and the response code from the HTTP connection.
     #
-    #     RIGELLIB::Common->getrss_and_response(  $URL,  $headers, $ttl  )
+    #     RLCommon::getrss_and_response(  $URL,  $headers, $ttl  )
     #
     # Where:
     #     $URL is the url of the feed to retreive
@@ -135,7 +135,7 @@ package RLCommon;
     # This function interactivly prompts (if required) for a username and
     # returns it.
     #
-    #     RIGELLIB::Common->getUser(  $prompt,  $is_proxy  )
+    #     RLCommon::getUser(  $prompt,  $is_proxy  )
     #
     # Where:
     #     $prompt is the text to display before the user enters data
@@ -176,7 +176,7 @@ package RLCommon;
     # This function interactivly prompts (if required) for a password and
     # returns it.
     #
-    #     RIGELLIB::Common->getPass(  $prompt,  $is_proxy  )
+    #     RLCommon::getPass(  $prompt,  $is_proxy  )
     #
     # Where:
     #     $prompt is the text to display before the user enters data
@@ -247,7 +247,7 @@ package RLCommon;
     # This function interactivly prompts (if required) for a username and
     # returns it for the proxy server.
     #
-    #     RIGELLIB::Common->getProxyPass_ifEnabled(  )
+    #     RLCommon::getProxyPass_ifEnabled(  )
     #
     sub getProxyPass_ifEnabled
         {
@@ -261,7 +261,7 @@ package RLCommon;
     #
     # This function trims leading/trailing spaces from a string.
     #
-    #     RIGELLIB::Common->str_trim( $string )
+    #     RLCommon::str_trim( $string )
     #
     # Where:
     #     $string is the string to trim
@@ -285,7 +285,7 @@ package RLCommon;
     #
     # This function determines if an error as occured
     #
-    #     RIGELLIB::Rigel->__is_error( )
+    #     RLCommon::is_error( )
     #
     sub is_error
         {

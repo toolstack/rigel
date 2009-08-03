@@ -24,35 +24,36 @@ package RLTemplates;
     {
     use strict;
     use Exporter;
+    use RLConfig;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(AddFeed AddHelp AddSample SampleList);
+    @EXPORT_OK=qw(NewFeed Help FeedSample FeedSampleList GenerateConfig);
 
     #
     # This function returns the template message for adding feeds
     # to Rigel
     #
-    #     RLTemplates::AddFeed( $Version, $site_config)
+    #     RLTemplates::NewFeed( $Version, $site_config)
     #
     # Where:
     #     $Version is the current version of Rigel
     #     $site_config is the configuration to use for this feed
     #
-    sub AddFeed
+    sub NewFeed
         {
-        my $VERSION     = shift;
-        my $site_config    = shift;
+        my $VERSION        = shift;
+        my $site_config = shift;
 
         my $template_message =<<"BODY"
 From: Rigel@
-Subject: Template feed
+Subject: $site_config->{'desc'}
 MIME-Version: 1.0
 Content-Type: text/plain;
 Content-Transfer-Encoding: 7bit
 User-Agent: Rigel version $VERSION
 
-http://template
+$site_config->{'url'}
 
 # See end of message for macro definitions
 #
@@ -150,13 +151,13 @@ BODY
     #
     # This function returns the template message for help
     #
-    #     RLTemplates::AddHelp( $Version, $site_config)
+    #     RLTemplates::Help( $Version, $site_config)
     #
     # Where:
     #     $Version is the current version of Rigel
     #     $site_config is the configuration to use for this feed
     #
-    sub AddHelp
+    sub Help
         {
         my $VERSION     = shift;
         my $site_config = shift;
@@ -308,9 +309,9 @@ BODY
     # This function returns an array of all the sample feed configuration
     # names to add to the Help folder
     #
-    #     RLTemplates::SampleList( )
+    #     RLTemplates::FeedSampleList( )
     #
-    sub SampleList
+    sub FeedSampleList
         {
         return ( "register.co.uk",
                  "theinquirer.net",
@@ -325,92 +326,147 @@ BODY
     # This function returns the template message a sample feed
     # to Rigel
     #
-    #     RLTemplates::AddSample( $Version, $site_config, $name)
+    #     RLTemplates::FeedSample( $Version, $site_config, $name)
     #
     # Where:
     #     $Version is the current version of Rigel
     #     $site_config is the configuration to use for this feed
     #     $name is the name of the sample to return
     #
-    sub AddSample
+    sub FeedSample
         {
         my $VERSION     = shift;
         my $site_config = shift;
         my $samplename  = lc( shift );
 
-        # Retreive the standard Add Feed template
-        my $template_message = AddFeed( $VERSION, $site_config, $samplename );
+        if( $samplename eq "register.co.uk" )
+            {
+            $site_config->{'desc'} = "The Register";
+            $site_config->{'url'} = "http://www.theregister.co.uk/headlines.rss";
+            $site_config->{'subject'} = "%{item:title} [%{item:link}]";
+            $site_config->{'delivery-mode'} = "thtmllink";
+            $site_config->{'crop-start'} = "<div id=\"article\">";
+            $site_config->{'crop-end'} = "<p class=\"wptl btm\">";
+            $site_config->{'order'} = "-1";
+            }
+        elsif( $samplename eq "theinquirer.net" )
+            {
+            $site_config->{'desc'} = "The Inquirer";
+            $site_config->{'url'} = "http://feeds.theinquirer.net/feed/vnunet/the_INQUIRER";
+            $site_config->{'subject'} = "%{item:title} [%{item:link}]";
+            $site_config->{'delivery-mode'} = "htmllink";
+            $site_config->{'crop-start'} = "<div class=\"contentparent\">";
+            $site_config->{'crop-end'} = "<div class=\"article_page_ads_bottom\">";
+            }
+        elsif( $samplename eq "aintitcool.com" )
+            {
+            $site_config->{'desc'} = "Ain't it Cool News";
+            $site_config->{'url'} = "http://www.aintitcool.com/node/feed";
+            $site_config->{'subject'} = "%{item:title} [%{item:link}]";
+            $site_config->{'delivery-mode'} = "htmllink";
+            $site_config->{'crop-start'} = "<tr valign=\"top\" class=\"articlenews\">";
+            $site_config->{'crop-end'} = "</base>";
+            }
+        elsif( $samplename eq "penny-arcade.com" )
+            {
+            $site_config->{'desc'} = "Penny Arcade";
+            $site_config->{'url'} = "http://www.penny-arcade.com/rss.xml";
+            }
+        elsif( $samplename eq "wired.com" )
+            {
+            $site_config->{'desc'} = "Wired News";
+            $site_config->{'url'} = "http://feeds.wired.com/wired/index";
+            }
+        else
+            {
+            $site_config->{'desc'} = "Slashdot News";
+            $site_config->{'url'} = "http://rss.slashdot.org/Slashdot/slashdot";
+            }
+
+        return GenerateConfig( $VERSION, $site_config );
+        }
+
+    #
+    # This function returns the config message that would generate
+    # the $site_config array
+    #
+    #     RLTemplates::GenerateConfig( $Version, $site_config)
+    #
+    # Where:
+    #     $Version is the current version of Rigel
+    #     $site_config is the configuration to use for this feed
+    #
+    sub GenerateConfig
+        {
+        my $VERSION     = shift;
+        my $site_config = shift;
+        my $item        = "";
+        my $default_site = RLConfig::get_site_configall();
+
+        # Retreive the standard Add Feed template.
+        my $template_message = NewFeed( $VERSION, $site_config );
+
+        # Retreive the template items that can change.
+        my $template_items = __TemplateItems( $site_config );
+
+        # Loop through each possible item in the site config.
+        while ( ($item) = each( %{$site_config} ) )
+            {
+            # If the item value is not the default from the config file, uncomment
+            # it in the message body.
+            if( $site_config->{$item} ne $default_site->{$item} )
+                {
+                my $replace = $template_items->{$item};
+                my $with = $replace;
+                $with =~ s/^#//;
+
+                $template_message =~ s/$replace/$with/;
+                }
+            }
+
+        return $template_message;
+        }
+
+    ###########################################################################
+    #  Internal Functions only from here
+    ###########################################################################
+
+    #
+    # This function returns all the possible settings in the template
+    # message that can be changed as an array.
+    #
+    #     __TemplateItems(  $site_config)
+    #
+    # Where:
+    #     $site_config is the configuration to use for this feed
+    #
+    sub __TemplateItems
+        {
+        my $site_config = shift;
+        my $item        = ();
 
         # These are the configuriaton items that appear in the standard add feed template
         # each one can be replaced with something specific to the feed, you must replace
         # $name and $url.
-        my $name = "Subject: Template feed";
-        my $url = "http://template";
-        my $folder = "#folder = $site_config->{'folder'}";
-        my $subject = "#subject = $site_config->{'subject'}";
-        my $delivery = "#delivery-mode = $site_config->{'delivery-mode'}";
-        my $cropstart = "#crop-start = $site_config->{'crop-start'}";
-        my $cropend = "#crop-end = $site_config->{'crop-end'}";
-        my $order = "#article-order = $site_config->{'article-order'}";
+        $item->{'desc'}             = "Subject: $site_config->{'desc'}";
+        $item->{'url'}                 = $site_config->{'url'};
+        $item->{'folder'}             = "#folder = $site_config->{'folder'}";
+        $item->{'subject'}             = "#subject = $site_config->{'subject'}";
+        $item->{'delivery-mode'}     = "#delivery-mode = $site_config->{'delivery-mode'}";
+        $item->{'crop-start'}         = "#crop-start = $site_config->{'crop-start'}";
+        $item->{'crop-end'}         = "#crop-end = $site_config->{'crop-end'}";
+        $item->{'article-order'}     = "#article-order = $site_config->{'article-order'}";
+        $item->{'to'}                 = "#to = $site_config->{'to'}";
+        $item->{'from'}             = "#from = $site_config->{'from'}";
+        $item->{'expire'}             = "#expire = $site_config->{'expire'}";
+        $item->{'expire-unseen'}     = "#expire-unseen = $site_config->{'expire-unseen'}";
+        $item->{'expire-folder'}     = "#expire-folder = $site_config->{'expire-folder'}";
+        $item->{'sync'}             = "#sync = $site_config->{'sync'}";
+        $item->{'use-subjects'}     = "#use-subjects = $site_config->{'use-subjects'}";
+        $item->{'force-ttl'}         = "#force-ttl = $site_config->{'force-ttl'}";
+        $item->{'ignore-dates'}     = "#ignore-dates = $site_config->{'ignore-dates'}";
 
-		# The following lines are other items we may use in the future, included here for
-		# completness only.
-		#
-		#        my $to = "#to = $site_config->{'to'}";
-		#        my $from = "#from = $site_config->{'from'}";
-		#        my $expire = "#expire = $site_config->{'expire'}";
-		#        my $eunseen = "#expire-unseen = $site_config->{'expire-unseen'}";
-		#        my $efolder = "#expire-folder = $site_config->{'expire-folder'}";
-		#        my $sync = "#sync = $site_config->{'sync'}";
-		#        my $subcache = "#use-subjects = $site_config->{'use-subjects'}";
-		#        my $ttl = "#force-ttl = $site_config->{'force-ttl'}";
-		#	my $idates = "ignore-dates = $site_config->{'ignore-dates'}";
-
-        if( $samplename eq "register.co.uk" )
-            {
-            $template_message =~ s/$name/Subject: The Register/;
-            $template_message =~ s/$url/http:\/\/www.theregister.co.uk\/headlines.rss/;
-            $template_message =~ s/$subject/subject = %{item:title} \[%{item:link}\]/;
-            $template_message =~ s/$delivery/delivery-mode = thtmllink/;
-            $template_message =~ s/$cropstart/crop-start = <div id="article">/;
-            $template_message =~ s/$cropend/crop-end = <p class="wptl btm">/;
-            $template_message =~ s/$order/article-order = -1/;
-            }
-        elsif( $samplename eq "theinquirer.net" )
-            {
-            $template_message =~ s/$name/Subject: The Inquirer/;
-            $template_message =~ s/$url/http:\/\/feeds.theinquirer.net\/feed\/vnunet\/the_INQUIRER/;
-            $template_message =~ s/$subject/subject = %{item:title} \[%{item:link}\]/;
-            $template_message =~ s/$delivery/delivery-mode = htmllink/;
-            $template_message =~ s/$cropstart/crop-start = <div class="contentparent">/;
-            $template_message =~ s/$cropend/crop-end = <div class="article_page_ads_bottom">/;
-            }
-        elsif( $samplename eq "aintitcool.com" )
-            {
-            $template_message =~ s/$name/Subject: Ain't it Cool News/;
-            $template_message =~ s/$url/http:\/\/www.aintitcool.com\/node\/feed/;
-            $template_message =~ s/$subject/subject = %{item:title} \[%{item:link}\]/;
-            $template_message =~ s/$delivery/delivery-mode = htmllink/;
-            $template_message =~ s/$cropstart/crop-start = <tr valign="top" class="articlenews">/;
-            $template_message =~ s/$cropend/crop-end = <\/base>/;
-            }
-        elsif( $samplename eq "penny-arcade.com" )
-            {
-            $template_message =~ s/$name/Subject: Penny Arcade/;
-            $template_message =~ s/$url/http:\/\/www.penny-arcade.com\/rss.xml/;
-            }
-        elsif( $samplename eq "wired.com" )
-            {
-            $template_message =~ s/$name/Subject: Wired News/;
-            $template_message =~ s/$url/http:\/\/feeds.wired.com\/wired\/index/;
-            }
-        else
-            {
-            $template_message =~ s/$name/Subject: Slashdot News/;
-            $template_message =~ s/$url/http:\/\/rss.slashdot.org\/Slashdot\/slashdot/;
-            }
-
-        return $template_message;
+        return $item;
         }
     }
 
