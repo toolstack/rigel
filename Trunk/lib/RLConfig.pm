@@ -33,6 +33,8 @@ package RLConfig;
     use RLCommon;
     use RLUnicode;
     use RLDebug;
+    use RLIMAP;
+    use RLTemplates;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
@@ -59,6 +61,7 @@ package RLConfig;
         'config-file'          => 'Rigel.conf',
         'VERSION'              => $VERSION,
         'debug'                => 0,
+        'config-update'        => undef,
         };
 
     our $DEFAULT_SITE_CONFIG =
@@ -105,9 +108,56 @@ package RLConfig;
         }
 
     #
+    # This function updates the IMAP configuraiton messages with
+    # the current template.
+    #
+    #     RLConfig::UpdateConfig(  $imap, \@sites)
+    #
+    # Where:
+    #     $imap is the IMAP connection handle
+    #     \@sites is an arrary reference of site config's
+    #
+    sub UpdateConfig
+        {
+        my $imap    = shift;
+        my $sites   = shift;
+        my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+
+        $folder = RLIMAP::get_real_folder_name( $folder, $DEFAULT_GLOBAL_CONFIG->{'directory_separator'}, $DEFAULT_GLOBAL_CONFIG->{'prefix'} );
+
+        $imap->select( $folder );
+
+        # First mark all the messages as deleted in the config folder.
+        RLIMAP::delete_folder_items( $imap, $folder );
+
+        my $sites_processed = 0;
+
+        #Add in all of the new config messages
+        for my $site_config (@{$sites})
+            {
+            print "\t$site_config->{'desc'}\r\n";
+
+            $imap->append_string( $folder, RLTemplates::GenerateConfig( $VERSION, $site_config ), "Seen" );
+
+            $sites_processed++;
+            }
+
+        # Make sure all the config messages are marked as read.
+        RLIMAP::mark_folder_read( $imap, $folder );
+
+        # Verify we now have twice as many messages in the config folder
+        # as we have site configs
+        if( $imap->message_count( $folder ) >= ( $sites_processed * 2 ) )
+            {
+            # Expunge the config folder
+            $imap->expunge( $folder );
+            }
+        }
+
+    #
     # This function imports an OPML file
     #
-    #     RIGELLIB::RLConfig::import_file(  $filename )
+    #     RLConfig::import_file(  $filename )
     #
     # Where:
     #     $filename is the fully qulified file name to import
@@ -172,7 +222,7 @@ package RLConfig;
     # This function parses a URL list from the old rss2imap utlity, it should
     # be depricated at this point.
     #
-    #     RIGELLIB::RLConfig::parse_url_list(  @filename )
+    #     RLConfig::parse_url_list(  @filename )
     #
     # Where:
     #     @filename is the fully qulified file name array to parse
@@ -194,7 +244,7 @@ package RLConfig;
                 s/\s*$//;
                 if( /^(ftp|http|https):\/\// )
                     {
-                    push @{$config{url}}, $_;
+                    $config{url}  = RLCommon::str_trim( $_ );
                     }
                 elsif( /^\#/ )
                     {
@@ -239,7 +289,7 @@ package RLConfig;
     # This function parses a URL list from a string, it is the new code used
     # to replace parse_url_list in Rigel.
     #
-    #     RIGELLIB::RLConfig::parse_url_list_from_string(  $feedconf, $feeddesc )
+    #     RLConfig::parse_url_list_from_string(  $feedconf, $feeddesc )
     #
     # Where:
     #     $feedconf is a feed configuration object returned by get_site_conf()
@@ -262,7 +312,7 @@ package RLConfig;
 
             if( /^(ftp|http|https):\/\// )
                 {
-                push @{$config{url}}, RLCommon::str_trim( $_ );
+                $config{url} = RLCommon::str_trim( $_ );
                 }
             elsif(/^\#/ )
                 {
@@ -303,7 +353,7 @@ package RLConfig;
     #
     # This function exports an OPML file from the Rigel configuration.
     #
-    #     RIGELLIB::RLConfig::export_file(  @filename )
+    #     RLConfig::export_file(  @filename )
     #
     # Where:
     #     @filename is an array of file names to export, only one should be passed
@@ -455,7 +505,7 @@ package RLConfig;
     #
     # This function returns a global configuration variable for a given setting
     #
-    #     RIGELLIB::RLConfig::get_global_conf(  $key )
+    #     RLConfig::get_global_conf(  $key )
     #
     # Where:
     #     $key is the configuration variable you want the setting for
@@ -470,7 +520,7 @@ package RLConfig;
     #
     # This function returns a global configuration variable for a given setting
     #
-    #     RIGELLIB::RLConfig::set_global_conf(  $key, $value )
+    #     RLConfig::set_global_conf(  $key, $value )
     #
     # Where:
     #     $key is the configuration variable you want to set
@@ -487,7 +537,7 @@ package RLConfig;
     #
     # This function returns a site configuration variable for a given setting
     #
-    #     RIGELLIB::RLConfig::get_site_conf(  $key )
+    #     RLConfig::get_site_conf(  $key )
     #
     # Where:
     #     $key is the configuration variable you want the setting for
@@ -502,7 +552,7 @@ package RLConfig;
     #
     # This function returns the version of Rigel
     #
-    #     RIGELLIB::RLConfig::get_version( )
+    #     RLConfig::get_version( )
     #
     sub get_version
         {
@@ -512,7 +562,7 @@ package RLConfig;
     #
     # This function returns the default global configuration settings
     #
-    #     RIGELLIB::RLConfig::get_global_conf( )
+    #     RLConfig::get_global_conf( )
     #
     sub get_global_configall
         {
@@ -522,7 +572,7 @@ package RLConfig;
     #
     # This function returns the default site configuration settings
     #
-    #     RIGELLIB::RLConfig::get_global_conf( )
+    #     RLConfig::get_global_conf( )
     #
     sub get_site_configall
         {
@@ -532,7 +582,7 @@ package RLConfig;
     #
     # This function applies the Rigel configuration templates to a string
     #
-    #     RIGELLIB::Rigel->apply_template(  $rss, $item, $folder)
+    #     RLConfig::apply_template(  $rss, $item, $folder)
     #
     # Where:
     #     $rss is the feed (optional)
@@ -688,7 +738,12 @@ package RLConfig;
 
             $config_key = RLCommon::str_trim( $config_key );
             $value      = RLCommon::str_trim( $value );
-            $value = undef if ($value eq "undef" || $value eq "" || $value eq "no" );
+
+            if ($value eq "undef" || $value eq "" || $value eq "no" )
+                {
+                $value = undef;
+                }
+
             $return_hash{$config_key} = $value;
             }
 
@@ -709,7 +764,7 @@ package RLConfig;
                    's|host=s'                      => \$DEFAULT_GLOBAL_CONFIG->{'host'},
                    'u|user=s'                      => \$DEFAULT_GLOBAL_CONFIG->{'user'},
                    'P|port=s'                      => \$DEFAULT_GLOBAL_CONFIG->{'port'},
-                   'm|last-modified-folder=s'     => \$DEFAULT_GLOBAL_CONFIG->{'last-modified-folder'},
+                   'm|last-modified-folder=s'      => \$DEFAULT_GLOBAL_CONFIG->{'last-modified-folder'},
                    'password=s'                    => \$DEFAULT_GLOBAL_CONFIG->{'password'},
                    'p|prefix=s'                    => \$DEFAULT_GLOBAL_CONFIG->{'prefix'},
                    'D|debug'                       => \$DEFAULT_GLOBAL_CONFIG->{'debug'},
@@ -726,6 +781,7 @@ package RLConfig;
                    'h|help'                        => \$DEFAULT_GLOBAL_CONFIG->{'help'},
                    'v|version'                     => \$DEFAULT_GLOBAL_CONFIG->{'version'},
                    'f|configfile=s'                => \$DEFAULT_GLOBAL_CONFIG->{'config-file'},
+                   'R|refreshconfig'               => \$DEFAULT_GLOBAL_CONFIG->{'config-update'},
                     );
 
         # at this point. @ARGV reference contents is changed!.

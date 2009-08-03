@@ -40,7 +40,7 @@ package RLDebug;
     # This function returns true/false depending upon if debugging is enabled
     # at a given level.  Usage should be:
     #
-    #     RIGELLIB::Debug->DebugEnabled( $level )
+    #     RLDebug::DebugEnabled( $level )
     #
     # Where:
     #     $level is a value between 0 and 3.
@@ -63,7 +63,7 @@ package RLDebug;
     # This function outputs debug information if debugging is enabled
     # at a given level.  Usage should be:
     #
-    #     RIGELLIB::Debug->OutputDebug( $level, $string, $variable )
+    #     Debug::OutputDebug( $level, $string, $variable )
     #
     # Where:
     #     $level is the desired output level to execute at

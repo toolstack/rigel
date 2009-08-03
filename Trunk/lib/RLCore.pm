@@ -102,20 +102,24 @@ package RLCore;
         # Finally, load the feeds from the server
         my $site_config_list = __get_feeds_from_imap();
 
+        #   Update the IMAP configuration messages if it's been requested.
+        if( $GLOBAL_CONFIG->{'config-update'} )
+            {
+            print "Updating the IMAP configuration messages...\r\n";
+            RLConfig::UpdateConfig( $IMAP_CONNECT, $site_config_list );
+            }
+
         for my $site_config (@{$site_config_list})
             {
-            for my $url (@{$site_config->{url}})
+            my ( $rss, $ttl, @subject_lines ) = __get_rss( $site_config->{url}, $site_config );
+
+            if( !$rss )
                 {
-                my ( $rss, $ttl, @subject_lines ) = __get_rss( $url, $site_config );
-
-                if( !$rss )
-                    {
-                    next;
-                    }
-
-                __send_feed( $rss, $site_config, $ttl, \@subject_lines );
-                __expire_feed( $rss, $site_config );
+                next;
                 }
+
+            __send_feed( $rss, $site_config, $ttl, \@subject_lines );
+            __expire_feed( $rss, $site_config );
             }
 
         $IMAP_CONNECT->close();
@@ -449,8 +453,8 @@ package RLCore;
                 }
 
             # Check to see if the rss item is older than the last update, in otherwords, the user
-            # deleted it so we shouldn't add it back in.   There can be cases where the pubdate 
-            # provided in the rss feed on new items older than the last update so the 
+            # deleted it so we shouldn't add it back in.   There can be cases where the pubdate
+            # provided in the rss feed on new items older than the last update so the
             # 'ignore-dates' is provided to override this behaviour.
             RLDebug::OutputDebug( 2, "Is '$rss_time' > '" . $site_config->{'last-updated'} . "' ?" );
             RLDebug::OutputDebug( 2, "Or is '$rss_date' = '' ?" );
@@ -778,7 +782,7 @@ BODY
         ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
 
         RLDebug::OutputDebug( 2, "Getting headers for item with subject: $subject" );
-		
+
         my $mime_type;
 
         if( $site_config->{'delivery-mode'} eq 'text'
@@ -1269,12 +1273,7 @@ BODY
 
             %config = RLConfig::parse_url_list_from_string( $feedconf );
 
-            $siteurl = "";
-            foreach my $site (@{$config{url}})
-                {
-                $siteurl = $siteurl . $site;
-                }
-
+            $siteurl = $config{url};
             $siteurl = RLCommon::str_trim( $siteurl );
 
             if( $feeddesc eq "" ) { $feeddesc = $siteurl; }
@@ -1311,7 +1310,9 @@ BODY
         $IMAP_CONNECT->expunge( $AddFolder );  # For some reason the folder has to be passed here otherwise the expunge fails
 
         # Now fill in any extra template messages we need
-        my $template_message = RLTemplates::AddFeed( $VERSION, $site_config );
+        $site_config->{'desc'} = "Template feed";
+        $site_config->{'url'}  = "http://template";
+        my $template_message   = RLTemplates::NewFeed( $VERSION, $site_config );
 
         my $i = 10 - $IMAP_CONNECT->message_count( $AddFolder );
         for( ; $i != 0; $i-- )
@@ -1381,7 +1382,7 @@ BODY
             {
             RLDebug::OutputDebug( 2, "Creating help messages..." );
             my $message = "";
-            my @samples = RLTemplates::SampleList();
+            my @samples = RLTemplates::FeedSampleList();
             my $sample = "";
 
             # Add the samples first so that the help message show at the top
@@ -1389,11 +1390,11 @@ BODY
             # date.
             foreach $sample (@samples)
                 {
-                $message = RLTemplates::AddSample( $VERSION, $site_config, $sample );
+                $message = RLTemplates::FeedSample( $VERSION, $site_config, $sample );
                 $IMAP_CONNECT->append_string( $HelpFolder, $message, "Seen" );
                 }
 
-            $message = RLTemplates::AddHelp( $VERSION, $site_config );
+            $message = RLTemplates::Help( $VERSION, $site_config );
             $IMAP_CONNECT->append_string( $HelpFolder, $message, "Seen" );
 
             # As we cannot count on the above addpend_string to actually mark the

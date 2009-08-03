@@ -35,7 +35,7 @@ package RLIMAP;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(imap_connect imap_connect_test get_latest_date imap_select_folder imap_create_folder get_real_folder_name mark_folder_read);
+    @EXPORT_OK=qw(imap_connect imap_connect_test get_latest_date imap_select_folder imap_create_folder get_real_folder_name mark_folder_read delete_folder_items);
 
     #
     # This function connects to the IMAP server and stores the connection handle
@@ -248,7 +248,7 @@ package RLIMAP;
     #
     # This function marks all items in and IMAP folder as seen.
     #
-    #     __mark_folder_read( $imap, $folder )
+    #     RLIMAP::mark_folder_read( $imap, $folder )
     #
     # Where:
     #     $imap is the connection to use
@@ -265,6 +265,29 @@ package RLIMAP;
         foreach $message ($imap->messages())
             {
             $imap->see( $message );
+            }
+        }
+
+    #
+    # This function marks all items in and IMAP folder as seen.
+    #
+    #     RLIMAP::delete_folder_items( $imap, $folder )
+    #
+    # Where:
+    #     $imap is the connection to use
+    #     $folder is the folder to work on (unused)
+    #
+    sub delete_folder_items
+        {
+        my $imap = shift;
+        my $folder = shift;
+        my $message;
+
+        $imap->select( $folder );
+
+        foreach $message ($imap->messages())
+            {
+            $imap->delete_message( $message );
             }
         }
     }
