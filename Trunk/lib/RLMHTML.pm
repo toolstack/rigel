@@ -24,10 +24,12 @@ package RLMHTML;
     {
     use strict;
     use LWP::UserAgent;
+    use HTTP::Request;
     use HTML::TreeBuilder;
     use File::Basename;
     use MIME::Base64;
     use MIME::Types;
+    use Encode;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
@@ -258,7 +260,20 @@ package RLMHTML;
         my $req = HTTP::Request->new( GET => $url );
         my $res = $ua->request( $req );
 
-        return $res->content();
+        my $content = $res->content();
+
+        # It seems, some web pages, encode their content in UTF-8, but don't
+        # say so in the HTTP headers, this causes UserAgent to return a string
+        # that is not in Perl's UTF-8 format even though the bytes in the string
+        # are UTF-8.  So check to see if we have a content-type meta data
+        # string in the content that indicates UTF-8, if so, force Perl to belive
+        # the content is REALLY UTF-8.
+        if( $content =~ m/<meta.*http-equiv=.Content-Type.*charset=UTF-8.*>/gi )
+            {
+            Encode::_utf8_on( $content );
+            }
+
+        return $content;
         }
     }
 
