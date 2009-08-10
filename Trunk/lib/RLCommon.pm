@@ -38,22 +38,22 @@ package RLCommon;
     sub SetCommonConfig
         {
         (%config) = %{(shift)};
+
+        my $filename = RLConfig::apply_template( undef, undef, undef, %config->{'log-file'} );
         
         if( %config->{'log-file'} )
             {
             if( %config->{'log-rotate'} eq "append" )
                 {
-                open( $LogFH, ">>" . %config->{'log-file'} );
+                open( $LogFH, ">>" . $filename );
                 }
             elsif( %config->{'log-rotate'} eq "unique" )
                 {
-                %config->{'log-file'} = __GetUniqueLogName();
-                
-                open( $LogFH, ">>" . %config->{'log-file'} );
+                open( $LogFH, ">>" . $filename );
                 }
             else
                 {
-                open( $LogFH, ">" . %config->{'log-file'} );
+                open( $LogFH, ">" . $filename );
                 }
             }
         }
@@ -70,25 +70,12 @@ package RLCommon;
             {
             close( $LogFH );
 
-            %config->{'log-file'} = __GetUniqueLogName();
-            
-            open( $LogFH, ">>" . %config->{'log-file'} );
+            open( $LogFH, ">>" . RLConfig::apply_template( undef, undef, undef, %config->{'log-file'} ) );
             }
             
         return;
         }
         
-    #
-    # This function returns an log file name based upon the current date/time
-    #
-    #     __GetUniqueLogName( )
-    #
-    sub __GetUniqueLogName
-        {
-        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-        
-        return "Rigel-" . ($year + 1900) . "-" . $mon . "-" . $mday . "-" . $hour . "-" . $min . ".log";
-        }
     #
     # This function returns an array with two entires, the rss feed as a
     # string and the response code from the HTTP connection.
