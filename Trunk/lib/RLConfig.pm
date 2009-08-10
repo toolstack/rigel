@@ -585,22 +585,34 @@ package RLConfig;
     #
     # This function applies the Rigel configuration templates to a string
     #
-    #     RLConfig::apply_template(  $rss, $item, $folder)
+    #     RLConfig::apply_template(  $rss, $item, $folder, $string)
     #
     # Where:
     #     $rss is the feed (optional)
     #     $item is the feed item (optional)
     #     $folder is a flag (t/f) (optional)
+    #     $string is the string to apply the template to
     #
     sub apply_template
         {
         my $rss        = shift;
         my $item       = shift;
         my $folder_flg = shift;
+        my $from       = shift;
 
-        my @from       = @_;
         my %cnf;
 
+        ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:dom'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
+        
+        $cnf{'date:dow'} = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat' )[$cnf{'date:weekday'}];
+        $cnf{'date:longdow'} = ( 'Sunday', 'Monday', 'Tueday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' )[$cnf{'date:weekday'}];
+        $cnf{'date:month'} = ( "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec" )[$cnf{'date:monthnumber'}];
+        $cnf{'date:longmonth'} = ( "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" )[$cnf{'date:monthnumber'}];
+        $cnf{'date:year'} += 1900;
+        $cnf{'date:monthnumber'} += 1;
+        $cnf{'date:weekday'} += 1;
+        $cnf{'date:yearday'} += 1;
+        
         if( $rss )
             {
             $cnf{'channel:title'}       = $rss->title();
@@ -633,30 +645,25 @@ package RLConfig;
         $cnf{'newline'}       = "\n";
 
         my @result;
-        for my $from (@from)
+        if( $from )
             {
-            if( $from )
+            for my $key (keys %cnf)
                 {
-                for my $key (keys %cnf)
+                if( !$cnf{$key} ) { next; }
+
+                if( $folder_flg )
                     {
-                    if( !$cnf{$key} ) { next; }
-
-                    if( $folder_flg )
-                        {
-                        $cnf{$key} =~ s/\./:/g ;
-                        }
-
-                    my $key2 = "%{" . $key . "}";
-                    $from =~ s/$key2/$cnf{$key}/eg;
+                    $cnf{$key} =~ s/\./:/g ;
                     }
 
-                $from =~ s/%{.*}//g;
+                my $key2 = "%{" . $key . "}";
+                $from =~ s/$key2/$cnf{$key}/eg;
                 }
 
-            push @result, $from;
+            $from =~ s/%{.*}//g;
             }
 
-        return @result;
+        return $from;
         }
 
     ###########################################################################

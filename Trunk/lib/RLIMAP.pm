@@ -89,8 +89,8 @@ package RLIMAP;
         # Now that we have the directory seperator, update the management
         # folder value and last modified folder value with the proper template
         # values
-        ( $GLOBAL_CONFIG->{'management-folder'} ) = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'management-folder'} );
-        ( $GLOBAL_CONFIG->{'last-modified-folder'} ) = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
+        $GLOBAL_CONFIG->{'management-folder'} = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'management-folder'} );
+        $GLOBAL_CONFIG->{'last-modified-folder'} = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
 
         if( RLDebug::DebugEnabled( 3 ) )
             {
