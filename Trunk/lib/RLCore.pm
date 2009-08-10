@@ -145,7 +145,7 @@ package RLCore;
         {
         my $link        = shift;
         my $site_config = shift;
-        my ($folder)    = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
+        my $folder      = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
         my $headers     = {};
 
         # start site processing....
@@ -398,7 +398,7 @@ package RLCore;
             return;
             }
 
-        my ($folder) = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder} );
+        my $folder = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder} );
         $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 1, "IMAP folder to use = $folder" );
         RLIMAP::imap_select_folder( $IMAP_CONNECT, $folder );
@@ -611,9 +611,10 @@ package RLCore;
             return;
             }
 
-        my ($folder, $expire_folder) = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder}, $site_config->{'expire-folder'} );
-        $folder        = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
-        $expire_folder = RLIMAP::get_real_folder_name( $expire_folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        my $folder        = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder} );
+        my $expire_folder = RLConfig::apply_template( $rss, undef, 1, $site_config->{'expire-folder'} );
+        $folder           = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $expire_folder    = RLIMAP::get_real_folder_name( $expire_folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
 
         RLDebug::OutputDebug( 2, "RSS Folder:" . $folder );
         RLDebug::OutputDebug( 2, "Expire Folder:" . $expire_folder );
@@ -704,7 +705,7 @@ BODY
             $body = $body . $subject . "\r\n";
             }
 
-        my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
+        my $folder = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
         $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "last update folder: $folder" );
         $IMAP_CONNECT->select( $folder );
@@ -781,7 +782,8 @@ BODY
         my $to         = $site_config->{to};
         my $message_id = __gen_message_id( $rss, $item );
 
-        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
+        $subject = RLConfig::apply_template( $rss, $item, undef, $subject );
+        $from    = RLConfig::apply_template( $rss, $item, undef, $from );
 
         RLDebug::OutputDebug( 2, "Getting headers for item with subject: $subject" );
 
@@ -868,7 +870,8 @@ BODY
         my $desc        = $item->description();
         my $link         = $item->link();
 
-        ($subject, $from) = RLConfig::apply_template( $rss, $item, undef, $subject, $from );
+        $subject = RLConfig::apply_template( $rss, $item, undef, $subject );
+        $from    = RLConfig::apply_template( $rss, $item, undef, $from );
 
         if( $site_config->{'delivery-mode'} eq 'embedded' )
             {
@@ -1133,7 +1136,7 @@ BODY
         my @messages;
         my @config_list;
         my %config;
-        my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+        my $folder = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
         my $mp       = new MIME::Parser;
 
         # setup the message parser so we don't get any errors and we
@@ -1230,10 +1233,10 @@ BODY
         my %config;
         my $siteurl;
         my $uid;
-        my ($AddFolder)     = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" ) );
-        my ($DeleteFolder)  = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" ) );
-        my ($ConfigFolder)  = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" ) );
-        my ($LastModFolder) = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" ) );
+        my $AddFolder     = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" );
+        my $DeleteFolder  = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" );
+        my $ConfigFolder  = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+        my $LastModFolder = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
         my $e;
         my $mp              = new MIME::Parser;
 
@@ -1370,7 +1373,7 @@ BODY
         {
         my $site_config = RLConfig::get_site_configall();
         my @messages;
-        my ($HelpFolder)    = join( '', RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Help" ) );
+        my $HelpFolder  = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Help" );
 
         $HelpFolder = RLIMAP::get_real_folder_name( $HelpFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "Help folder: $HelpFolder" );
