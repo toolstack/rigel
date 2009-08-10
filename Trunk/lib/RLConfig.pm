@@ -602,7 +602,7 @@ package RLConfig;
 
         my %cnf;
 
-        ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:dom'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
+        ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:day'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
         
         $cnf{'date:dow'} = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat' )[$cnf{'date:weekday'}];
         $cnf{'date:longdow'} = ( 'Sunday', 'Monday', 'Tueday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' )[$cnf{'date:weekday'}];
