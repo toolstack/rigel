@@ -32,7 +32,7 @@ package main;
 
 sub show_usage
     {
-    print <<"EOS"
+    my $usage = <<"EOS"
 
 Usage: Rigel [options]
 
@@ -63,6 +63,9 @@ Usage: Rigel [options]
 
 EOS
 ;
+
+    RLCommon::LogLine( $usage );
+
     exit();
     }
 
@@ -92,7 +95,7 @@ sub main
     #    print version
     if( $config{version} )
         {
-        print "Rigel $version\r\n";
+        RLCommon::LogLine( "Rigel $version\r\n" );
         exit();
         }
 
@@ -102,7 +105,7 @@ sub main
         }
 
     #   Welcome message.
-    print "* Welcome to Rigel $version!\r\n";
+    RLCommon::LogLine( "* Welcome to Rigel $version!\r\n" );
 
     #   Import, export process.
     #   Option import accepts one filename
@@ -116,7 +119,7 @@ sub main
     #   Prompt for imap and proxy password if required
     if( !$config{'password'} )
         {
-        print "You require authentication ...\r\n";
+        RLCommon::LogLine( "You require authentication ...\r\n" );
         RLCommon::getProxyPass_ifEnabled();
 
         RLConfig::set_global_config( 'password', RLCommon::getPass( 'IMAP password: ' ) );
@@ -142,8 +145,8 @@ sub main
 
         if( !defined( $config{nodaemon} ) )
             {
-            print "Starting Rigel background daemon...\r\n";
-            print "Update interval: $config{interval} minutes\r\n";
+            RLCommon::LogLine( "Starting Rigel background daemon...\r\n" );
+            RLCommon::LogLine( "Update interval: $config{interval} minutes\r\n" );
 
             if( fork() )
                 {
@@ -163,6 +166,7 @@ sub main
             {
             eval { RLCore::UpdateFeeds(); };
             sleep $config{interval} * 60;
+            RLCommon::RotateLog();
             }
         }
     }
