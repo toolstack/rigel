@@ -53,8 +53,8 @@ package RLIMAP;
 
             if( RLCommon::is_error() )
                 {
-                print "you specify use SSL but dont install IO::Socket::SSL.\r\n";
-                print "please install it via cpan.\r\n";
+                RLCommon::LogLine( "you specify use SSL but dont install IO::Socket::SSL.\r\n" );
+                RLCommon::LogLine( "please install it via cpan.\r\n" );
 
                 exit();
                 }
@@ -107,8 +107,8 @@ package RLIMAP;
         # authentication failure. sorry.
         if( !$imap->IsAuthenticated() )
             {
-            print "Authentication failure, sorry.\r\n";
-            print "connected to : $GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}\r\n";
+            RLCommon::LogLine( "Authentication failure, sorry.\r\n" );
+            RLCommon::LogLine( "connected to : $GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}\r\n" );
 
             exit();
             }
@@ -186,7 +186,7 @@ package RLIMAP;
         my $folder  = shift;
 
         imap_create_folder( $imap, $folder );
-        $imap->select( $folder ) || print "@!\r\n";
+        $imap->select( $folder ) || RLCommon::LogLine( "@!\r\n" );
         }
 
     #
@@ -204,7 +204,7 @@ package RLIMAP;
 
         if( !$imap->exists( $folder ) )
             {
-            $imap->create( $folder ) || print "WARNING: $@\r\n";
+            $imap->create( $folder ) || RLCommon::LogLine( "WARNING: $@\r\n" );
             }
         }
 
@@ -226,10 +226,7 @@ package RLIMAP;
 
         if( $prefix )
             {
-            $str = sprintf ("%s%s%s",
-                            RLUnicode::to_utf8( $prefix ),
-                            $dirsep,
-                            $str);
+            $str = RLUnicode::to_utf8( $prefix ) . $dirsep . $str;
             }
         else
             {

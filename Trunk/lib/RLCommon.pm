@@ -30,15 +30,65 @@ package RLCommon;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim is_error);
+    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim is_error LogLine RotateLog);
 
     our %config = undef;
-
+    our $LogFH   = undef;
+    
     sub SetCommonConfig
         {
         (%config) = %{(shift)};
+        
+        if( %config->{'log-file'} )
+            {
+            if( %config->{'log-rotate'} eq "append" )
+                {
+                open( $LogFH, ">>" . %config->{'log-file'} );
+                }
+            elsif( %config->{'log-rotate'} eq "unique" )
+                {
+                %config->{'log-file'} = __GetUniqueLogName();
+                
+                open( $LogFH, ">>" . %config->{'log-file'} );
+                }
+            else
+                {
+                open( $LogFH, ">" . %config->{'log-file'} );
+                }
+            }
         }
 
+    #
+    # This function rotates to the next log file name if unique logging is
+    # enabled.
+    #
+    #     RLCommon::RotateLog( )
+    #
+    sub RotateLog
+        {
+        if( %config->{'log-rotate'} eq "unique" )
+            {
+            close( $LogFH );
+
+            %config->{'log-file'} = __GetUniqueLogName();
+            
+            open( $LogFH, ">>" . %config->{'log-file'} );
+            }
+            
+        return;
+        }
+        
+    #
+    # This function returns an log file name based upon the current date/time
+    #
+    #     __GetUniqueLogName( )
+    #
+    sub __GetUniqueLogName
+        {
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+        
+        return "Rigel-" . ($year + 1900) . "-" . $mon . "-" . $mday . "-" . $hour . "-" . $min . ".log";
+        }
     #
     # This function returns an array with two entires, the rss feed as a
     # string and the response code from the HTTP connection.
@@ -157,7 +207,7 @@ package RLCommon;
             }
 
         # prompt and get username
-        print $prompt;
+        RLCommon::LogLine( $prompt );
         my $user = <STDIN>;
         chomp( $user );
         $user = undef unless length $user;
@@ -197,14 +247,14 @@ package RLCommon;
             return %config->{'proxy-pass'};
             }
 
-        print $prompt;
+        RLCommon::LogLine( $prompt );
         my $password = undef;
         if( $^O =~ /Win32/ )
             {
             eval 'use Term::Getch';
             if( $@ )
                 {
-                print "Term::Getch is not installed, can not continue!\r\n";
+                RLCommon::LogLine( "Term::Getch is not installed, can not continue!\r\n" );
                 die;
                 }
             else
@@ -220,14 +270,14 @@ package RLCommon;
                 $password = join( '' => @c );
                 }
 
-            print "\r\n";
+            RLCommon::LogLine( "\r\n" );
             }
         else
             {
             system( "stty -echo" );
             $password = <STDIN>;
             system( "stty echo" );
-            print "\r\n";  # because we disabled echo
+            RLCommon::LogLine( "\r\n" );  # because we disabled echo
             }
 
         chomp( $password );
@@ -296,6 +346,32 @@ package RLCommon;
             }
 
         return 1;
+        }
+
+    #
+    # This function logs a line of text to the console, or where it's supposed to.
+    #
+    #     RLCommon::LogLine( $string )
+    #
+    # Where:
+    #     $string is the string to log
+    #
+    sub LogLine
+        {
+        my $line    = shift;
+
+        # If we have a logfile to write to, then don't write to the console, unless 
+        # we are being forced to.
+        if( ( not defined( %config->{'log-file'} ) ) || defined( %config->{'force-console'} ) )
+            {
+            print $line;
+            }
+
+        # Write ot the logfile if we have one.
+        if( defined( %config->{'log-file'} ) )
+            {
+            print $LogFH $line;
+            }
         }
     }
 

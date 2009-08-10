@@ -85,11 +85,11 @@ package RLDebug;
         if( $__DebugLevel >= $level )
             {
             my $parent = ( caller(1) )[3];
-            print "[" . localtime() . "] " . $parent . ": " . $string . "\r\n";
+            RLCommon::LogLine( "[" . localtime() . "] " . $parent . ": " . $string . "\r\n" );
 
             if( defined( $var ) )
                 {
-                print Data::Dumper::Dumper( $var ) . "\r\n";
+                RLCommon::LogLine( Data::Dumper::Dumper( $var ) . "\r\n" );
                 }
             }
         }
