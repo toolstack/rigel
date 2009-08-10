@@ -79,7 +79,9 @@ package RLCore;
         {
         my $cipher = Crypt::CBC->new( -key => 'rigel007', -cipher => 'DES_PP', -salt => "rigel007");
 
-        print "----Start Encrypted Data----\r\n", $cipher->encrypt_hex( $GLOBAL_CONFIG->{encrypt} ), "\r\n----End Encrpyted Data----\r\n";
+        RLCommon::LogLine( "----Start Encrypted Data----\r\n" );
+        RLCommon::LogLine( $cipher->encrypt_hex( $GLOBAL_CONFIG->{encrypt} ) );
+        RLCommon::LogLine( "\r\n----End Encrpyted Data----\r\n" );
         }
 
     #
@@ -105,7 +107,7 @@ package RLCore;
         #   Update the IMAP configuration messages if it's been requested.
         if( $GLOBAL_CONFIG->{'config-update'} )
             {
-            print "Updating the IMAP configuration messages...\r\n";
+            RLCommon::LogLine( "Updating the IMAP configuration messages...\r\n" );
             RLConfig::UpdateConfig( $IMAP_CONNECT, $site_config_list );
             }
 
@@ -147,7 +149,7 @@ package RLCore;
         my $headers     = {};
 
         # start site processing....
-        print "\r\nprocessing '$site_config->{'desc'}'...\r\n";
+        RLCommon::LogLine( "\r\nprocessing '$site_config->{'desc'}'...\r\n" );
 
         $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "last update folder: $folder" );
@@ -159,7 +161,7 @@ package RLCore;
 
         if( RLCommon::is_error() )
             {
-            print "WARNING: $@\r\n";
+            RLCommon::LogLine( "WARNING: $@\r\n" );
             }
 
         my $latest = undef;
@@ -209,7 +211,7 @@ package RLCore;
         if( $rss_ttl > $ctime )
             {
             # Not time to update
-            print "\tTTL not yet expired, no update required.\r\n";
+            RLCommon::LogLine( "\tTTL not yet expired, no update required.\r\n" );
             return ( undef, undef, undef );
             }
         else
@@ -220,7 +222,7 @@ package RLCore;
             # If we didn't actually get an update from the feed, just return undef's
             if( scalar(@rss_and_response) == 0 )
                 {
-                print "\tFeed not modified, no update required.\r\n";
+                RLCommon::LogLine( "\tFeed not modified, no update required.\r\n" );
                 return ( undef, undef, undef );
                 }
             }
@@ -308,17 +310,17 @@ package RLCore;
 
         if( RLCommon::is_error() )
             {
-            print "\tFeed error, content will not be created.\r\n";
+            RLCommon::LogLine( "\tFeed error, content will not be created.\r\n" );
             return ( undef, $ttl, @subject_lines );
             }
 
         if( $rss )
             {
-            print "\tModified, updating IMAP items.\r\n";
+            RLCommon::LogLine( "\tModified, updating IMAP items.\r\n" );
             }
         else
             {
-            print "\tUnabled to retreive feed, not updating.\r\n";
+            RLCommon::LogLine( "\tUnabled to retreive feed, not updating.\r\n" );
             return ( undef, $ttl, @subject_lines );
             }
 
@@ -392,7 +394,7 @@ package RLCore;
             }
         else
             {
-            print "WARNING: unknown type [$type]!\r\n";
+            RLCommon::LogLine( "WARNING: unknown type [$type]!\r\n" );
             return;
             }
 
@@ -468,7 +470,7 @@ package RLCore;
 
                 if( RLCommon::is_error() )
                     {
-                    print "WARNING: $@\r\n";
+                    RLCommon::LogLine( "WARNING: $@\r\n" );
                     next;
                     }
 
@@ -564,11 +566,11 @@ package RLCore;
         my $ItemsUpdated = scalar( @append_items );
         if( $ItemsUpdated > 0 )
             {
-            print "\tAdded $ItemsUpdated articles.\r\n";
+            RLCommon::LogLine( "\tAdded $ItemsUpdated articles.\r\n" );
             }
         else
             {
-            print "\tNo items found to add.\r\n";
+            RLCommon::LogLine( "\tNo items found to add.\r\n" );
             }
 
         # If for some reason we don't have any items from the feed, we want to keep
@@ -627,7 +629,7 @@ package RLCore;
 
         if( RLCommon::is_error() )
             {
-            print "WARNING: $@\r\n";
+            RLCommon::LogLine( "WARNING: $@\r\n" );
             return;
             }
 
@@ -637,13 +639,13 @@ package RLCore;
             {
             RLIMAP::imap_create_folder( $IMAP_CONNECT, $expire_folder );
             for my $msg (@search) {
-                print "  moving: $msg -> $expire_folder\r\n";
+                RLCommon::LogLine( "  moving: $msg -> $expire_folder\r\n" );
                 $IMAP_CONNECT->move( $expire_folder, $msg );
                 }
             }
         else
             {
-            print "  deleting: [@search]\r\n";
+            RLCommon::LogLine( "  deleting: [@search]\r\n" );
             $IMAP_CONNECT->delete_message( @search );
             }
         }
@@ -1289,7 +1291,7 @@ Content-Transfer-Encoding: 7bit
 User-Agent: Rigel version $VERSION
 BODY
 ;
-                print "Adding feed: " . $siteurl . "\r\n";
+                RLCommon::LogLine( "Adding feed: " . $siteurl . "\r\n" );
 
                 $IMAP_CONNECT->append_string( $ConfigFolder, $headers . "\n" . $feedconf, "Seen" );
                 $IMAP_CONNECT->delete_message( $message );
@@ -1344,7 +1346,7 @@ BODY
         $IMAP_CONNECT->select( $LastModFolder );
         foreach $Subject (@FeedsToDelete)
             {
-            print "Deleting feed: " . $Subject . "\r\n";
+            RLCommon::LogLine( "Deleting feed: " . $Subject . "\r\n" );
             $message_id = sprintf( '%s@%s', $Subject, $GLOBAL_CONFIG->{host} );
             @search = $IMAP_CONNECT->search( "UNDELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel-checker\"" );
 
