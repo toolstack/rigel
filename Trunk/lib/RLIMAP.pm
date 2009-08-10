@@ -95,7 +95,7 @@ package RLIMAP;
         if( RLDebug::DebugEnabled( 3 ) )
             {
             $imap->Debug( 1 );
-            $imap->Debug_fh();
+            $imap->Debug_fh( RLCommon::GetLogFileHandle() );
             }
 
         if( $GLOBAL_CONFIG->{'use-ssl'} )

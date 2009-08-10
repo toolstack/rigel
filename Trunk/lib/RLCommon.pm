@@ -30,7 +30,7 @@ package RLCommon;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim is_error LogLine RotateLog);
+    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim is_error LogLine RotateLog GetLogFileHandle);
 
     our %config = undef;
     our $LogFH   = undef;
@@ -373,6 +373,28 @@ package RLCommon;
             print $LogFH $line;
             }
         }
+
+    #
+    # This function returns the current log file handle if one exists, otherwise
+    # stdout is returned.  This is used for IMAP debugging.
+    #
+    #     RLCommon::LogLine( $string )
+    #
+    # Where:
+    #     $string is the string to log
+    #
+    sub GetLogFileHandle
+        {
+        if( defined( $LogFH ) )
+            {
+            return $LogFH;
+            }
+        else
+            {
+            return *STDOUT;
+            }
+        }
+        
     }
 
 1;
