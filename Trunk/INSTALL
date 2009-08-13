@@ -232,5 +232,7 @@ Command Line Options
                                    MODE is "text", "raw"(default) or "embedded"
         -f   --configfile          Location and name of the configuration file.
         -h   --help                this help.
+        -R   --refreshconfig       Reformat all IMAP config messages to use the
+                                   standard template.
         -v   --version             version info.
 
