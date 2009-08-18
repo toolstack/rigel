@@ -1,0 +1,165 @@
+#!/usr/bin/env perl
+
+#
+# Rigel - an RSS to IMAP Gateway
+#
+# Copyright (C) 2004 Taku Kudo <taku@chasen.org>
+#               2005 Yoshinari Takaoka <mumumu@mumumu.org>
+#               2008 Greg Ross <greg@darkphoton.com>
+#     All rights reserved.
+#     This is free software with ABSOLUTELY NO WARRANTY.
+#
+# You can redistribute it and/or modify it under the terms of the
+# GPL2, GNU General Public License version 2.
+#
+
+#
+# This is the main Rigel script, it is responsible for inital
+# setup and calling of the subfunctions as required.
+#
+use lib './lib';
+
+use strict;
+use POSIX qw(setsid);
+use RLConfig;
+use RLCore;
+use RLCommon;
+use RLDebug;
+use RLIMAP;
+use Data::Dumper;
+
+package main;
+
+sub ShowUsage
+    {
+    my $usage = <<"EOS"
+
+Usage: Rigel [options]
+
+-s,  --host=HOST           use HOST as an IMAP host [localhost]
+-P,  --port=INT            use INT as a port number [143]
+-u,  --user=USER           use USER as a user name [$ENV{USER}]
+     --password=PASSWORD   use PASSWORD as your password
+-p,  --prefix=PREFIX       use PREFIX as a folder prefix name []
+                           set "INBOX" when you use courier-imap
+-m,  --last-modified-folder=FOLDER
+                           use "FOLDER" as the last-modified-folder
+-c,  --cram-md5            use cram-md5 authentication
+-o,  --once                run once and exit
+-n,  --nodaemon            run as a foreground process
+-i,  --interval=MIN        run at MIN intervals [30]
+     --proxy=HOST          use HOST as a http proxy
+     --proxy-user=USER     use proxy username
+     --proxy-pass=PASS     use proxy password
+-S   --use-ssl             use Secure Socket Layer(SSL)
+-e   --encrypt             encrypt a string (used for passwords)
+-d   --delivery-mode=MODE  mail delivery mode.
+                           MODE is "text"(default) or "html"
+-f   --configfile          Location and name of the configuration file.
+-h   --help                this help.
+-R   --refreshconfig       Reformat all IMAP config messages to use the
+                           standard template.
+-v   --version             version info.
+
+EOS
+;
+
+    RLCommon::LogLine( $usage );
+
+    exit();
+    }
+
+sub main
+    {
+    $| = 1;
+    select( STDERR );
+    $| = 1;
+    select( STDOUT );
+
+    # Load the configuration
+    RLConfig::LoadConfig();
+
+    # Initalize the Core library
+    RLCore::InitCore();
+
+    my %config      = %{RLConfig::GetGlobalConfig()};
+    my $version     = RLConfig::GetVersion();
+
+    # Set the current debug level
+    RLDebug::SetCurrentDebugLevel( $config{debug} );
+
+    # Initalize the common library
+    RLCommon::SetCommonConfig( \%config );
+
+    # print version
+    if( $config{version} )
+        {
+        RLCommon::LogLine( "Rigel $version\r\n" );
+        exit();
+        }
+
+    if( $config{help} )
+        {
+        ShowUsage();
+        }
+
+    # Welcome message.
+    RLCommon::LogLine( "* Welcome to Rigel $version!\r\n" );
+
+    # Prompt for imap and proxy password if required
+    if( !$config{'password'} )
+        {
+        RLCommon::LogLine( "You require authentication ...\r\n" );
+        RLCommon::GetProxyPass();
+
+        RLConfig::SetGlobalConfig( 'password', RLCommon::GetPass( 'IMAP password: ' ) );
+        }
+
+    # Finally do something!
+    if( $config{encrypt} )
+        {
+        # Encrypt a password and print it out so it can be stored
+        # in the config file for later use.
+        RLCore::Encrypt();
+        }
+    elsif( $config{once_p} || $config{debug} )
+        {
+        # We're only going to run once if that's all there is to do or
+        # if we're in debug mode.
+        RLCore::UpdateFeeds();
+        }
+    else
+        {
+        # Invoke once to check whether given parameters are OK
+        RLIMAP::IMAPTestConnect();
+
+        if( !defined( $config{nodaemon} ) )
+            {
+            RLCommon::LogLine( "Starting Rigel background daemon...\r\n" );
+            RLCommon::LogLine( "Update interval: $config{interval} minutes\r\n" );
+
+            if( fork() )
+                {
+                exit();
+                }
+
+            if ( $^O !~ /Win32/ ) { setsid(); }
+            umask( 022 );
+
+            open( STDIN, '/dev/null' ) or die;
+            open( STDOUT, '>>/dev/null' ) or die;
+            open( STDERR, '>>/dev/null' ) or die;
+            }
+
+        # Loop forever and sleep for a while.
+        while( 1 )
+            {
+            eval { RLCore::UpdateFeeds(); };
+            sleep $config{interval} * 60;
+            RLCommon::RotateLog();
+            }
+        }
+    }
+
+# Run the main Rigel code.
+main();
