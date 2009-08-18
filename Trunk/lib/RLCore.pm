@@ -53,7 +53,7 @@ package RLCore;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(InitCore encrypt UpdateFeeds);
+    @EXPORT_OK=qw(InitCore Encrypt UpdateFeeds);
 
     our $VERSION       = undef;
 
@@ -64,18 +64,18 @@ package RLCore;
 
     sub InitCore
         {
-        $GLOBAL_CONFIG = RLConfig::get_global_configall();
-        $SITE_CONFIG   = RLConfig::get_site_configall();
-        $VERSION       = RLConfig::get_version();
+        $GLOBAL_CONFIG = RLConfig::GetGlobalConfig();
+        $SITE_CONFIG   = RLConfig::GetSiteConfig();
+        $VERSION       = RLConfig::GetVersion();
         }
 
     #
     # This function encrpts a string so that it can be used in the
     # configuration file for a password
     #
-    #     RLCore::encrypt()
+    #     RLCore::Encrypt()
     #
-    sub encrypt
+    sub Encrypt
         {
         my $cipher = Crypt::CBC->new( -key => 'rigel007', -cipher => 'DES_PP', -salt => "rigel007");
 
@@ -93,16 +93,16 @@ package RLCore;
     sub UpdateFeeds
         {
         # First, connect to the IMAP server
-        $IMAP_CONNECT = RLIMAP::imap_connect( $GLOBAL_CONFIG );
+        $IMAP_CONNECT = RLIMAP::IMAPConnect( $GLOBAL_CONFIG );
 
         # Next, verify that the help messages exist and are up to date
-        __verify_help();
+        __VerifyHelp();
 
         # Next, check to see if there are any Add/Delete's to process
-        __process_change_requests();
+        __ProcessChangeRequests();
 
         # Finally, load the feeds from the server
-        my $site_config_list = __get_feeds_from_imap();
+        my $site_config_list = __GetFeedsFromIMAP();
 
         #   Update the IMAP configuration messages if it's been requested.
         if( $GLOBAL_CONFIG->{'config-update'} )
@@ -113,15 +113,15 @@ package RLCore;
 
         for my $site_config (@{$site_config_list})
             {
-            my ( $rss, $ttl, @subject_lines ) = __get_rss( $site_config->{url}, $site_config );
+            my ( $rss, $ttl, @subject_lines ) = __GetRSS( $site_config->{url}, $site_config );
 
             if( !$rss )
                 {
                 next;
                 }
 
-            __send_feed( $rss, $site_config, $ttl, \@subject_lines );
-            __expire_feed( $rss, $site_config );
+            __SendFeed( $rss, $site_config, $ttl, \@subject_lines );
+            __ExpireFeed( $rss, $site_config );
             }
 
         $IMAP_CONNECT->close();
@@ -135,23 +135,23 @@ package RLCore;
     # This function does the grunt work of getting the feed, ensuring TTL's
     # are handled and if any updates need to be made
     #
-    #     RLCore::__get_rss( $url, $site_config)
+    #     __GetRSS( $url, $site_config)
     #
     # Where:
     #     $url is the url of the feed
     #     $site_config is the configuration to use for this feed
     #
-    sub __get_rss
+    sub __GetRSS
         {
         my $link        = shift;
         my $site_config = shift;
-        my $folder      = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
+        my $folder      = RLConfig::ApplyTemplate( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
         my $headers     = {};
 
         # start site processing....
         RLCommon::LogLine( "\r\nprocessing '$site_config->{'desc'}'...\r\n" );
 
-        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $folder = RLIMAP::GetRealFolderName( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "last update folder: $folder" );
         $IMAP_CONNECT->select( $folder );
 
@@ -159,14 +159,14 @@ package RLCore;
         my @search = $IMAP_CONNECT->search( "HEADER message-id \"$message_id\"" );
         RLDebug::OutputDebug( 2, "HEADER message-id \"$message_id\"" );
 
-        if( RLCommon::is_error() )
+        if( RLCommon::IsError() )
             {
             RLCommon::LogLine( "WARNING: $@\r\n" );
             }
 
         my $latest = undef;
         my $lmsg = undef;
-        ( $latest, $lmsg ) = RLIMAP::get_latest_date( $IMAP_CONNECT, \@search );
+        ( $latest, $lmsg ) = RLIMAP::GetLatestDate( $IMAP_CONNECT, \@search );
         RLDebug::OutputDebug( 2, "Message search: ", \@search );
         RLDebug::OutputDebug( 2, "Latest message: $lmsg" );
 
@@ -217,7 +217,7 @@ package RLCore;
         else
             {
             # We're good to go, get the update
-            @rss_and_response = RLCommon::getrss_and_response( $link, $headers, $rss_ttl );
+            @rss_and_response = RLCommon::GetRSS( $link, $headers, $rss_ttl );
 
             # If we didn't actually get an update from the feed, just return undef's
             if( scalar(@rss_and_response) == 0 )
@@ -261,7 +261,7 @@ package RLCore;
                     {
                     # get_mime_text_body will retrevie all the plain text peices of the
                     # message and return it as one string.
-                    $subject_glob = RLCommon::str_trim( __get_mime_text_body( $e ) );
+                    $subject_glob = RLCommon::StrTrim( __GetMIMETextBody( $e ) );
                     $mp->filer->purge;
                     }
                 }
@@ -294,7 +294,7 @@ package RLCore;
 
         # Do some rudimentary checks/fixes on the feed before parsing it
         RLDebug::OutputDebug( 1, "Fix feed for common errors..." );
-        $content = __fix_feed( $content );
+        $content = __FixFeed( $content );
         RLDebug::OutputDebug( 1, "Fix feed complete." );
 
         # As FeedPP doesn't understand TTL values in the feed, check to see
@@ -308,7 +308,7 @@ package RLCore;
         # Parse the feed
         eval { $rss = XML::FeedPP->new($content); };
 
-        if( RLCommon::is_error() )
+        if( RLCommon::IsError() )
             {
             RLCommon::LogLine( "\tFeed error, content will not be created.\r\n" );
             return ( undef, $ttl, @subject_lines );
@@ -348,7 +348,7 @@ package RLCore;
     # server as well as cleaning up old articles if required and updating the last
     # update information.
     #
-    #     RLCore::__send_feed( $rss, $site_config, $ttl, $subjects )
+    #     RLCore::__SendFeed( $rss, $site_config, $ttl, $subjects )
     #
     # Where:
     #     $rss is the feed as a string
@@ -356,7 +356,7 @@ package RLCore;
     #     $ttl is the current time to live for the feed
     #     $subjects is the currnet list of subjects from the lastupdate
     #
-    sub __send_feed
+    sub __SendFeed
         {
         my $rss         = shift;
         my $site_config = shift;
@@ -398,10 +398,10 @@ package RLCore;
             return;
             }
 
-        my $folder = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder} );
-        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        my $folder = RLConfig::ApplyTemplate( $rss, undef, 1, $site_config->{folder} );
+        $folder = RLIMAP::GetRealFolderName( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 1, "IMAP folder to use = $folder" );
-        RLIMAP::imap_select_folder( $IMAP_CONNECT, $folder );
+        RLIMAP::IMAPSelectFolder( $IMAP_CONNECT, $folder );
 
         my @append_items;
         my @delete_mail;
@@ -427,17 +427,17 @@ package RLCore;
         for( my $i = $start; $i != $end; $i = $i + $increment )
             {
             $item = $items[$i];
-            my $message_id  = __gen_message_id( $rss, $item );
+            my $message_id  = __GenerateMessageID( $rss, $item );
 
             # Get the subject line and add it to our cache for later, make sure we
             # strip any newlines so we can store it in the IMAP message properly
-            $subject = __rss_txt_convert( $item->title() );
+            $subject = __ConvertToText( $item->title() );
             $subject =~ s/\n//g;
             RLDebug::OutputDebug( 2, "RSS Item Subject = $subject" );
             push @subject_lines, $subject;
 
             # Retreive the date from the item or feed for future work.
-            my $rss_date = __get_date ($rss, $item);
+            my $rss_date = __GetDate ($rss, $item);
             RLDebug::OutputDebug( 2, "RSS Item date = $rss_date" );
 
             # Convert the above date to a unix time code
@@ -468,7 +468,7 @@ package RLCore;
                 RLDebug::OutputDebug( 2, "imap search = NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
                 my @search = $IMAP_CONNECT->search( "NOT DELETED HEADER message-id \"$message_id\" HEADER x-rss-aggregator \"Rigel\"" );
 
-                if( RLCommon::is_error() )
+                if( RLCommon::IsError() )
                     {
                     RLCommon::LogLine( "WARNING: $@\r\n" );
                     next;
@@ -505,7 +505,7 @@ package RLCore;
                     RLDebug::OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
-                    my ( $latest, $lmsg ) = RLIMAP::get_latest_date( $IMAP_CONNECT, \@search );
+                    my ( $latest, $lmsg ) = RLIMAP::GetLatestDate( $IMAP_CONNECT, \@search );
                     RLDebug::OutputDebug( 2, "latest date = $latest" );
 
                     # if rss date is newer, delete search result and add rss items.
@@ -559,7 +559,7 @@ package RLCore;
         # Now we actually append the new items to the folder
         for my $item (@append_items)
             {
-            __send_item( $site_config, $folder, $rss, $item );
+            __SendItem( $site_config, $folder, $rss, $item );
             }
 
         # Find out how many items we added and give the user some feedback about it
@@ -579,11 +579,11 @@ package RLCore;
         # want to happen
         if( scalar( @subject_lines ) < 1 )
             {
-            __send_last_update( $rss, $ttl, \@old_subject_lines );
+            __SendLastUpdate( $rss, $ttl, \@old_subject_lines );
             }
         else
             {
-            __send_last_update( $rss, $ttl, \@subject_lines );
+            __SendLastUpdate( $rss, $ttl, \@subject_lines );
             }
 
         return;
@@ -593,13 +593,13 @@ package RLCore;
     # This function does the grunt work of expiring feed items on the IMAP
     # server.
     #
-    #     RLCore::__expire_feed( $rss, $site)
+    #     __ExpireFeed( $rss, $site)
     #
     # Where:
     #     $rss is the feed as a string
     #     $site is the site configuration array
     #
-    sub __expire_feed
+    sub __ExpireFeed
         {
         my $rss                = shift;
         my $site_config     = shift;
@@ -611,10 +611,10 @@ package RLCore;
             return;
             }
 
-        my $folder        = RLConfig::apply_template( $rss, undef, 1, $site_config->{folder} );
-        my $expire_folder = RLConfig::apply_template( $rss, undef, 1, $site_config->{'expire-folder'} );
-        $folder           = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
-        $expire_folder    = RLIMAP::get_real_folder_name( $expire_folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        my $folder        = RLConfig::ApplyTemplate( $rss, undef, 1, $site_config->{folder} );
+        my $expire_folder = RLConfig::ApplyTemplate( $rss, undef, 1, $site_config->{'expire-folder'} );
+        $folder           = RLIMAP::GetRealFolderName( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $expire_folder    = RLIMAP::GetRealFolderName( $expire_folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
 
         RLDebug::OutputDebug( 2, "RSS Folder:" . $folder );
         RLDebug::OutputDebug( 2, "Expire Folder:" . $expire_folder );
@@ -625,10 +625,10 @@ package RLCore;
         $query .= " HEADER x-rss-aggregator \"Rigel\"";
         RLDebug::OutputDebug( 2, "Expire query:" . $query );
 
-        RLIMAP::imap_select_folder( $IMAP_CONNECT, $folder );
+        RLIMAP::IMAPSelectFolder( $IMAP_CONNECT, $folder );
         my @search = $IMAP_CONNECT->search( $query );
 
-        if( RLCommon::is_error() )
+        if( RLCommon::IsError() )
             {
             RLCommon::LogLine( "WARNING: $@\r\n" );
             return;
@@ -638,7 +638,7 @@ package RLCore;
 
         if( $site_config->{'expire-folder'} && $expire_folder )
             {
-            RLIMAP::imap_create_folder( $IMAP_CONNECT, $expire_folder );
+            RLIMAP::IMAPCreateFolder( $IMAP_CONNECT, $expire_folder );
             for my $msg (@search) {
                 RLCommon::LogLine( "  moving: $msg -> $expire_folder\r\n" );
                 $IMAP_CONNECT->move( $expire_folder, $msg );
@@ -655,14 +655,14 @@ package RLCore;
     # This function stores the last update message on the IMAP server for
     # a feed
     #
-    #     RLCore::__send_last_update(  $rss, $ttl, $subjects )
+    #     __SendLastUpdate(  $rss, $ttl, $subjects )
     #
     # Where:
     #     $rss is the rss feed
     #     $ttl is the time to live for the feed
     #     $subjects is the new subject cache to store
     #
-    sub __send_last_update
+    sub __SendLastUpdate
         {
         my $rss           = shift;
         my $ttl           = shift;
@@ -705,8 +705,8 @@ BODY
             $body = $body . $subject . "\r\n";
             }
 
-        my $folder = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
-        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        my $folder = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:lastmod}" );
+        $folder = RLIMAP::GetRealFolderName( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "last update folder: $folder" );
         $IMAP_CONNECT->select( $folder );
         my $uid = $IMAP_CONNECT->append_string( $folder, $body, "Seen" );
@@ -714,14 +714,14 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        RLIMAP::mark_folder_read( $IMAP_CONNECT, $folder );
+        RLIMAP::MarkFolderRead( $IMAP_CONNECT, $folder );
         }
 
     #
     # This function stores a single article on the IMAP server in the
     # appropriate format.
     #
-    #     RLCore::__send_item(  $site, $folder, $rss, $item )
+    #     __SendItem(  $site, $folder, $rss, $item )
     #
     # Where:
     #     $site is the site configuration array
@@ -729,7 +729,7 @@ BODY
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub __send_item
+    sub __SendItem
         {
         my $site_config = shift;
         my $folder      = shift;
@@ -741,10 +741,10 @@ BODY
         my $message        = "";
 
         # Generate the message headers
-        $headers = __get_headers( $site_config, $rss, $item );
+        $headers = __GetHeaders( $site_config, $rss, $item );
 
         # Format the body and generate any addditional headers that are type dependent (like MHTMLLINK)
-        ( $optheaders, $body ) = __get_body( $site_config, $rss, $item );
+        ( $optheaders, $body ) = __GetBody( $site_config, $rss, $item );
         $headers .= $optheaders;
 
         # append the message together
@@ -761,29 +761,29 @@ BODY
     # This function creates a header string for a mail message based upon the
     # contents of the rss item to store
     #
-    #     RLCore::__get_headers(  $site, $rss, $item )
+    #     __GetHeaders(  $site, $rss, $item )
     #
     # Where:
     #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub __get_headers
+    sub __GetHeaders
         {
         my $site_config = shift;
         my $rss         = shift;
         my $item        = shift;
 
-        my $date       = __get_date( $rss, $item );
-        my $rss_date   = __get_rss_date( $rss, $item ) || "undef";
+        my $date       = __GetDate( $rss, $item );
+        my $rss_date   = __GetRSSDate( $rss, $item ) || "undef";
 
         my $subject    = $site_config->{subject};
         my $from       = $site_config->{from};
         my $to         = $site_config->{to};
-        my $message_id = __gen_message_id( $rss, $item );
+        my $message_id = __GenerateMessageID( $rss, $item );
 
-        $subject = RLConfig::apply_template( $rss, $item, undef, $subject );
-        $from    = RLConfig::apply_template( $rss, $item, undef, $from );
+        $subject = RLConfig::ApplyTemplate( $rss, $item, undef, $subject );
+        $from    = RLConfig::ApplyTemplate( $rss, $item, undef, $from );
 
         RLDebug::OutputDebug( 2, "Getting headers for item with subject: $subject" );
 
@@ -798,7 +798,7 @@ BODY
             # Since we're delivering in plain text, make sure that
             # the subject line didn't get poluted with html from the
             # rss feed.
-            $subject = __rss_txt_convert( $subject );
+            $subject = __ConvertToText( $subject );
             }
         else
             {
@@ -808,9 +808,9 @@ BODY
         # if line feed character include, some mailer make header broken.. :<
         $subject =~ s/\n//g;
 
-        my $m_from    = RLUnicode::to_mime( $from );
-        my $m_subject = RLUnicode::to_mime( $subject );
-        my $m_to      = RLUnicode::to_mime( $to );
+        my $m_from    = RLUnicode::ToMIME( $from );
+        my $m_subject = RLUnicode::ToMIME( $subject );
+        my $m_to      = RLUnicode::ToMIME( $to );
         my $a_date    = scalar( localtime() );
         my $l_date    = $rss->{'Rigel:last-modified'} || $a_date;
         my $link      = $rss->{'Rigel:rss-link'} || "undef";
@@ -851,14 +851,14 @@ BODY
     # This function returns the formated body of an rss item's
     # conetents, whether linked or contained
     #
-    #     RLCore::__get_body(  $site, $rss, $item)
+    #     __GetBody(  $site, $rss, $item)
     #
     # Where:
     #     $site is the site configuration array
     #     $rss is the feed
     #     $item is the item to store
     #
-    sub __get_body
+    sub __GetBody
         {
         my $site_config = shift;
         my $rss         = shift;
@@ -870,8 +870,8 @@ BODY
         my $desc        = $item->description();
         my $link         = $item->link();
 
-        $subject = RLConfig::apply_template( $rss, $item, undef, $subject );
-        $from    = RLConfig::apply_template( $rss, $item, undef, $from );
+        $subject = RLConfig::ApplyTemplate( $rss, $item, undef, $subject );
+        $from    = RLConfig::ApplyTemplate( $rss, $item, undef, $from );
 
         if( $site_config->{'delivery-mode'} eq 'embedded' )
             {
@@ -909,8 +909,8 @@ BODY
         elsif( $site_config->{'delivery-mode'} eq 'text' )
            {
             # convert html tag to appropriate text.
-            $subject = __rss_txt_convert( $subject );
-            $desc    = __rss_txt_convert( $desc );
+            $subject = __ConvertToText( $subject );
+            $desc    = __ConvertToText( $desc );
 
             # Get rid of any newlines in the subject or link
             $subject =~ s/\n//g;
@@ -977,12 +977,12 @@ BODY
     #
     # This function converts an rss item with HTML markup in it to plain text
     #
-    #     RLCore::__rss_txt_convert(  $string)
+    #     __ConvertToText(  $string)
     #
     # Where:
     #     $string is the string to convert
     #
-    sub __rss_txt_convert
+    sub __ConvertToText
         {
         my $string = shift;
 
@@ -1064,31 +1064,31 @@ BODY
     #
     # This function creates a message id to be used in the IMAP messages
     #
-    #     RLCore::__gen_message_id(  $rss, $item)
+    #     __GenerateMessageID(  $rss, $item)
     #
     # Where:
     #     $rss is the feed (unused)
     #     $item is the feed item
     #
-    sub __gen_message_id
+    sub __GenerateMessageID
         {
         my $rss  = shift;
         my $item = shift;
 
-        return sprintf( '%s@%s', RLCommon::str_trim( $item->link() ), $GLOBAL_CONFIG->{host} );
+        return sprintf( '%s@%s', RLCommon::StrTrim( $item->link() ), $GLOBAL_CONFIG->{host} );
         }
 
 
     #
     # This function returns the last modified date for an rss item
     #
-    #     RLCore::__get_rss_date(  $rss, $item)
+    #     __GetRSSDate(  $rss, $item)
     #
     # Where:
     #     $rss is the feed (unused)
     #     $item is the feed item
     #
-    sub __get_rss_date
+    sub __GetRSSDate
         {
         my $rss  = shift;
         my $item = shift;
@@ -1106,17 +1106,17 @@ BODY
     #
     # This function returns a HTTP formated time for an rss item
     #
-    #     RLCore::__get_date( $rss, $item)
+    #     __GetDate( $rss, $item)
     #
     # Where:
     #     $rss is the feed (unused)
     #     $item is the feed item
     #
-    sub __get_date
+    sub __GetDate
         {
         my $rss  = shift;
         my $item = shift;
-        my $date = __get_rss_date( $rss, $item ) || "";
+        my $date = __GetRSSDate( $rss, $item ) || "";
 
         return HTTP::Date::time2str(HTTP::Date::str2time( $date ) );
         }
@@ -1125,9 +1125,9 @@ BODY
     # This function returns an array of feed site configurations from the
     # IMAP server
     #
-    #     RLCore::__get_feeds_from_imap( )
+    #     __GetFeedsFromIMAP( )
     #
-    sub __get_feeds_from_imap
+    sub __GetFeedsFromIMAP
         {
         my $message;
         my $feedconf;
@@ -1136,7 +1136,7 @@ BODY
         my @messages;
         my @config_list;
         my %config;
-        my $folder = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+        my $folder = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
         my $mp       = new MIME::Parser;
 
         # setup the message parser so we don't get any errors and we
@@ -1144,7 +1144,7 @@ BODY
         $mp->ignore_errors( 1 );
         $mp->extract_uuencode( 1 );
 
-        $folder = RLIMAP::get_real_folder_name( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $folder = RLIMAP::GetRealFolderName( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "config folder: $folder" );
         $IMAP_CONNECT->select( $folder );
 
@@ -1164,13 +1164,13 @@ BODY
                 {
                 # get_mime_text_body will retrevie all the plain text peices of the
                 # message and return it as one string.
-                $feedconf = RLCommon::str_trim( __get_mime_text_body( $e ) );
+                $feedconf = RLCommon::StrTrim( __GetMIMETextBody( $e ) );
                 $feeddesc = $IMAP_CONNECT->subject( $message );
                 $mp->filer->purge;
                 }
 
             # parse the configuration options in to a configuration object
-            %config = RLConfig::parse_url_list_from_string( $feedconf, $feeddesc );
+            %config = RLConfig::ParseConfigString( $feedconf, $feeddesc );
             push @config_list, { %config };
             }
 
@@ -1181,12 +1181,12 @@ BODY
     # This function returns the textual version of the message body in a
     # MIME message
     #
-    #     __get_mime_text_body(  $mime)
+    #     __GetMIMETextBody(  $mime)
     #
     # Where:
     #     $mime is the mime encoded message to retreive
     #
-    sub __get_mime_text_body
+    sub __GetMIMETextBody
         {
         my $ent = shift;
 
@@ -1195,7 +1195,7 @@ BODY
 
         if( my @parts = $ent->parts )
             {
-            return __get_mime_text_body( $_ ) for @parts;
+            return __GetMIMETextBody( $_ ) for @parts;
             }
         elsif( my $body = $ent->bodyhandle )
             {
@@ -1213,7 +1213,7 @@ BODY
                     $wd = supported MIME::WordDecoder "ISO-8859-1";
                     }
 
-                return $text .  RLUnicode::to_utf8( $wd->decode( $body->as_string || '' ) );
+                return $text .  RLUnicode::ToUTF8( $wd->decode( $body->as_string || '' ) );
                 }
             }
         }
@@ -1221,11 +1221,11 @@ BODY
     #
     # This function processes and add/delete messages on the IMAP server
     #
-    #     RLCore::__process_change_requests( )
+    #     __ProcessChangeRequests( )
     #
-    sub __process_change_requests
+    sub __ProcessChangeRequests
         {
-        my $site_config = RLConfig::get_site_configall();
+        my $site_config = RLConfig::GetSiteConfig();
         my @messages;
         my $message;
         my $feedconf;
@@ -1233,10 +1233,10 @@ BODY
         my %config;
         my $siteurl;
         my $uid;
-        my $AddFolder     = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" );
-        my $DeleteFolder  = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" );
-        my $ConfigFolder  = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
-        my $LastModFolder = RLConfig::apply_template( undef, undef, 1, "%{dir:lastmod}" );
+        my $AddFolder     = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:manage}%{dir:sep}Add" );
+        my $DeleteFolder  = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:manage}%{dir:sep}Delete" );
+        my $ConfigFolder  = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+        my $LastModFolder = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:lastmod}" );
         my $e;
         my $mp              = new MIME::Parser;
 
@@ -1245,21 +1245,21 @@ BODY
         $mp->ignore_errors( 1 );
         $mp->extract_uuencode( 1 );
 
-        $AddFolder = RLIMAP::get_real_folder_name( $AddFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $AddFolder = RLIMAP::GetRealFolderName( $AddFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "Add folder: $AddFolder" );
-        RLIMAP::imap_create_folder( $IMAP_CONNECT, $AddFolder );
+        RLIMAP::IMAPCreateFolder( $IMAP_CONNECT, $AddFolder );
 
-        $DeleteFolder = RLIMAP::get_real_folder_name( $DeleteFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $DeleteFolder = RLIMAP::GetRealFolderName( $DeleteFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "Delete folder: $DeleteFolder" );
-        RLIMAP::imap_create_folder( $IMAP_CONNECT, $DeleteFolder );
+        RLIMAP::IMAPCreateFolder( $IMAP_CONNECT, $DeleteFolder );
 
-        $ConfigFolder = RLIMAP::get_real_folder_name( $ConfigFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $ConfigFolder = RLIMAP::GetRealFolderName( $ConfigFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "Config folder: $ConfigFolder" );
-        RLIMAP::imap_create_folder( $IMAP_CONNECT, $ConfigFolder );
+        RLIMAP::IMAPCreateFolder( $IMAP_CONNECT, $ConfigFolder );
 
-        $LastModFolder = RLIMAP::get_real_folder_name( $LastModFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $LastModFolder = RLIMAP::GetRealFolderName( $LastModFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "last update folder: $LastModFolder" );
-        RLIMAP::imap_create_folder( $IMAP_CONNECT, $LastModFolder );
+        RLIMAP::IMAPCreateFolder( $IMAP_CONNECT, $LastModFolder );
 
         $IMAP_CONNECT->select( $AddFolder );
         @messages = $IMAP_CONNECT->messages();
@@ -1273,13 +1273,13 @@ BODY
             my $feeddesc = $IMAP_CONNECT->subject( $message );
 
             $feedconf = "";
-            $feedconf = RLCommon::str_trim( __get_mime_text_body( $e ) );
+            $feedconf = RLCommon::StrTrim( __GetMIMETextBody( $e ) );
             $mp->filer->purge;
 
-            %config = RLConfig::parse_url_list_from_string( $feedconf );
+            %config = RLConfig::ParseConfigString( $feedconf );
 
             $siteurl = $config{url};
-            $siteurl = RLCommon::str_trim( $siteurl );
+            $siteurl = RLCommon::StrTrim( $siteurl );
 
             if( $feeddesc eq "" ) { $feeddesc = $siteurl; }
 
@@ -1308,7 +1308,7 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        RLIMAP::mark_folder_read( $IMAP_CONNECT, $ConfigFolder );
+        RLIMAP::MarkFolderRead( $IMAP_CONNECT, $ConfigFolder );
 
         # Now expunge any deleted messages
         $IMAP_CONNECT->select( $AddFolder );
@@ -1328,7 +1328,7 @@ BODY
         # As we cannot count on the above addpend_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
-        RLIMAP::mark_folder_read( $IMAP_CONNECT, $AddFolder );
+        RLIMAP::MarkFolderRead( $IMAP_CONNECT, $AddFolder );
 
         $IMAP_CONNECT->select( $DeleteFolder );
         @messages = $IMAP_CONNECT->messages();
@@ -1367,17 +1367,17 @@ BODY
     # This function checks the help folder and updates messages
     # as required.
     #
-    #     RLCore::__verify_help( )
+    #     __VerifyHelp( )
     #
-    sub __verify_help
+    sub __VerifyHelp
         {
-        my $site_config = RLConfig::get_site_configall();
+        my $site_config = RLConfig::GetSiteConfig();
         my @messages;
-        my $HelpFolder  = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Help" );
+        my $HelpFolder  = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:manage}%{dir:sep}Help" );
 
-        $HelpFolder = RLIMAP::get_real_folder_name( $HelpFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+        $HelpFolder = RLIMAP::GetRealFolderName( $HelpFolder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
         RLDebug::OutputDebug( 2, "Help folder: $HelpFolder" );
-        RLIMAP::imap_create_folder( $IMAP_CONNECT, $HelpFolder );
+        RLIMAP::IMAPCreateFolder( $IMAP_CONNECT, $HelpFolder );
 
         $IMAP_CONNECT->select( $HelpFolder );
         @messages = $IMAP_CONNECT->messages();
@@ -1405,7 +1405,7 @@ BODY
             # As we cannot count on the above addpend_string to actually mark the
             # messages as seen and $uid may or may not acutall contain the message
             # make sure they're marked as read
-            RLIMAP::mark_folder_read( $IMAP_CONNECT, $HelpFolder );
+            RLIMAP::MarkFolderRead( $IMAP_CONNECT, $HelpFolder );
             }
 
         return;
@@ -1414,12 +1414,12 @@ BODY
     #
     # This function 'fixes' some common feeds errors
     #
-    #     __fix_feed(  $feed)
+    #     __FixFeed(  $feed)
     #
     # Where:
     #     $feed is the raw feed to fix
     #
-    sub __fix_feed()
+    sub __FixFeed
         {
         my $content  = shift;
 
@@ -1427,7 +1427,7 @@ BODY
         my $count;
 
         # First, strip any spaces from feed
-        $fixed = RLCommon::str_trim( $content );
+        $fixed = RLCommon::StrTrim( $content );
 
         # Some feeds seem to have some crap charaters in them (either at the begining or the end)
         # which need to get stripped out, so build a hash that contains the ASCII values of all the

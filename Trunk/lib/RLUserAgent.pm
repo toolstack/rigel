@@ -68,12 +68,12 @@ package RLUserAgent;
 
             if ( %config->{'proxy-user'})
                 {
-                return ( %config->{'proxy-user'}, RLCommon::getPass( "Your Proxy Password: ", 1 ) );
+                return ( %config->{'proxy-user'}, RLCommon::GetPass( "Your Proxy Password: ", 1 ) );
                 }
             else
                 {
                 RLCommon::LogLine( "Your Proxy Server Requires Authentication.\r\n" );
-                return ( RLCommon::getUser( undef, $isproxy ), RLCommon::getPass( undef, $isproxy ) );
+                return ( RLCommon::GetUser( undef, $isproxy ), RLCommon::GetPass( undef, $isproxy ) );
                 }
             }
 

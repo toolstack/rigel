@@ -29,17 +29,17 @@ package RLUnicode;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(to_utf7 to_mime to_utf8);
+    @EXPORT_OK=qw(ToUTF7 ToMIME ToUTF8);
 
     #
     # This function converts a string to UTF7 encoding
     #
-    #     RLUnicode::to_utf7(  $string  )
+    #     RLUnicode::ToUTF7(  $string  )
     #
     # Where:
     #     $string is the string to convert
     #
-    sub to_utf7
+    sub ToUTF7
         {
         my $s = shift;
 
@@ -58,13 +58,13 @@ package RLUnicode;
     #
     # This function converts a string to UTF8 encoding
     #
-    #     RLUnicode::to_utf8(  $string, $from )
+    #     RLUnicode::ToUTF8(  $string, $from )
     #
     # Where:
     #     $string is the string to convert
     #     $from is the encoding the string is currently in
     #
-    sub to_utf8
+    sub ToUTF8
         {
         my $s       = shift;
         my $fromenc = lc( shift );
@@ -85,13 +85,13 @@ package RLUnicode;
     #
     # This function converts a string to MIME encoding
     #
-    #     RLUnicode::to_mime(  $string, $from )
+    #     RLUnicode::ToMIME(  $string, $from )
     #
     # Where:
     #     $string is the string to convert
     #     $from is the encoding the string is currently in
     #
-    sub to_mime
+    sub ToMIME
         {
         my $string     = shift;
         my $fromenc    = lc( shift );

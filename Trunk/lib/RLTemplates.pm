@@ -413,7 +413,7 @@ BODY
         my $VERSION     = shift;
         my $site_config = shift;
         my $item        = "";
-        my $default_site = RLConfig::get_site_configall();
+        my $default_site = RLConfig::GetSiteConfig();
 
         # Retreive the standard Add Feed template.
         my $template_message = NewFeed( $VERSION, $site_config );

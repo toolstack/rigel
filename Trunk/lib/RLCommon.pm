@@ -30,7 +30,7 @@ package RLCommon;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(SetCommonConfig getrss_and_response getUser getPass getProxyPass_ifEnabled str_trim is_error LogLine RotateLog GetLogFileHandle);
+    @EXPORT_OK=qw(SetCommonConfig GetRSS GetUser GetPass GetProxyPass StrTrim IsError LogLine RotateLog GetLogFileHandle);
 
     our %config = undef;
     our $LogFH   = undef;
@@ -39,7 +39,7 @@ package RLCommon;
         {
         (%config) = %{(shift)};
 
-        my $filename = RLConfig::apply_template( undef, undef, undef, %config->{'log-file'} );
+        my $filename = RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} );
         
         if( %config->{'log-file'} )
             {
@@ -70,7 +70,7 @@ package RLCommon;
             {
             close( $LogFH );
 
-            open( $LogFH, ">>" . RLConfig::apply_template( undef, undef, undef, %config->{'log-file'} ) );
+            open( $LogFH, ">>" . RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} ) );
             }
             
         return;
@@ -80,14 +80,14 @@ package RLCommon;
     # This function returns an array with two entires, the rss feed as a
     # string and the response code from the HTTP connection.
     #
-    #     RLCommon::getrss_and_response(  $URL,  $headers, $ttl  )
+    #     RLCommon::GetRSS(  $URL,  $headers, $ttl  )
     #
     # Where:
     #     $URL is the url of the feed to retreive
     #     $headers are any headers to add to the HTTP request
     #     $ttl is unused at this time
     #
-    sub getrss_and_response
+    sub GetRSS
         {
         my $uri              = shift;
         my $headers          = shift;
@@ -143,7 +143,7 @@ package RLCommon;
         # force all contents to UTF-8
         if( $header =~ /encoding="([^<>]*?)"/i )
             {
-            $content = RLUnicode::to_utf8( $content, $1 );
+            $content = RLUnicode::ToUTF8( $content, $1 );
             }
 
         # Replace the opening xml tag if it does not have the version/encoding in it
@@ -172,13 +172,13 @@ package RLCommon;
     # This function interactivly prompts (if required) for a username and
     # returns it.
     #
-    #     RLCommon::getUser(  $prompt,  $is_proxy  )
+    #     RLCommon::GetUser(  $prompt,  $is_proxy  )
     #
     # Where:
     #     $prompt is the text to display before the user enters data
     #     $is_proxy defines if this is for the proxy server or not (t/f)
     #
-    sub getUser
+    sub GetUser
         {
         my $prompt  = shift;
         my $isproxy = shift;
@@ -213,13 +213,13 @@ package RLCommon;
     # This function interactivly prompts (if required) for a password and
     # returns it.
     #
-    #     RLCommon::getPass(  $prompt,  $is_proxy  )
+    #     RLCommon::GetPass(  $prompt,  $is_proxy  )
     #
     # Where:
     #     $prompt is the text to display before the user enters data
     #     $is_proxy defines if this is for the proxy server or not (t/f)
     #
-    sub getPass
+    sub GetPass
         {
         my $prompt  = shift;
         my $isproxy = shift;
@@ -284,26 +284,26 @@ package RLCommon;
     # This function interactivly prompts (if required) for a username and
     # returns it for the proxy server.
     #
-    #     RLCommon::getProxyPass_ifEnabled(  )
+    #     RLCommon::getProxyPass(  )
     #
-    sub getProxyPass_ifEnabled
+    sub GetProxyPass
         {
 
         if( %config->{'proxy'} && %config->{'proxy-user'} )
             {
-            getPass( 'proxy password: ', 1 );
+            GetPass( 'proxy password: ', 1 );
             }
         }
 
     #
     # This function trims leading/trailing spaces from a string.
     #
-    #     RLCommon::str_trim( $string )
+    #     RLCommon::StrTrim( $string )
     #
     # Where:
     #     $string is the string to trim
     #
-    sub str_trim
+    sub StrTrim
         {
         my $str     = shift;
 
@@ -322,9 +322,9 @@ package RLCommon;
     #
     # This function determines if an error as occured
     #
-    #     RLCommon::is_error( )
+    #     RLCommon::IsError( )
     #
-    sub is_error
+    sub IsError
         {
         # if you use windows, FCNTL error will be ignored.
         if( !$@ || ( $^O =~ /Win32/ && $@ =~ /fcntl.*?f_getfl/ ) )

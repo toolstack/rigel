@@ -35,23 +35,23 @@ package RLIMAP;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(imap_connect imap_connect_test get_latest_date imap_select_folder imap_create_folder get_real_folder_name mark_folder_read delete_folder_items);
+    @EXPORT_OK=qw(IMAPConnect IMAPTestConnect GetLatestDate IMAPSelectFolder IMAPCreateFolder GetRealFolderName MarkFolderRead DeleteFolderItems);
 
     #
     # This function connects to the IMAP server and stores the connection handle
     #
-    #     RLIMAP::imap_connect()
+    #     RLIMAP::IMAPConnect()
     #
-    sub imap_connect
+    sub IMAPConnect
         {
-        my $GLOBAL_CONFIG     = shift;
+        my $GLOBAL_CONFIG    = shift;
         my $ssl_sock         = undef;
 
         if( $GLOBAL_CONFIG->{'use-ssl'} )
             {
             eval 'use IO::Socket::SSL';
 
-            if( RLCommon::is_error() )
+            if( RLCommon::IsError() )
                 {
                 RLCommon::LogLine( "you specify use SSL but dont install IO::Socket::SSL.\r\n" );
                 RLCommon::LogLine( "please install it via cpan.\r\n" );
@@ -89,8 +89,8 @@ package RLIMAP;
         # Now that we have the directory seperator, update the management
         # folder value and last modified folder value with the proper template
         # values
-        $GLOBAL_CONFIG->{'management-folder'} = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'management-folder'} );
-        $GLOBAL_CONFIG->{'last-modified-folder'} = RLConfig::apply_template( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
+        $GLOBAL_CONFIG->{'management-folder'} = RLConfig::ApplyTemplate( undef, undef, 1, $GLOBAL_CONFIG->{'management-folder'} );
+        $GLOBAL_CONFIG->{'last-modified-folder'} = RLConfig::ApplyTemplate( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
 
         if( RLDebug::DebugEnabled( 3 ) )
             {
@@ -121,24 +121,24 @@ package RLIMAP;
     #
     # This function test that the connection to the IMAP server can be made
     #
-    #     RLIMAP::connect_test()
+    #     RLIMAP::IMAPTestConnect()
     #
-    sub imap_connect_test
+    sub IMAPTestConnect
         {
-        my $imap = imap_connect();
+        my $imap = IMAPConnect();
         $imap->close();
         }
 
     #
     # This function compares IMAP message dates and returns the latest one
     #
-    #     RLIMAP::get_latest_date(  @messages, $date )
+    #     RLIMAP::GetLatestDate(  @messages, $date )
     #
     # Where:
     #     @messages is an array of message ID's to compare
     #     $date is the date to use, if omitted, the current date is used
     #
-    sub get_latest_date
+    sub GetLatestDate
         {
         my $imap    = shift;
         my $list       = shift;
@@ -175,29 +175,29 @@ package RLIMAP;
     #
     # This function selects an IMAP folder, creating it if required
     #
-    #     RLIMAP::imap_select_folder(  $folder)
+    #     RLIMAP::IMAPSelectFolder(  $folder)
     #
     # Where:
     #     $folder is the folder to create/select
     #
-    sub imap_select_folder
+    sub IMAPSelectFolder
         {
         my $imap    = shift;
         my $folder  = shift;
 
-        imap_create_folder( $imap, $folder );
+        IMAPCreateFolder( $imap, $folder );
         $imap->select( $folder ) || RLCommon::LogLine( "@!\r\n" );
         }
 
     #
     # This function creates an IMAP folder
     #
-    #     RLIMAP::create_folder(  $folder)
+    #     RLIMAP::IMAPCreateFolder(  $folder)
     #
     # Where:
     #     $folder is the folder to create
     #
-    sub imap_create_folder
+    sub IMAPCreateFolder
         {
         my $imap    = shift;
         my $folder  = shift;
@@ -212,13 +212,13 @@ package RLIMAP;
     # This function returns the full IMAP path to a folder, incuding any prefix
     # and directory seperatores
     #
-    #     RLIMAP::get_real_folder_name(  $folder, $dirsep)
+    #     RLIMAP::GetRealFolderName(  $folder, $dirsep)
     #
     # Where:
     #     $folder is the folder you want to get
     #     $dirsep is the directory seperator to use
     #
-    sub get_real_folder_name
+    sub GetRealFolderName
         {
         my $str    = shift;
         my $dirsep = shift;
@@ -226,7 +226,7 @@ package RLIMAP;
 
         if( $prefix )
             {
-            $str = RLUnicode::to_utf8( $prefix ) . $dirsep . $str;
+            $str = RLUnicode::ToUTF8( $prefix ) . $dirsep . $str;
             }
         else
             {
@@ -239,19 +239,19 @@ package RLIMAP;
             $str =~ s#$dirsep$##;
             }
 
-        return RLUnicode::to_utf7( $str );
+        return RLUnicode::ToUTF7( $str );
         }
 
     #
     # This function marks all items in and IMAP folder as seen.
     #
-    #     RLIMAP::mark_folder_read( $imap, $folder )
+    #     RLIMAP::MarkFolderRead( $imap, $folder )
     #
     # Where:
     #     $imap is the connection to use
     #     $folder is the folder to work on (unused)
     #
-    sub mark_folder_read
+    sub MarkFolderRead
         {
         my $imap = shift;
         my $folder = shift;
@@ -268,13 +268,13 @@ package RLIMAP;
     #
     # This function marks all items in and IMAP folder as seen.
     #
-    #     RLIMAP::delete_folder_items( $imap, $folder )
+    #     RLIMAP::DeleteFolderItems( $imap, $folder )
     #
     # Where:
     #     $imap is the connection to use
     #     $folder is the folder to work on (unused)
     #
-    sub delete_folder_items
+    sub DeleteFolderItems
         {
         my $imap = shift;
         my $folder = shift;
