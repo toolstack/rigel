@@ -82,8 +82,8 @@ sub main
     #     Initalize the Core library
     RLCore::InitCore();
 
-    my %config      = %{RLConfig::get_global_configall()};
-    my $version     = RLConfig::get_version();
+    my %config      = %{RLConfig::GetGlobalConfig()};
+    my $version     = RLConfig::GetVersion();
 
     #    Set the current debug level
     RLDebug::SetCurrentDebugLevel( $config{debug} );
@@ -110,9 +110,9 @@ sub main
     if( !$config{'password'} )
         {
         RLCommon::LogLine( "You require authentication ...\r\n" );
-        RLCommon::getProxyPass_ifEnabled();
+        RLCommon::GetProxyPass();
 
-        RLConfig::set_global_config( 'password', RLCommon::getPass( 'IMAP password: ' ) );
+        RLConfig::set_global_config( 'password', RLCommon::GetPass( 'IMAP password: ' ) );
         }
 
     #   finally do something!
@@ -120,7 +120,7 @@ sub main
         {
         #   Encrypt a password and print it out so it can be stored
         #   in the config file for later use.
-        RLCore::encrypt();
+        RLCore::Encrypt();
         }
     elsif( $config{once_p} || $config{debug} )
         {
@@ -131,7 +131,7 @@ sub main
     else
         {
         #   Invoke once to check whether given parameters are OK
-        RLIMAP::imap_connect_test();
+        RLIMAP::IMAPTestConnect();
 
         if( !defined( $config{nodaemon} ) )
             {

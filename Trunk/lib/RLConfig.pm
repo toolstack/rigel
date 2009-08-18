@@ -39,7 +39,7 @@ package RLConfig;
 
     our (@ISA, @EXPORT_OK);
     @ISA=qw(Exporter);
-    @EXPORT_OK=qw(LoadConfig parse_url_list_from_string get_global_conf get_site_conf get_version get_global_configall get_site_configall apply_template);
+    @EXPORT_OK=qw(LoadConfig ParseConfigString GetVersion GetGlobalConfig GetSiteConfig ApplyTemplate);
 
     our $VERSION = "V1 post-b5 development";
 
@@ -98,13 +98,13 @@ package RLConfig;
     sub LoadConfig
         {
         # First, parse the commnad line in case the config file location is specified
-        &__parse_options();
+        &__ParseOptions();
 
         # Config value initialize.
-        &__parse_conf();
+        &__ParseConfig();
 
         # Now reparse the command line to override and config values set above
-        &__parse_options();
+        &__ParseOptions();
 
         RLDebug::OutputDebug( 2, "Global Config Dump:", \%{$DEFAULT_GLOBAL_CONFIG} );
         RLDebug::OutputDebug( 2, "Site Config Dump:",  \%{$DEFAULT_SITE_CONFIG} );
@@ -124,14 +124,14 @@ package RLConfig;
         {
         my $imap    = shift;
         my $sites   = shift;
-        my ($folder) = RLConfig::apply_template( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
+        my ($folder) = ApplyTemplate( undef, undef, 1, "%{dir:manage}%{dir:sep}Configuration" );
 
-        $folder = RLIMAP::get_real_folder_name( $folder, $DEFAULT_GLOBAL_CONFIG->{'directory_separator'}, $DEFAULT_GLOBAL_CONFIG->{'prefix'} );
+        $folder = RLIMAP::GetRealFolderName( $folder, $DEFAULT_GLOBAL_CONFIG->{'directory_separator'}, $DEFAULT_GLOBAL_CONFIG->{'prefix'} );
 
         $imap->select( $folder );
 
         # First mark all the messages as deleted in the config folder.
-        RLIMAP::delete_folder_items( $imap, $folder );
+        RLIMAP::DeleteFolderItems( $imap, $folder );
 
         my $sites_processed = 0;
 
@@ -146,7 +146,7 @@ package RLConfig;
             }
 
         # Make sure all the config messages are marked as read.
-        RLIMAP::mark_folder_read( $imap, $folder );
+        RLIMAP::MarkFolderRead( $imap, $folder );
 
         # Verify we now have twice as many messages in the config folder
         # as we have site configs
@@ -158,16 +158,16 @@ package RLConfig;
         }
 
     #
-    # This function parses a URL list from a string, it is the new code used
-    # to replace parse_url_list in Rigel.
+    # This function parses a text string and extracts a URL and configuration
+    # items from it.
     #
-    #     RLConfig::parse_url_list_from_string(  $feedconf, $feeddesc )
+    #     RLConfig::ParseConfigString(  $feedconf, $feeddesc )
     #
     # Where:
-    #     $feedconf is a feed configuration object returned by get_site_conf()
+    #     $feedconf is a feed configuration object returned by GetSiteConfig()
     #     $feeddesc is the description of the feed (usually the subject line of the configuraiton message
     #
-    sub parse_url_list_from_string
+    sub ParseConfigString
         {
         my $feedconf = shift;
         my $feeddesc = shift;
@@ -184,7 +184,7 @@ package RLConfig;
 
             if( /^(ftp|http|https):\/\// )
                 {
-                $config{url} = RLCommon::str_trim( $_ );
+                $config{url} = RLCommon::StrTrim( $_ );
                 }
             elsif(/^\#/ )
                 {
@@ -196,8 +196,8 @@ package RLConfig;
                 }
             elsif( /^([^=]+)\s*=\s*(.*)\s*/ )
                 {
-                my $key   = RLCommon::str_trim( lc( $1 ) );
-                my $value = RLCommon::str_trim( $2 );
+                my $key   = RLCommon::StrTrim( lc( $1 ) );
+                my $value = RLCommon::StrTrim( $2 );
 
                 if( !exists $config{$key} )
                     {
@@ -210,7 +210,7 @@ package RLConfig;
                     next;
                     }
 
-                $config{$key} = RLUnicode::to_utf8( $value );
+                $config{$key} = RLUnicode::ToUTF8( $value );
                 RLDebug::OutputDebug( 2, "config{$key} = $value\r\n" );
                 }
             else
@@ -220,21 +220,6 @@ package RLConfig;
             }
 
         return %config;
-        }
-
-    #
-    # This function returns a global configuration variable for a given setting
-    #
-    #     RLConfig::get_global_conf(  $key )
-    #
-    # Where:
-    #     $key is the configuration variable you want the setting for
-    #
-    sub get_global_conf
-        {
-        my $key  = shift;
-
-        return $DEFAULT_GLOBAL_CONFIG->{$key};
         }
 
     #
@@ -255,26 +240,11 @@ package RLConfig;
         }
 
     #
-    # This function returns a site configuration variable for a given setting
-    #
-    #     RLConfig::get_site_conf(  $key )
-    #
-    # Where:
-    #     $key is the configuration variable you want the setting for
-    #
-    sub get_site_conf
-        {
-        my $key  = shift;
-
-        return $DEFAULT_SITE_CONFIG->{$key};
-        }
-
-    #
     # This function returns the version of Rigel
     #
-    #     RLConfig::get_version( )
+    #     RLConfig::GetVersion( )
     #
-    sub get_version
+    sub GetVersion
         {
         return $VERSION;
         }
@@ -282,9 +252,9 @@ package RLConfig;
     #
     # This function returns the default global configuration settings
     #
-    #     RLConfig::get_global_conf( )
+    #     RLConfig::GetGlobalConfig( )
     #
-    sub get_global_configall
+    sub GetGlobalConfig
         {
         return $DEFAULT_GLOBAL_CONFIG;
         }
@@ -292,9 +262,9 @@ package RLConfig;
     #
     # This function returns the default site configuration settings
     #
-    #     RLConfig::get_global_conf( )
+    #     RLConfig::GetSiteConfig( )
     #
-    sub get_site_configall
+    sub GetSiteConfig
         {
         return $DEFAULT_SITE_CONFIG;
         }
@@ -302,7 +272,7 @@ package RLConfig;
     #
     # This function applies the Rigel configuration templates to a string
     #
-    #     RLConfig::apply_template(  $rss, $item, $folder, $string)
+    #     RLConfig::ApplyTemplate(  $rss, $item, $folder, $string)
     #
     # Where:
     #     $rss is the feed (optional)
@@ -310,7 +280,7 @@ package RLConfig;
     #     $folder is a flag (t/f) (optional)
     #     $string is the string to apply the template to
     #
-    sub apply_template
+    sub ApplyTemplate
         {
         my $rss        = shift;
         my $item       = shift;
@@ -388,37 +358,14 @@ package RLConfig;
     ###########################################################################
 
     #
-    # This function converts an array to a hash
-    #
-    #     __array_to_hash(  @array )
-    #
-    # Where:
-    #     @array is the array to convert
-    #
-    sub __array_to_hash
-        {
-        my $hash_ref = {};
-
-        for( ; @_ ; )
-            {
-            my $key = shift;
-            my $value = shift;
-
-            $hash_ref->{$key} = $value;
-            }
-
-        return $hash_ref;
-        }
-
-    #
     # This function parses the Rigel.conf file and updates the default global
     # and site configuration variables
     #
-    #     __parse_conf( )
+    #     __ParseConfig( )
     #
-    sub __parse_conf
+    sub __ParseConfig
         {
-        my %parse_result = &__parse_conffile( $DEFAULT_GLOBAL_CONFIG->{'config-file'} );
+        my %parse_result = &__ParseConfigFile( $DEFAULT_GLOBAL_CONFIG->{'config-file'} );
 
         # override config value for the site definition
         while( my ($key, $value) = each %$DEFAULT_SITE_CONFIG )
@@ -442,12 +389,12 @@ package RLConfig;
     #
     # This function parses the Rigel.conf file and returns the results in a hash.
     #
-    #     __parse_conffile( $filename )
+    #     __ParseConfigFile( $filename )
     #
     # Where:
     #     $filename is the configuraiton file to load.
     #
-    sub __parse_conffile
+    sub __ParseConfigFile
         {
         my $filename   = shift;
         my %return_hash = ();
@@ -463,8 +410,8 @@ package RLConfig;
 
             my ($config_key, $value ) = split /=/, $line;
 
-            $config_key = RLCommon::str_trim( $config_key );
-            $value      = RLCommon::str_trim( $value );
+            $config_key = RLCommon::StrTrim( $config_key );
+            $value      = RLCommon::StrTrim( $value );
 
             if ($value eq "undef" || $value eq "" || $value eq "no" )
                 {
@@ -480,9 +427,9 @@ package RLConfig;
     #
     # This function parses the command line options.
     #
-    #     __parse_options( )
+    #     __ParseOptions( )
     #
-    sub __parse_options
+    sub __ParseOptions
         {
         my @ARGV_TMP = @ARGV;
 

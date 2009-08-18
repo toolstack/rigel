@@ -83,7 +83,7 @@ package RLMHTML;
         $result .= "Content-Type: text/html; name=\"index.html\"\r\n";
         $result .= "\r\n";
 
-        my $sitebody = __get_http_body( $sitename );
+        my $sitebody = __GetHTTPBody( $sitename );
 
         $sitebody = CropBody( $sitebody, $crop_start, $crop_end );
 
@@ -105,12 +105,12 @@ package RLMHTML;
                 my $filename = basename $style->attr( 'href' );
                 $result .= $boundry . "\r\n";
                 $result .= "Content-Disposition: inline; filename=\"" . $filename . "\"\r\n";
-                $result .= "Content-Location: " . __abs_url( $style->attr( 'href' ), $sitename ) . "\r\n";
+                $result .= "Content-Location: " . __absoluteURL( $style->attr( 'href' ), $sitename ) . "\r\n";
                 $result .= "Content-Transfer-Encoding: 8bit\r\n";
                 $result .= "Content-Type: text/html; name=\"" . $filename . "\"\r\n";
                 $result .= "\r\n";
 
-                my $itembody = __get_http_body( __abs_url( $style->attr( 'href' ), $sitename ) );
+                my $itembody = __GetHTTPBody( __absoluteURL( $style->attr( 'href' ), $sitename ) );
                 $result .= $itembody;
 
                 $result .= "\r\n";
@@ -131,13 +131,13 @@ package RLMHTML;
 
             $result .= $boundry . "\r\n";
             $result .= "Content-Disposition: inline; filename=\"" . $filename . "\"\r\n";
-            $result .= "Content-Location: " . __abs_url( $img->attr( 'src' ), $sitename ) . "\r\n";
+            $result .= "Content-Location: " . __absoluteURL( $img->attr( 'src' ), $sitename ) . "\r\n";
             $result .= "Content-Transfer-Encoding: base64\r\n";
 
             $result .= "Content-Type: " . $filemimetype . "; name=\"" . $filename . "\"\r\n";
             $result .= "\r\n";
 
-            my $itembody = __get_http_body( __abs_url( $img->attr( 'src' ), $sitename) );
+            my $itembody = __GetHTTPBody( __absoluteURL( $img->attr( 'src' ), $sitename) );
             $result .= encode_base64( $itembody );
 
             $result .= "\r\n";
@@ -162,7 +162,7 @@ package RLMHTML;
         {
         my ( $url ) = @_;
 
-        return __get_http_body( $url );
+        return __GetHTTPBody( $url );
         }
 
     #
@@ -205,13 +205,13 @@ package RLMHTML;
     #
     # This function returns the absolute URL give a relative url and a base url
     #
-    #     __abs_url(  $RelativeURL,  $BaseURL  )
+    #     __absoluteURL(  $RelativeURL,  $BaseURL  )
     #
     # Where:
     #     $RelativeURL is the relative url
     #     $BaseURL is the base url
     #
-    sub __abs_url
+    sub __absoluteURL
         {
         my ( $relative, $base ) = @_;
 
@@ -247,12 +247,12 @@ package RLMHTML;
     # This function returns a character string that represents the web page
     # body, it follows redirects as required.
     #
-    #     __get_http_body(  $url  )
+    #     __GetHTTPBody(  $url  )
     #
     # Where:
     #     $url is the web site to retreive
     #
-    sub __get_http_body
+    sub __GetHTTPBody
         {
         my ( $url ) = @_;
 
