@@ -1,14 +1,33 @@
 Rigel change log:
 ================
 
-version 1.0b?
--------------
+version 1.0RC1
+--------------
         - Added cropping mode
-        - Fixed bug in mime encoder that split long lines when it shouldn't have
+        - Fixed bug in mime encoder that split long lines when it shouldn't 
         - Added feed direction setting
-        - Fixed bug in the add new feed code that dropped the subject line on new
-          feeds
+        - Fixed bug in the add new feed code that dropped the subject line 
+          on new feeds
         - Added thtmllink mode
+        - Removed the need for Unicode::Map8, Rigel now runs on Windows 
+          without a complier!
+        - Major code cleanup, function descriptions, function naming 
+          standards and lots of other internal cleanup, the source code
+            almost looks beautiful ;)
+        - Converted all modules to be function based instead of object based
+        - Renamed the module directory and modules
+        - Added Template and IMAP modules
+        - Added help folder and feed examples to the IMAP server
+        - Added FAQ file
+        - Fixed issues with feeds that have UTF8 encoding not getting stored
+          in Perl in UTF8 format, causing currupt messages to be stored on
+          the IMAP server
+        - Added support for log files instead of just console output, including
+          log file roll over and dual console/file output
+        - Configuraton templates now support various date items
+        - Removed old OPML import/export code as it hasn't worked in a long 
+          time
+        
 version 1.0b5
 -------------
         - Fixed critical bug where sync mode was forced on for all feeds

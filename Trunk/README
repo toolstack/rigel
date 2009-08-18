@@ -1,4 +1,4 @@
-Rigel V1.0b? (???? ??, 2009)
+Rigel V1.0RC1 (Aug 18, 2009)
 ============================
 
 Welcome to Rigel, an RSS to IMAP gateway
@@ -25,6 +25,8 @@ Welcome to Rigel, an RSS to IMAP gateway
 
 News
 ----
+        August 18/2009
+                - First release candidate
         July 14/2009
                 - Fifth (and final?) beta release to fix critical bug in b4
         July 13/2009
