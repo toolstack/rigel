@@ -34,8 +34,8 @@ package RLIMAP;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(IMAPConnect IMAPTestConnect GetLatestDate IMAPSelectFolder IMAPCreateFolder GetRealFolderName MarkFolderRead DeleteFolderItems);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(IMAPConnect IMAPTestConnect GetLatestDate IMAPSelectFolder IMAPCreateFolder GetRealFolderName MarkFolderRead DeleteFolderItems);
 
     #
     # This function connects to the IMAP server and stores the connection handle
@@ -53,14 +53,14 @@ package RLIMAP;
 
             if( RLCommon::IsError() )
                 {
-                RLCommon::LogLine( "you specify use SSL but dont install IO::Socket::SSL.\r\n" );
-                RLCommon::LogLine( "please install it via cpan.\r\n" );
+                RLCommon::LogLine( "ERROR: SSL cannot be used without IO::Socket::SSL installed!.\r\n" );
+                RLCommon::LogLine( "       Please install it via cpan.\r\n" );
 
                 exit();
                 }
 
             $ssl_sock = IO::Socket::SSL->new( "$GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}" )
-            or die "could not connect to the imap server over ssl.";
+            or die "ERROR: Could not connect to the imap server over ssl.";
             }
 
         if( substr( $GLOBAL_CONFIG->{password}, 0, 16 ) == "53616c7465645f5f" )
@@ -81,7 +81,7 @@ package RLIMAP;
 
         if( !$imap )
             {
-             die "imap client initialize failed. maybe you dont specify proper option...\r\n";
+             die "ERROR: IMAP client initialize failed. Please check your configuratino and try again.\r\n";
             }
 
         $GLOBAL_CONFIG->{'directory_separator'} = $imap->separator();
@@ -107,13 +107,13 @@ package RLIMAP;
         # authentication failure. sorry.
         if( !$imap->IsAuthenticated() )
             {
-            RLCommon::LogLine( "Authentication failure, sorry.\r\n" );
-            RLCommon::LogLine( "connected to : $GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}\r\n" );
+            RLCommon::LogLine( "ERROR: Authentication failure trying to connect to:\r\n" );
+            RLCommon::LogLine( "       $GLOBAL_CONFIG->{host}:$GLOBAL_CONFIG->{port}\r\n" );
 
             exit();
             }
 
-        die "$@ $GLOBAL_CONFIG->{user}\@$GLOBAL_CONFIG->{host}\r\n" unless ($imap);
+        die "ERROR: $@ $GLOBAL_CONFIG->{user}\@$GLOBAL_CONFIG->{host}\r\n" unless ($imap);
 
         return $imap;
         }
@@ -141,10 +141,10 @@ package RLIMAP;
     sub GetLatestDate
         {
         my $imap    = shift;
-        my $list       = shift;
-        my $header     = shift || 'date';
-        my $lmsg       = undef;
-        my $latest     = -1;
+        my $list    = shift;
+        my $header  = shift || 'date';
+        my $lmsg    = undef;
+        my $latest  = -1;
 
         for my $msg (@{$list})
             {

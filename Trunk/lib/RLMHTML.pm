@@ -33,8 +33,8 @@ package RLMHTML;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(GetMHTML GetHTML CropBody);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(GetMHTML GetHTML CropBody);
 
     #
     # This function returns a character string that represents the web page

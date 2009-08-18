@@ -29,18 +29,18 @@ package RLCommon;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(SetCommonConfig GetRSS GetUser GetPass GetProxyPass StrTrim IsError LogLine RotateLog GetLogFileHandle);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(SetCommonConfig GetRSS GetUser GetPass GetProxyPass StrTrim IsError LogLine RotateLog GetLogFileHandle);
 
-    our %config = undef;
+    our %config  = undef;
     our $LogFH   = undef;
-    
+
     sub SetCommonConfig
         {
         (%config) = %{(shift)};
 
         my $filename = RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} );
-        
+
         if( %config->{'log-file'} )
             {
             if( %config->{'log-rotate'} eq "append" )
@@ -72,10 +72,10 @@ package RLCommon;
 
             open( $LogFH, ">>" . RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} ) );
             }
-            
+
         return;
         }
-        
+
     #
     # This function returns an array with two entires, the rss feed as a
     # string and the response code from the HTTP connection.
@@ -347,7 +347,7 @@ package RLCommon;
         {
         my $line    = shift;
 
-        # If we have a logfile to write to, then don't write to the console, unless 
+        # If we have a logfile to write to, then don't write to the console, unless
         # we are being forced to.
         if( ( not defined( %config->{'log-file'} ) ) || defined( %config->{'force-console'} ) )
             {
@@ -365,10 +365,7 @@ package RLCommon;
     # This function returns the current log file handle if one exists, otherwise
     # stdout is returned.  This is used for IMAP debugging.
     #
-    #     RLCommon::LogLine( $string )
-    #
-    # Where:
-    #     $string is the string to log
+    #     RLCommon::GetLogFileHandle( )
     #
     sub GetLogFileHandle
         {
@@ -381,7 +378,7 @@ package RLCommon;
             return *STDOUT;
             }
         }
-        
+
     }
 
 1;
