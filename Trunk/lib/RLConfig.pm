@@ -20,6 +20,7 @@
 #     - Import and Export of OPML files
 #     - Parsing URL lists from files and in string variables
 #     - Parsing the command line options
+#     - Filling in variables in to configuration items
 #
 
 package RLConfig;
@@ -38,13 +39,13 @@ package RLConfig;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(LoadConfig ParseConfigString GetVersion GetGlobalConfig GetSiteConfig ApplyTemplate);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(LoadConfig ParseConfigString GetVersion GetGlobalConfig GetSiteConfig ApplyTemplate);
 
     our $VERSION = "V1 post-b5 development";
 
     # fallback config value(real default value)
-    # this value may be overridden by config file and cmdline option.
+    # these values may be overridden by the config file or cmdline options.
     our $DEFAULT_GLOBAL_CONFIG =
         {
         'user'                 => $ENV{USER},
@@ -90,11 +91,12 @@ package RLConfig;
         'ignore-dates'  => 'no',
         };
 
-    # opml parse result.
-    our $opml_parse = undef;
-    our @folder_array = ();
-    our $outline_empty = 0;
-
+    #
+    # This function loads the configuration settings from the command line
+    # and the config file.
+    #
+    #     RLConfig::LoadConfig()
+    #
     sub LoadConfig
         {
         # First, parse the commnad line in case the config file location is specified
@@ -223,15 +225,15 @@ package RLConfig;
         }
 
     #
-    # This function returns a global configuration variable for a given setting
+    # This function sets a global configuration variable for a given setting
     #
-    #     RLConfig::set_global_conf(  $key, $value )
+    #     RLConfig::SetGlobalConfig(  $key, $value )
     #
     # Where:
     #     $key is the configuration variable you want to set
     #     $value is the value to set $key to
     #
-    sub set_global_conf
+    sub SetGlobalConfig
         {
         my $key      = shift;
         my $value     = shift;
@@ -290,7 +292,7 @@ package RLConfig;
         my %cnf;
 
         ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:day'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
-        
+
         $cnf{'date:dow'} = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat' )[$cnf{'date:weekday'}];
         $cnf{'date:longdow'} = ( 'Sunday', 'Monday', 'Tueday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' )[$cnf{'date:weekday'}];
         $cnf{'date:month'} = ( "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec" )[$cnf{'date:monthnumber'}];
@@ -299,7 +301,7 @@ package RLConfig;
         $cnf{'date:monthnumber'} += 1;
         $cnf{'date:weekday'} += 1;
         $cnf{'date:yearday'} += 1;
-        
+
         if( $rss )
             {
             $cnf{'channel:title'}       = $rss->title();

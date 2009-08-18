@@ -27,8 +27,8 @@ package RLTemplates;
     use RLConfig;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(NewFeed Help FeedSample FeedSampleList GenerateConfig);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(NewFeed Help FeedSample FeedSampleList GenerateConfig);
 
     #
     # This function returns the template message for adding feeds
@@ -278,6 +278,18 @@ Macros
                 %{channel:description}  Description of RSS channel.
                 %{channel:dc:date}      dc:date of RSS channel. (undefined in
                                         some RSS)
+                %{date:dow}             The current day of the week (3 letters)
+                %{date:longdow}         The current day of the week (long form)
+                %{date:month}           The current month (3 letters)
+                %{date:longmonth}       The current month (long form)
+                %{date:sec}             The current seconds past the hour (0-59)
+                %{date:min}             The current minutes past the hour (0-59)
+                %{date:hour}            The current hour of the day (0-23)
+                %{date:dom}             The current day of the month (1-31)
+                %{date:monthnumber}     The current month's number (1-12)
+                %{date:year}            The current year (4 digit )
+                %{date:weekday}         The current day of the week (1=Sun, 2=Mon, etc.)
+                %{date:yearday}         The current day of the year (1-365)
 
 Delivery mode
 -------------

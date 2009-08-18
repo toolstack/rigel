@@ -23,7 +23,6 @@
 #     - Converting HTML to Text
 #     - Retreiving feed info from the IMAP server
 #     - Adding/Deleting feeds
-#     - Filling in variables in to configuration items
 #     - Fixing broken feeds if possible
 #
 
@@ -52,8 +51,8 @@ package RLCore;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(InitCore Encrypt UpdateFeeds);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(InitCore Encrypt UpdateFeeds);
 
     our $VERSION       = undef;
 
@@ -62,6 +61,12 @@ package RLCore;
     our $SITE_CONFIG   = undef;
     our $IMAP_CONNECT  = undef;
 
+    #
+    # This function sets up the various priavte variables to the
+    # module.
+    #
+    #     RLCore::InitCore()
+    #
     sub InitCore
         {
         $GLOBAL_CONFIG = RLConfig::GetGlobalConfig();
@@ -70,7 +75,7 @@ package RLCore;
         }
 
     #
-    # This function encrpts a string so that it can be used in the
+    # This function encrypts a string so that it can be used in the
     # configuration file for a password
     #
     #     RLCore::Encrypt()
@@ -348,7 +353,7 @@ package RLCore;
     # server as well as cleaning up old articles if required and updating the last
     # update information.
     #
-    #     RLCore::__SendFeed( $rss, $site_config, $ttl, $subjects )
+    #     __SendFeed( $rss, $site_config, $ttl, $subjects )
     #
     # Where:
     #     $rss is the feed as a string

@@ -28,8 +28,8 @@ package RLUnicode;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(ToUTF7 ToMIME ToUTF8);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(ToUTF7 ToMIME ToUTF8);
 
     #
     # This function converts a string to UTF7 encoding

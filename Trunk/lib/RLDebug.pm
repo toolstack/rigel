@@ -26,8 +26,8 @@ package RLDebug;
     use Exporter;
 
     our (@ISA, @EXPORT_OK);
-    @ISA=qw(Exporter);
-    @EXPORT_OK=qw(OutputDebug DebugEnabled  SetCurrentDebugLevel);
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(OutputDebug DebugEnabled  SetCurrentDebugLevel);
 
     our $__DebugLevel = undef;
 

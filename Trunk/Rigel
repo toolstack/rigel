@@ -30,7 +30,7 @@ use Data::Dumper;
 
 package main;
 
-sub show_usage
+sub ShowUsage
     {
     my $usage = <<"EOS"
 
@@ -76,61 +76,61 @@ sub main
     $| = 1;
     select( STDOUT );
 
-    #    Load the configuration
+    # Load the configuration
     RLConfig::LoadConfig();
 
-    #     Initalize the Core library
+    # Initalize the Core library
     RLCore::InitCore();
 
     my %config      = %{RLConfig::GetGlobalConfig()};
     my $version     = RLConfig::GetVersion();
 
-    #    Set the current debug level
+    # Set the current debug level
     RLDebug::SetCurrentDebugLevel( $config{debug} );
 
-    #    Initalize the common library
+    # Initalize the common library
     RLCommon::SetCommonConfig( \%config );
 
-    #    print version
+    # print version
     if( $config{version} )
         {
         RLCommon::LogLine( "Rigel $version\r\n" );
         exit();
         }
 
-    if ( $config{help} )
+    if( $config{help} )
         {
-        show_usage();
+        ShowUsage();
         }
 
-    #   Welcome message.
+    # Welcome message.
     RLCommon::LogLine( "* Welcome to Rigel $version!\r\n" );
 
-    #   Prompt for imap and proxy password if required
+    # Prompt for imap and proxy password if required
     if( !$config{'password'} )
         {
         RLCommon::LogLine( "You require authentication ...\r\n" );
         RLCommon::GetProxyPass();
 
-        RLConfig::set_global_config( 'password', RLCommon::GetPass( 'IMAP password: ' ) );
+        RLConfig::SetGlobalConfig( 'password', RLCommon::GetPass( 'IMAP password: ' ) );
         }
 
-    #   finally do something!
+    # Finally do something!
     if( $config{encrypt} )
         {
-        #   Encrypt a password and print it out so it can be stored
-        #   in the config file for later use.
+        # Encrypt a password and print it out so it can be stored
+        # in the config file for later use.
         RLCore::Encrypt();
         }
     elsif( $config{once_p} || $config{debug} )
         {
-        #   We're only going to run once if that's all there is to do or
-        #   if we're in debug mode.
+        # We're only going to run once if that's all there is to do or
+        # if we're in debug mode.
         RLCore::UpdateFeeds();
         }
     else
         {
-        #   Invoke once to check whether given parameters are OK
+        # Invoke once to check whether given parameters are OK
         RLIMAP::IMAPTestConnect();
 
         if( !defined( $config{nodaemon} ) )
@@ -151,7 +151,7 @@ sub main
             open( STDERR, '>>/dev/null' ) or die;
             }
 
-        #   Loop forever and sleep for a while.
+        # Loop forever and sleep for a while.
         while( 1 )
             {
             eval { RLCore::UpdateFeeds(); };
@@ -161,5 +161,5 @@ sub main
         }
     }
 
-#   Run the main Rigel code.
+# Run the main Rigel code.
 main();
