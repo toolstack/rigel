@@ -1,0 +1,108 @@
+Rigel change log:
+================
+
+version 1.0RC1
+--------------
+        - Added cropping mode
+        - Fixed bug in mime encoder that split long lines when it shouldn't 
+        - Added feed direction setting
+        - Fixed bug in the add new feed code that dropped the subject line 
+          on new feeds
+        - Added thtmllink mode
+        - Removed the need for Unicode::Map8, Rigel now runs on Windows 
+          without a complier!
+        - Major code cleanup, function descriptions, function naming 
+          standards and lots of other internal cleanup, the source code
+            almost looks beautiful ;)
+        - Converted all modules to be function based instead of object based
+        - Renamed the module directory and modules
+        - Added Template and IMAP modules
+        - Added help folder and feed examples to the IMAP server
+        - Added FAQ file
+        - Fixed issues with feeds that have UTF8 encoding not getting stored
+          in Perl in UTF8 format, causing currupt messages to be stored on
+          the IMAP server
+        - Added support for log files instead of just console output, including
+          log file roll over and dual console/file output
+        - Configuraton templates now support various date items
+        - Removed old OPML import/export code as it hasn't worked in a long 
+          time
+        
+version 1.0b5
+-------------
+        - Fixed critical bug where sync mode was forced on for all feeds
+
+version 1.0b4
+-------------
+        - Added support for TTL's in RSS Feeds
+        - Added code to clean feeds of high ascii characters
+        - Fixed issue with Courier IMAP
+        - Added date/time to debug output
+        - Added support for mhtmllink, htmllink and textlink message types
+        - Updated "Template" add message to be more user friendly
+        - Enabled "use subjects" by default
+        - Updated the "Processing..." line to use the configuration message
+          subject line instead of the rss url
+
+version 1.0b3
+-------------
+        - removed redundent config file loads
+        - removed data::dumper from all .pm files except debug.pm
+        - Fixed config file parsing to apply settings to the approrpriate
+          site or global config variables only
+        - possible bug fix with checking the time stamp on a search where no
+          messages exist
+        - Added debugging library and support
+        - It turns out that you cannot count on UID's being returned form
+          append_string() when adding messages to the IMAP server, nor can
+          you count on the flag's variable in append_string() actually
+          working so this update loops through all messages in the
+          configuration and last update folders whenever a change is made
+          and marks all messages as seen.
+        - also removed the peek setting in the imap server connection code
+          as some servers take this to mean to never update the seen status
+          no matter what the function being preformed, incudeing a see() call
+        - added Ignoresizeerrors to the IMAP connect to support mail servers
+          like Exchange 2007
+        - added code to check the validity of the subject lines being
+          replaced in the last update so if an error occured after the
+          connetion to the RSS feed was made and no subjects were actually
+          returned the old list of subjects will be used
+
+version 1.0b2
+-------------
+        - Second Beta
+        - Significant changes to the HTML->text converter code to better
+          handle the kind of HTML that comes from RSS feeds
+        - Rigel now strips HTML from subject lines when delivering in
+          text mode
+        - Rigel now requires HTML::Entities
+        - Rigel now can cache the subject lines of feed items and use
+          them to exclude items as being seen as new
+        - Removed the use of WARN in the code
+        - Delivery mode is now a per feed option instead of a global
+          option
+        - Added two new macro's in the configuration file code, %{newline}
+          and %{dashline:}
+        - Reworked the macro code to strip out any macro that was not
+          recognized or contained a blank item
+        - The template "add" messages now include a list of all options
+          available to be set, commented out by default
+        - Fixed an issue that if a configuration message had a blank line
+          in it, the parser would treat it as a "reset to default" command
+          instead of just a blank line :)
+        - Changed delivery modes from text/html to text/raw/embedded, see
+          the install file for details
+        - The add feed code now handles mime messages correctly
+
+version 1.0b1
+-------------
+        - Initial Beta
+        - Based upon rss2imap v0.78 development
+        - Moved RSS configuration details to the IMAP server instead
+          of a local file
+        - Combined the local and site configuration files in
+          to a single configuration file
+        - Changed logic on feeds so that if you delete an article
+          Rigel will not re-add it on the next update
+        - General code standardization and removal of of unused code
