@@ -436,8 +436,10 @@ package RLCore;
 
             # Get the subject line and add it to our cache for later, make sure we
             # strip any newlines so we can store it in the IMAP message properly
+            # as well as any extra spaces
             $subject = __ConvertToText( $item->title() );
             $subject =~ s/\n//g;
+            $subject = RLCommon::StrTrim( $subject );
             RLDebug::OutputDebug( 2, "RSS Item Subject = $subject" );
             push @subject_lines, $subject;
 
