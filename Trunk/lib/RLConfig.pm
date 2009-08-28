@@ -301,6 +301,9 @@ package RLConfig;
         $cnf{'date:monthnumber'} += 1;
         $cnf{'date:weekday'} += 1;
         $cnf{'date:yearday'} += 1;
+        $cnf{'date:sec'} = sprintf( "%02d", $cnf{'date:sec'} );
+        $cnf{'date:min'} = sprintf( "%02d", $cnf{'date:min'} );
+        $cnf{'date:hour'} = sprintf( "%02d", $cnf{'date:hour'} );
 
         if( $rss )
             {
