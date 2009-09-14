@@ -880,6 +880,8 @@ BODY
         $subject = RLConfig::ApplyTemplate( $rss, $item, undef, $subject );
         $from    = RLConfig::ApplyTemplate( $rss, $item, undef, $from );
 
+        RLDebug::OutputDebug( 2, "GetBody: " . $site_config->{'delivery-mode'} );
+
         if( $site_config->{'delivery-mode'} eq 'embedded' )
             {
             $body =<<"BODY"
@@ -954,14 +956,16 @@ BODY
         elsif( $site_config->{'delivery-mode'} eq 'textlink' )
             {
             $body = RLMHTML::GetHTML( $item->link() );
-            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
+			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
+            eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
             $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
         elsif( $site_config->{'delivery-mode'} eq 'thtmllink' )
             {
             $body = RLMHTML::GetHTML( $item->link() );
             $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            $body = HTML::FormatText::WithLinks::AndTables->convert( $body );
+			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
+            eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
             }
         else
             {
