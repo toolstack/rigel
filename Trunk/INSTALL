@@ -42,8 +42,8 @@ Requirements
         IMAP server, however it has only been verified at this time with
         Microsoft Exchange 2003/2007.
 
-        Rigel has only been tested on Linux at this time but it should run on
-        just about any *nix variant that support Perl and the above modules.
+        Rigel has been tested on OpenSUSE Linux at this time but it should run
+        on just about any *nix variant that support Perl and the above modules.
 
         Rigel has been test on Windows and it works with ActiveState Perl 5.10,
         however not all functionality has been test and ActiveState's pacakge
