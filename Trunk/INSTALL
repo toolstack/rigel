@@ -4,7 +4,7 @@ Rigel Installation
 Requirements
 ------------
         Rigel is a Perl script, so of course it needs Perl, specifically
-        Perl 5.8 or above.
+        Perl 5.8 or above (5.10 is highly recommended for Windows).
 
         In addition, the following Perl modules are required:
 
@@ -35,21 +35,21 @@ Requirements
                 XML::Parser::Expat
 
         Note that XML::FeedPP and MAIL::IMAPClient must be up to the current
-        versions (0.38 and 3.06 and this time), previous versions had bugs
+        versions (0.40 and 3.21 and this time), previous versions had bugs
         which caused Rigel to fail.
 
         You also need an IMAP server, Rigel should work with just about any
         IMAP server, however it has only been verified at this time with
         Microsoft Exchange 2003/2007.
 
-        Rigel has been tested on OpenSUSE Linux at this time but it should run
+        Rigel has been thoroughly tested on OpenSUSE Linux but it should run
         on just about any *nix variant that support Perl and the above modules.
 
-        Rigel has been test on Windows and it works with ActiveState Perl 5.10,
-        however not all functionality has been test and ActiveState's pacakge
-        manager does not inlcude all of the required packages.  Install what
-        you can from ActiveState's package manager and then use cpan to install
-        the rest.
+        Rigel has also been test on Windows and it works with ActiveState Perl
+        5.10, however not all functionality has been test and ActiveState's
+        package manager does not include all of the required packages.  Install
+        what you can from ActiveState's package manager and then use cpan to
+        install the rest.
 
 Installation
 ------------
@@ -98,6 +98,9 @@ Installation
         Inside the Add folder will be a series of templates to use for adding
         new feeds to your configuration.
 
+        Inside the Help folder will be some example feeds and a general help
+        message to get you started.
+
         The last step is to configure Rigel to run in the background, there are
         two options for this:
 
@@ -114,16 +117,18 @@ Installation
 
 Adding Feeds
 ------------
-        To add a feed, simply edit one of these templates or create a new
-        message in the Add folder.  The message should simply contain the url
-        of the feed you want to add to Rigel.
+        To add a feed, simply edit one of the template messages or create a new
+        message in the Add folder.  The message should contain the url of the
+        feed you want to add to Rigel as well as any custom configuration you
+        want to have for this feed.  You can also see the examples in the Help
+        folder as a place to start.
 
-        Once complete, re-run Rigel
+        Once complete, re-run Rigel (or let your scheduler run it for you):
 
                 perl Rigel -o
 
         This will create the configuration messages in the Configuration folder
-        and retrieve the first set of articles from the feeds.
+        and retrieve the first set of articles from the feeds you have added.
 
         For more advanced functions, when you create the message in the Add
         folder, you can add additional items to the message body to control how
@@ -137,14 +142,24 @@ Adding Feeds
 
                 folder
                 type
-                sync
+                to
+                subject
+                from
+                delivery-mode
+                crop-start
+                crop-end
+                ignore-dates
+                article-order
                 expire
                 expire-unseen
                 expire-folder
-                subject
-                from
+                sync
+                use-subjects
+                force-ttl
 
-        See the configuration file for details on these.
+        The template add messages have all of these options commented out with
+        brief descriptions of them, or you can read the configuration file for
+        details on these.
 
 Macros
 ------
@@ -173,6 +188,7 @@ Macros
                 %{item:dc:creator}      dc:creator of every RSS item.(undefined
                                         in some RSS)
                 %{channel:link}         Link of RSS channel.
+                %{channel:hostname}        The hostname of the channel url.
                 %{channel:title}        Title of RSS channel.
                 %{channel:description}  Description of RSS channel.
                 %{channel:dc:date}      dc:date of RSS channel. (undefined in
@@ -207,16 +223,16 @@ Delivery mode
                         you have to be connected to the Internet to see the
                         content in this mode.
                 - mhtmllink
-                        Retreive the webpage in the rss link and convert it
+                        Retrieve the webpage in the rss link and convert it
                         to a mime HTML mail message with all css and images
                         embedded in the message.  This allows for offline
                         reading, but can generate very large messages.
                 - htmllink
-                        Retrive the webpage in the rss link and create an
+                        Retrieve the webpage in the rss link and create an
                         HTML message from it.  This allows for offline
                         reading, but no css or images will be available.
                 - textlink
-                        Retreive the webpage in the rss link and create a
+                        Retrieve the webpage in the rss link and create a
                         text message from it.
 
         You can configure delivery mode by setting "delivery-mode" value in

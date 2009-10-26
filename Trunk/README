@@ -1,22 +1,22 @@
-Rigel V1.0??? (??? ??, ????)
-============================
+Rigel V1.0 (October 26, 2009)
+=============================
 
 Welcome to Rigel, an RSS to IMAP gateway
 ----------------------------------------
         Rigel is designed to be run by a user on their own hardware and
         transfer RSS feeds to an IMAP account of the users choosing.
 
-        Some of Rigels features include:
+        Some of Rigel's features include:
                 * RSS 0.9, 1.0, 2.0, Atom 0.3 support.
-                * text/html, text/plain mail format support.
-                * You can tell Rigel to retrive the full content and add it
-                  to the message instead of the content from thr RSS feed.
+                * Multiple mail formats supported.
+                * You can tell Rigel to retrieve the full content and add it
+                  to the message instead of the content from the RSS feed.
                 * You can unify unread RSS article management via IMAP. This
-                  is useful in case of using multiple client.
-                * IMAP over SSL support
-                * Connect via proxy, proxy authentication support.
-                * Generate IMAP Folder dynamically from every RSS title, and
-                  so on.
+                  is useful in case of using multiple clients.
+                * IMAP over SSL supported.
+                * Connect via proxy, proxy authentication supported.
+                * Generate IMAP Folder dynamically from every RSS title or
+                  other details from the items.
                 * Automatically delete expired article.
                 * By executing in channel mode, it can work as simple Antenna.
                 * Reduce needless traffic by using If-Modified-Since header.
@@ -25,12 +25,14 @@ Welcome to Rigel, an RSS to IMAP gateway
 
 News
 ----
+        October 26/2009
+                - Version 1.0 release
         August 18/2009
                 - First release candidate
         July 14/2009
                 - Fifth (and final?) beta release to fix critical bug in b4
         July 13/2009
-                - Fouth (and final?) beta release, three new message modes add,
+                - Fourth (and final?) beta release, three new message modes add,
                   hence the beta instead of 1.0
         June 10/2008
                 - Third (and final?) beta release
@@ -51,17 +53,6 @@ Acknowledgement
         Rigel is a fork from rss2imap, their code, while apparently no
         longer maintained, is still the core of Rigel, please visit
         their sourceforge page for more information.
-
-Soapbox
--------
-        I hate Perl.  I really, really, really hate Perl.
-
-        However it is really, really, really good for some things.  This
-        is one of them.
-
-        Having said that, I'll apologize for the code up front, between
-        not having written the vast majority of it (see Acknowledgements
-        above) and just hacking in the changes I wanted.
 
 Change Log
 ----------

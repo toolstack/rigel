@@ -42,7 +42,7 @@ package RLConfig;
     @ISA = qw(Exporter);
     @EXPORT_OK = qw(LoadConfig ParseConfigString GetVersion GetGlobalConfig GetSiteConfig ApplyTemplate);
 
-    our $VERSION = "V1 post RC1 development";
+    our $VERSION = "V1.0";
 
     # fallback config value(real default value)
     # these values may be overridden by the config file or cmdline options.
