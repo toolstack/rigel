@@ -1,20 +1,29 @@
 Rigel change log:
 ================
 
-version 1.0???
---------------
+version 1.0
+-----------
+        - updated template code to pad with 0's the sec/min/hour values to
+          two digits
+        - Trimmed extra spaces from the start/end of the subject line for a
+          feed item to ensure they match what is stored in the subject line
+          cache
+        - HTML::FormatText::WithLinks::AndTables is a little flaky,
+          encapsulated in a Perl eval so things don't blow up if there is
+          a problem
+        - added channel hostname macro
 
 version 1.0RC1
 --------------
         - Added cropping mode
-        - Fixed bug in mime encoder that split long lines when it shouldn't 
+        - Fixed bug in mime encoder that split long lines when it shouldn't
         - Added feed direction setting
-        - Fixed bug in the add new feed code that dropped the subject line 
+        - Fixed bug in the add new feed code that dropped the subject line
           on new feeds
         - Added thtmllink mode
-        - Removed the need for Unicode::Map8, Rigel now runs on Windows 
+        - Removed the need for Unicode::Map8, Rigel now runs on Windows
           without a complier!
-        - Major code cleanup, function descriptions, function naming 
+        - Major code cleanup, function descriptions, function naming
           standards and lots of other internal cleanup, the source code
             almost looks beautiful ;)
         - Converted all modules to be function based instead of object based
@@ -28,9 +37,9 @@ version 1.0RC1
         - Added support for log files instead of just console output, including
           log file roll over and dual console/file output
         - Configuraton templates now support various date items
-        - Removed old OPML import/export code as it hasn't worked in a long 
+        - Removed old OPML import/export code as it hasn't worked in a long
           time
-        
+
 version 1.0b5
 -------------
         - Fixed critical bug where sync mode was forced on for all feeds
