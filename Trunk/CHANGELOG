@@ -1,6 +1,10 @@
 Rigel change log:
 ================
 
+version ?.?
+-----------
+
+
 version 1.0
 -----------
         - updated template code to pad with 0's the sec/min/hour values to
