@@ -1,3 +1,5 @@
+svn copy ../Trunk ../Tags/$1
+svn commit ../Tags/$1 --message "Tagged $1"
 svn export https://rigel.svn.sourceforge.net/svnroot/rigel/Tags/$1 Rigel-$1
 tar --owner nobody --group nobody -cf Rigel-$1.tar Rigel-$1
 rm -rf Rigel-$1
