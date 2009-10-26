@@ -116,6 +116,7 @@ $site_config->{'url'}
 #   %{channel:dc:date}                 The channel date
 #   %{channel:description}             The channel description
 #   %{channel:link}                    The channel URL
+#   %{channel:hostname}                The hostname from the channel URL
 #   %{channel:title}                   The channel title
 #   %{dashline:channel:title}          A line of "-"'s equal to the length
 #                                      of the channel title
@@ -274,6 +275,7 @@ Macros
                 %{item:dc:creator}      dc:creator of every RSS item.(undefined
                                         in some RSS)
                 %{channel:link}         Link of RSS channel.
+				%{channel:hostname}		The hostname from the channel link.
                 %{channel:title}        Title of RSS channel.
                 %{channel:description}  Description of RSS channel.
                 %{channel:dc:date}      dc:date of RSS channel. (undefined in
@@ -459,7 +461,7 @@ BODY
     # This function returns all the possible settings in the template
     # message that can be changed as an array.
     #
-    #     __TemplateItems(  $site_config)
+    #     __TemplateItems( $site_config )
     #
     # Where:
     #     $site_config is the configuration to use for this feed
@@ -472,23 +474,23 @@ BODY
         # These are the configuriaton items that appear in the standard add feed template
         # each one can be replaced with something specific to the feed, you must replace
         # $name and $url.
-        $item->{'desc'}             = "Subject: $site_config->{'desc'}";
-        $item->{'url'}                 = $site_config->{'url'};
-        $item->{'folder'}             = "#folder = $site_config->{'folder'}";
-        $item->{'subject'}             = "#subject = $site_config->{'subject'}";
-        $item->{'delivery-mode'}     = "#delivery-mode = $site_config->{'delivery-mode'}";
-        $item->{'crop-start'}         = "#crop-start = $site_config->{'crop-start'}";
-        $item->{'crop-end'}         = "#crop-end = $site_config->{'crop-end'}";
-        $item->{'article-order'}     = "#article-order = $site_config->{'article-order'}";
-        $item->{'to'}                 = "#to = $site_config->{'to'}";
-        $item->{'from'}             = "#from = $site_config->{'from'}";
-        $item->{'expire'}             = "#expire = $site_config->{'expire'}";
-        $item->{'expire-unseen'}     = "#expire-unseen = $site_config->{'expire-unseen'}";
-        $item->{'expire-folder'}     = "#expire-folder = $site_config->{'expire-folder'}";
-        $item->{'sync'}             = "#sync = $site_config->{'sync'}";
-        $item->{'use-subjects'}     = "#use-subjects = $site_config->{'use-subjects'}";
-        $item->{'force-ttl'}         = "#force-ttl = $site_config->{'force-ttl'}";
-        $item->{'ignore-dates'}     = "#ignore-dates = $site_config->{'ignore-dates'}";
+        $item->{'desc'}            = "Subject: $site_config->{'desc'}";
+        $item->{'url'}             = $site_config->{'url'};
+        $item->{'folder'}          = "#folder = $site_config->{'folder'}";
+        $item->{'subject'}         = "#subject = $site_config->{'subject'}";
+        $item->{'delivery-mode'}   = "#delivery-mode = $site_config->{'delivery-mode'}";
+        $item->{'crop-start'}      = "#crop-start = $site_config->{'crop-start'}";
+        $item->{'crop-end'}        = "#crop-end = $site_config->{'crop-end'}";
+        $item->{'article-order'}   = "#article-order = $site_config->{'article-order'}";
+        $item->{'to'}              = "#to = $site_config->{'to'}";
+        $item->{'from'}            = "#from = $site_config->{'from'}";
+        $item->{'expire'}          = "#expire = $site_config->{'expire'}";
+        $item->{'expire-unseen'}   = "#expire-unseen = $site_config->{'expire-unseen'}";
+        $item->{'expire-folder'}   = "#expire-folder = $site_config->{'expire-folder'}";
+        $item->{'sync'}            = "#sync = $site_config->{'sync'}";
+        $item->{'use-subjects'}    = "#use-subjects = $site_config->{'use-subjects'}";
+        $item->{'force-ttl'}       = "#force-ttl = $site_config->{'force-ttl'}";
+        $item->{'ignore-dates'}    = "#ignore-dates = $site_config->{'ignore-dates'}";
 
         return $item;
         }

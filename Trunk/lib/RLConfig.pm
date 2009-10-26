@@ -312,6 +312,10 @@ package RLConfig;
             $cnf{'channel:description'} = $rss->description();
             $cnf{'channel:dc:date'}     = $rss->pubDate() || "";
 
+			$cnf{'channel:hostname'}	= $rss->link();
+			$cnf{'channel:hostname'} 	=~ s/.*:\/\///;
+			$cnf{'channel:hostname'} 	=~ s/\/.*$//;
+			
             $cnf{'dashline:channel:title'} = "-" x length( $cnf{'channel:title'} );
             }
 
