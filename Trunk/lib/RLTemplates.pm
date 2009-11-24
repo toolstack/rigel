@@ -109,6 +109,9 @@ $site_config->{'url'}
 # >0 TTL in minutes
 #force-ttl = $site_config->{'force-ttl'}
 #
+# Define a user-agent string to use
+#user-agent = Rigel/%{version} (%{OS})
+#
 ###############################################################################
 #   Some of the values can use macros to substitute run time values, these
 #   macros are as follows:
@@ -126,7 +129,9 @@ $site_config->{'url'}
 #   %{dir:manage}                      The management folder
 #   %{dir:sep}                         The character used to seperate folder
 #                                      names on the IMAP server
-#   %{host}                            The IMAP server name
+#   %{host}                            The local host server name
+#   %{OS}                              The local host server operating system name
+#   %{version}                         The current version of Rigel
 #   %{item:dc:creator}                 The item author
 #   %{item:dc:date}                    The item date
 #   %{item:dc:subject}                 The item subject
@@ -258,6 +263,8 @@ Macros
                 %{host}                 Hostname
                 %{user}                 Username
                 %{rss-link}             RSS URL
+				%{OS}					OS type
+				%{version}				Rigel's version
                 %{dir:sep}              The IMAP server's folder separator
                 %{dir:manage}           The folder that Rigel stores it's
                                         management items in
@@ -491,6 +498,7 @@ BODY
         $item->{'use-subjects'}    = "#use-subjects = $site_config->{'use-subjects'}";
         $item->{'force-ttl'}       = "#force-ttl = $site_config->{'force-ttl'}";
         $item->{'ignore-dates'}    = "#ignore-dates = $site_config->{'ignore-dates'}";
+		$item->{'user-agent'}      = "#user-agent = Rigel/%{version} (%{OS})";
 
         return $item;
         }
