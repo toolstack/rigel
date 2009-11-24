@@ -482,6 +482,7 @@ package RLCore;
                     }
 
                 # if message not found, append it.
+				RLDebug::OutputDebug( 2, "Result: @search" );
                 if( @search == 0 )
                     {
                     if( $site_config->{'use-subjects'} )
@@ -858,7 +859,7 @@ BODY
     # This function returns the formated body of an rss item's
     # conetents, whether linked or contained
     #
-    #     __GetBody(  $site, $rss, $item)
+    #     __GetBody( $site, $rss, $item )
     #
     # Where:
     #     $site is the site configuration array
@@ -950,19 +951,19 @@ BODY
             }
         elsif( $site_config->{'delivery-mode'} eq 'htmllink' )
             {
-            $body = RLMHTML::GetHTML( $item->link() );
+            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
             $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
         elsif( $site_config->{'delivery-mode'} eq 'textlink' )
             {
-            $body = RLMHTML::GetHTML( $item->link() );
+            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
 			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
             eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
             $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
             }
         elsif( $site_config->{'delivery-mode'} eq 'thtmllink' )
             {
-            $body = RLMHTML::GetHTML( $item->link() );
+            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
             $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
 			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
             eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };

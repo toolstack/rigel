@@ -33,8 +33,9 @@ my $crop_end = "<div class=\"more_fun\">";
 #print RLMHTML::GetMHTML( $url, $crop_start, $crop_end );
 
 # print out the HTML output
-#print RLMHTML::GetHTML( $url );
+my $output = RLMHTML::CropBody( RLMHTML::GetHTML( $url ), $crop_start, $crop_end );
+print RLMHTML::MakeLinksAbsolute( $output, $url );
 
 #print out the plain text output
-#print RLMHTML::GetTEXT( $url );
+#print RLMHTML::CropBody( RLMHTML::GetTEXT( $url ), $crop_start, $crop_end );
 

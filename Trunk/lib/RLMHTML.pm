@@ -34,7 +34,7 @@ package RLMHTML;
 
     our (@ISA, @EXPORT_OK);
     @ISA = qw(Exporter);
-    @EXPORT_OK = qw(GetMHTML GetHTML CropBody);
+    @EXPORT_OK = qw(GetMHTML GetHTML CropBody MakeLinksAbsolute);
 
     #
     # This function returns a character string that represents the web page
@@ -47,7 +47,7 @@ package RLMHTML;
     #
     sub GetMHTML
         {
-        my ( $sitename, $crop_start, $crop_end ) = @_;
+        my ( $sitename, $crop_start, $crop_end, $useragent ) = @_;
         my $result = "";
 
         # Define the content id for the starting mime part
@@ -83,7 +83,7 @@ package RLMHTML;
         $result .= "Content-Type: text/html; name=\"index.html\"\r\n";
         $result .= "\r\n";
 
-        my $sitebody = __GetHTTPBody( $sitename );
+        my $sitebody = __GetHTTPBody( $sitename, $useragent );
 
         $sitebody = CropBody( $sitebody, $crop_start, $crop_end );
 
@@ -110,7 +110,7 @@ package RLMHTML;
                 $result .= "Content-Type: text/html; name=\"" . $filename . "\"\r\n";
                 $result .= "\r\n";
 
-                my $itembody = __GetHTTPBody( __absoluteURL( $style->attr( 'href' ), $sitename ) );
+                my $itembody = __GetHTTPBody( __absoluteURL( $style->attr( 'href' ), $sitename ), $useragent );
                 $result .= $itembody;
 
                 $result .= "\r\n";
@@ -137,7 +137,7 @@ package RLMHTML;
             $result .= "Content-Type: " . $filemimetype . "; name=\"" . $filename . "\"\r\n";
             $result .= "\r\n";
 
-            my $itembody = __GetHTTPBody( __absoluteURL( $img->attr( 'src' ), $sitename) );
+            my $itembody = __GetHTTPBody( __absoluteURL( $img->attr( 'src' ), $sitename), $useragent );
             $result .= encode_base64( $itembody );
 
             $result .= "\r\n";
@@ -160,9 +160,9 @@ package RLMHTML;
     #
     sub GetHTML
         {
-        my ( $url ) = @_;
+        my ( $url, $useragent ) = @_;
 
-        return __GetHTTPBody( $url );
+        return __GetHTTPBody( $url, $useragent );
         }
 
     #
@@ -198,6 +198,41 @@ package RLMHTML;
         return $sitebody;
         }
 
+	sub MakeLinksAbsolute
+		{
+        my ( $sitebody, $BaseURL ) = @_;
+		
+        my $mimetypes = MIME::Types->new;
+        my $tree = HTML::TreeBuilder->new;
+        $tree->parse( $sitebody );
+		
+        # Find all the style sheet objects we want to make absolute
+        my @styles = $tree->find( 'link' );
+        my $style = "";
+
+        foreach $style (@styles)
+            {
+            if( $style->attr( 'rel' ) eq "stylesheet" )
+                {
+				my $abs_url = __absoluteURL( $style->attr( 'href' ), $BaseURL );
+				$sitebody =~ s/\Q$style->attr( 'href' )\E/$abs_url/g;
+                }
+            }
+
+        # Find all the img objects we want to make absolute
+        my @imgs = $tree->find( 'img' );
+        my $img = "";
+
+        foreach $img (@imgs)
+            {
+			my $img_src = $img->attr( 'src' );
+			my $abs_url = __absoluteURL( $img_src, $BaseURL );
+			$sitebody =~ s/\Q$img_src\E/$abs_url/g;
+			}
+		
+		return $sitebody;
+		}
+		
     ###########################################################################
     #  Internal Functions only from here
     ###########################################################################
@@ -247,21 +282,40 @@ package RLMHTML;
     # This function returns a character string that represents the web page
     # body, it follows redirects as required.
     #
-    #     __GetHTTPBody(  $url  )
+    #     __GetHTTPBody( $url, $UserAgent )
     #
     # Where:
     #     $url is the web site to retreive
+	#     $UserAgent is the user-agent string to send to the remote host
     #
     sub __GetHTTPBody
         {
-        my ( $url ) = @_;
+        my ( $url, $UserAgent ) = @_;
 
         my $ua = LWP::UserAgent->new( requests_redirectable => [ 'GET', 'HEAD', 'POST' ] );
-        my $req = HTTP::Request->new( GET => $url );
-        my $res = $ua->request( $req );
+		my $req;
+		my $res;
+		
+		$ua->agent( $UserAgent );
+		
+		# By default, retry three times if the request fails
+		for( my $i = 0; $i < 3; $i++ )
+			{
+			$req = HTTP::Request->new( GET => $url );
+			$res = $ua->request( $req );
+			
+			if( $res->is_success ) { $i = 3; }
+			}
 
         my $content = $res->content();
 
+		# If we still failed to retrieve the url, the content will be the 
+		# error code, but add the url as well for reference.
+		if( $res->is_error ) 
+			{
+			$content .= "\r\n\r\n$url";
+			}
+		
         # It seems, some web pages, encode their content in UTF-8, but don't
         # say so in the HTTP headers, this causes UserAgent to return a string
         # that is not in Perl's UTF-8 format even though the bytes in the string

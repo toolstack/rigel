@@ -48,9 +48,10 @@ package RLConfig;
     # these values may be overridden by the config file or cmdline options.
     our $DEFAULT_GLOBAL_CONFIG =
         {
-        'user'                 => $ENV{USER},
+        'user'                 => $^O !~ /Win32/ ? $ENV{USER} : $ENV{USERNAME},
         'password'             => undef,
         'host'                 => 'localhost',
+		'OS'				   => $^O,
         'port'                 => 143,
         'directory-separator'  => '.',
         'interval'             => 60,
@@ -68,13 +69,28 @@ package RLConfig;
         'force-console'        => undef,
         };
 
+	 if( $^O !~ /Win32/ )
+		{
+		if( $ENV{'HOSTNAME'} )
+			{
+			$DEFAULT_GLOBAL_CONFIG->{'host'} = $ENV{'HOSTNAME'};
+			}
+		}
+	else
+		{
+		if( $ENV{'COMPUTERNAME'} )
+			{
+			$DEFAULT_GLOBAL_CONFIG->{'host'} = $ENV{'COMPUTERNAME'};
+			}
+		}
+			
     our $DEFAULT_SITE_CONFIG =
         {
         'folder'        => 'RSS%{dir:sep}%{channel:title}',
         'type'          => 'items',
         'to'            => $DEFAULT_GLOBAL_CONFIG->{'user'},
         'subject'       => '%{item:title}',
-        'from'          => $ENV{'USER'} . '@' . ($ENV{'HOSTNAME'} ? $ENV{'HOSTNAME'} : "localhost"),
+        'from'          => $DEFAULT_GLOBAL_CONFIG->{'user'} . "@" . $DEFAULT_GLOBAL_CONFIG->{'host'},
         'delivery-mode' => 'raw',
         'expire-unseen' => 'no',
         'expire'        => -1,
@@ -89,6 +105,7 @@ package RLConfig;
         'crop-end'      => "",
         'article-order' => 1,
         'ignore-dates'  => 'no',
+		'user-agent'    => 'Rigel/$VERSION ($^O)',
         };
 
     #
@@ -333,6 +350,8 @@ package RLConfig;
 
         $cnf{host}            = $DEFAULT_GLOBAL_CONFIG->{host};
         $cnf{user}            = $DEFAULT_GLOBAL_CONFIG->{user};
+		$cnf{OS}			  = $DEFAULT_GLOBAL_CONFIG->{OS};
+		$cnf{version}         = $VERSION;
         $cnf{'last-modified'} = $rss->{'Rigel:last-modified'};
         $cnf{'rss-link'}      = $rss->{'Rigel:rss-link'};
         $cnf{'dir:sep'}       = $DEFAULT_GLOBAL_CONFIG->{'directory_separator'};
