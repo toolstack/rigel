@@ -51,7 +51,7 @@ Subject: $site_config->{'desc'}
 MIME-Version: 1.0
 Content-Type: text/plain;
 Content-Transfer-Encoding: 7bit
-User-Agent: Rigel version $VERSION
+User-Agent: Rigel $VERSION
 
 $site_config->{'url'}
 
@@ -72,18 +72,27 @@ $site_config->{'url'}
 # Source mail address, the "From:" header will be set to this value
 #from = $site_config->{'from'}
 #
-# Delivery mode for the articles: embedded, raw, text, mhtmllink, htmllink
-# textlink or thtmllink
-#delivery-mode = $site_config->{'delivery-mode'}
+# Body source for the articles: feed/link
+#body-source = $site_config->{'body-source'}
 #
-# Cropping of the source file: these are regular expressions that match content
-# in the body of the rss item or the linked item depending on the delivery mode.
+# Cropping of the body text before it is processed by any body-process 
+# conversions that may occur but after it is retrieved  from the rss item or 
+# website depending on the body source mode. 
+#pre-crop-start = $site_config->{'pre-crop-start'}
+#pre-crop-end = $site_config->{'pre-crop-end'}
 #
-#crop-start = $site_config->{'crop-start'}
-#crop-end = $site_config->{'crop-end'}
+# Convert URL's in the message body to absolute if they are relative: yes/no
+#absolute-urls = $site_config->{'absolute-urls'}
+#
+# Process the body text to convert it to: none/text/mhtml
+#body-process = $site_config->{'body-process'}
+#
+# Cropping of the body text after it is processed by any body-process 
+# conversions. 
+#post-crop-start = $site_config->{'post-crop-start'}
+#post-crop-end = $site_config->{'post-crop-end'}
 #
 # Ignore publication dates on items, yes/no.
-#
 #ignore-dates = $site_config->{'ignore-dates'}
 #
 # The order articles come in from the feed: 1 = oldest to newest,
@@ -110,6 +119,12 @@ $site_config->{'url'}
 #force-ttl = $site_config->{'force-ttl'}
 #
 # Define a user-agent string to use
+# Opera 10.01
+#user-agent = Opera/9.80 (Windows NT 6.1; U; en) Presto/2.2.15 Version/10.01
+# IE 8
+#user-agent = Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0)
+# Firefox 3.5.5
+#user-agent = Mozilla/5.0 (Windows; U; Windows NT 5.2; zh-CN; rv:1.9.1.5) Gecko/Firefox/3.5.5
 #user-agent = Rigel/%{version} (%{OS})
 #
 ###############################################################################
@@ -127,7 +142,7 @@ $site_config->{'url'}
 #                                      of the item title
 #   %{dir:lastmod}                     The last modified folder
 #   %{dir:manage}                      The management folder
-#   %{dir:sep}                         The character used to seperate folder
+#   %{dir:sep}                         The character used to separate folder
 #                                      names on the IMAP server
 #   %{host}                            The local host server name
 #   %{OS}                              The local host server operating system name
@@ -186,7 +201,7 @@ Subject: Help with Rigel
 MIME-Version: 1.0
 Content-Type: text/plain;
 Content-Transfer-Encoding: 7bit
-User-Agent: Rigel version $VERSION
+User-Agent: Rigel $VERSION
 
 Welcome to Rigel, an RSS to IMAP gateway
 ----------------------------------------
@@ -485,9 +500,13 @@ BODY
         $item->{'url'}             = $site_config->{'url'};
         $item->{'folder'}          = "#folder = $site_config->{'folder'}";
         $item->{'subject'}         = "#subject = $site_config->{'subject'}";
-        $item->{'delivery-mode'}   = "#delivery-mode = $site_config->{'delivery-mode'}";
-        $item->{'crop-start'}      = "#crop-start = $site_config->{'crop-start'}";
-        $item->{'crop-end'}        = "#crop-end = $site_config->{'crop-end'}";
+        $item->{'body-source'}     = "#body-source = $site_config->{'body-source'}";
+        $item->{'pre-crop-start'}  = "#pre-crop-start = $site_config->{'pre-crop-start'}";
+        $item->{'pre-crop-end'}    = "#pre-crop-end = $site_config->{'pre-crop-end'}";
+		$item->{'body-process'}    = "#body-process = $site_config->{'body-process'}";
+		$item->{'absolute-urls'}   = "#absolute-urls = $site_config->{'absolute-urls'}";
+        $item->{'post-crop-start'} = "#post-crop-start = $site_config->{'post-crop-start'}";
+        $item->{'post-crop-end'}   = "#post-crop-end = $site_config->{'post-crop-end'}";
         $item->{'article-order'}   = "#article-order = $site_config->{'article-order'}";
         $item->{'to'}              = "#to = $site_config->{'to'}";
         $item->{'from'}            = "#from = $site_config->{'from'}";

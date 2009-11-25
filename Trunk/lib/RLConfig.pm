@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2004 Taku Kudo <taku@chasen.org>
 #               2005 Yoshinari Takaoka <mumumu@mumumu.org>
-#                2008 Greg Ross <greg@darkphoton.com>
+#               2008 Greg Ross <greg@darkphoton.com>
 #     All rights reserved.
 #     This is free software with ABSOLUTELY NO WARRANTY.
 #
@@ -92,6 +92,9 @@ package RLConfig;
         'subject'       => '%{item:title}',
         'from'          => $DEFAULT_GLOBAL_CONFIG->{'user'} . "@" . $DEFAULT_GLOBAL_CONFIG->{'host'},
         'delivery-mode' => 'raw',
+		'body-source'   => 'feed',
+		'body-process'  => 'none',
+		'absolute-urls' => 'no',
         'expire-unseen' => 'no',
         'expire'        => -1,
         'expire-folder' => undef,
@@ -103,6 +106,10 @@ package RLConfig;
         'desc'          => "",
         'crop-start'    => "",
         'crop-end'      => "",
+        'pre-crop-start'=> "",
+        'pre-crop-end'  => "",
+        'post-crop-start'=> "",
+        'post-crop-end' => "",
         'article-order' => 1,
         'ignore-dates'  => 'no',
 		'user-agent'    => 'Rigel/$VERSION ($^O)',
