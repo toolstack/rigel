@@ -392,9 +392,10 @@ BODY
             $site_config->{'desc'} = "The Register";
             $site_config->{'url'} = "http://www.theregister.co.uk/headlines.rss";
             $site_config->{'subject'} = "%{item:title} [%{item:link}]";
-            $site_config->{'delivery-mode'} = "thtmllink";
-            $site_config->{'crop-start'} = "<div id=\"article\">";
-            $site_config->{'crop-end'} = "<p class=\"wptl btm\">";
+            $site_config->{'body-source'} = "link";
+            $site_config->{'pre-crop-start'} = "<div id=\"article\">";
+            $site_config->{'pre-crop-end'} = "<p class=\"wptl btm\">";
+			$site_config->{'body-process'} = "text";
             $site_config->{'order'} = "-1";
             }
         elsif( $samplename eq "theinquirer.net" )
@@ -402,18 +403,18 @@ BODY
             $site_config->{'desc'} = "The Inquirer";
             $site_config->{'url'} = "http://feeds.theinquirer.net/feed/vnunet/the_INQUIRER";
             $site_config->{'subject'} = "%{item:title} [%{item:link}]";
-            $site_config->{'delivery-mode'} = "htmllink";
-            $site_config->{'crop-start'} = "<div class=\"contentparent\">";
-            $site_config->{'crop-end'} = "<div class=\"article_page_ads_bottom\">";
+            $site_config->{'body-source'} = "link";
+            $site_config->{'pre-crop-start'} = "<div class=\"contentparent\">";
+            $site_config->{'pre-crop-end'} = "<div class=\"article_page_ads_bottom\">";
             }
         elsif( $samplename eq "aintitcool.com" )
             {
             $site_config->{'desc'} = "Ain't it Cool News";
             $site_config->{'url'} = "http://www.aintitcool.com/node/feed";
             $site_config->{'subject'} = "%{item:title} [%{item:link}]";
-            $site_config->{'delivery-mode'} = "htmllink";
-            $site_config->{'crop-start'} = "<tr valign=\"top\" class=\"articlenews\">";
-            $site_config->{'crop-end'} = "</base>";
+            $site_config->{'delivery-mode'} = "link";
+            $site_config->{'pre-crop-start'} = "<tr valign=\"top\" class=\"articlenews\">";
+            $site_config->{'pre-crop-end'} = "</base>";
             }
         elsif( $samplename eq "penny-arcade.com" )
             {
@@ -468,7 +469,7 @@ BODY
                 my $with = $replace;
                 $with =~ s/^#//;
 
-                $template_message =~ s/$replace/$with/;
+                $template_message =~ s/\Q$replace\E/$with/;
                 }
             }
 

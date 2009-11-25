@@ -1353,7 +1353,14 @@ BODY
                 $IMAP_CONNECT->append_string( $ConfigFolder, $headers . "\n" . $feedconf, "Seen" );
                 $IMAP_CONNECT->delete_message( $message );
                 }
-            }
+
+			# If we're updating the configuration messages, delete all the add messages
+			# as well to ensure the templates are up to date.
+			if( $GLOBAL_CONFIG->{'config-update'} )
+				{
+                $IMAP_CONNECT->delete_message( $message );
+				}
+			}
 
         # You can't change the folder during the above loop or the return
         # from messages() becomes invalid, so loop thorugh all the messages
@@ -1436,6 +1443,23 @@ BODY
         $IMAP_CONNECT->select( $HelpFolder );
         @messages = $IMAP_CONNECT->messages();
 
+		# If we're updating the configuration messages, delete all the help messages
+		# as well to ensure the templates are up to date.
+		if( $GLOBAL_CONFIG->{'config-update'} )
+			{
+			my $message;
+			
+			foreach $message (@messages)
+				{
+				$IMAP_CONNECT->delete_message( $message );
+				}
+			
+			$IMAP_CONNECT->select( $HelpFolder );
+			$IMAP_CONNECT->expunge( $HelpFolder );  # For some reason the folder has to be passed here otherwise the expunge fails
+			
+			@messages = $IMAP_CONNECT->messages();
+			}
+		
         # If the help folder is empty, append the help message and samples
         if( scalar( @messages ) == 0 )
             {
