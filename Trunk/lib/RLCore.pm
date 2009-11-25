@@ -921,7 +921,7 @@ BODY
         RLDebug::OutputDebug( 2, "Post-cropping the body" );
         $body = RLMHTML::CropBody( $body, $site_config->{'post-crop-start'}, $site_config->{'post-crop-end'} );
 
-        return ($headers, $body );
+        return ($headers, $body);
         }
 
     #
