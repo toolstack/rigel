@@ -1,0 +1,30 @@
+Upgrading from Rigel V1 to V2
+=============================
+
+Rigel V2 has updated the configuration items used to determine how articles 
+are delivered to the IMAP messages, at this time Rigel will read and process
+V1 and V2 configuration messages, however it will through out a warning about
+the V1 messages.
+
+You have two choices on how to "upgrade" the configuration messages to the V2
+format:
+
+    1. Move the config message to the "Add" folder and manuall update the 
+       settings to match the new format (not recommended)
+     
+    2. Run Rigel with the -R command line option and let it reformat your
+       configuration messages.
+       
+If you have modified other aspects of your configuration messages (like the 
+comments then option 2 will delete those changes and replace them with the 
+standard template that can be found in the "Add" folder.
+
+If you are going to let Rigel do the configuration message refresh for you
+it is highly recommended that you create a backup copy of the configuration
+messages before you do so.  This will ensure you can go back to the previous
+configuration at any time.
+
+In the future, Rigel will always support the previous major version's 
+configuration messages, however two major versions will not be supported.
+For example, V2 will support V1 and V2 configuration messages, however V3
+will support V2 and V3 messages, V1 will be dropped for supportability.
