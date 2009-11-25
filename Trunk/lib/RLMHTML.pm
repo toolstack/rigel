@@ -40,14 +40,20 @@ package RLMHTML;
     # This function returns a character string that represents the web page
     # as an MHTML file
     #
-    #     RLMHTML::GetMHTML(  $url )
+    #     RLMHTML::GetMHTML( $url, $crop_start, $crop_end, $useragent, $sitebody )
     #
     # Where:
     #     $url is the web site to retreive
+	#	  $crop_start is the begginning tag to crop to
+	#     $crop_end is the ending tag to crop to
+	#     $useragent is the agent name to use when retreiving the link
+	#     $sitebody is defined if you have already retreived the html
+	#               link and do not need GetMHTML to retreive or crop
+	#               the link for you
     #
     sub GetMHTML
         {
-        my ( $sitename, $crop_start, $crop_end, $useragent ) = @_;
+        my ( $sitename, $crop_start, $crop_end, $useragent, $sitebody ) = @_;
         my $result = "";
 
         # Define the content id for the starting mime part
@@ -83,10 +89,13 @@ package RLMHTML;
         $result .= "Content-Type: text/html; name=\"index.html\"\r\n";
         $result .= "\r\n";
 
-        my $sitebody = __GetHTTPBody( $sitename, $useragent );
+        if( $sitebody eq '' )
+			{
+			$sitebody = __GetHTTPBody( $sitename, $useragent );
 
-        $sitebody = CropBody( $sitebody, $crop_start, $crop_end );
-
+			$sitebody = CropBody( $sitebody, $crop_start, $crop_end );
+			}
+			
         $result .= $sitebody;
         $result .= "\r\n";
 
@@ -193,6 +202,7 @@ package RLMHTML;
         if( $crop_end ne "" )
             {
             ( $sitebody, $junk ) = split( /$crop_end/, $sitebody, 2 );
+			$sitebody =~ s/$crop_end//;
             }
 
         return $sitebody;

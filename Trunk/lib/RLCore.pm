@@ -109,26 +109,28 @@ package RLCore;
         # Finally, load the feeds from the server
         my $site_config_list = __GetFeedsFromIMAP();
 
-        #   Update the IMAP configuration messages if it's been requested.
+        # Update the IMAP configuration messages if it's been requested.
+		# otherwise process the feeds normally.
         if( $GLOBAL_CONFIG->{'config-update'} )
             {
             RLCommon::LogLine( "Updating the IMAP configuration messages...\r\n" );
             RLConfig::UpdateConfig( $IMAP_CONNECT, $site_config_list );
             }
+		else
+			{
+			for my $site_config (@{$site_config_list})
+				{
+				my ( $rss, $ttl, @subject_lines ) = __GetRSS( $site_config->{url}, $site_config );
 
-        for my $site_config (@{$site_config_list})
-            {
-            my ( $rss, $ttl, @subject_lines ) = __GetRSS( $site_config->{url}, $site_config );
+				if( !$rss )
+					{
+					next;
+					}
 
-            if( !$rss )
-                {
-                next;
-                }
-
-            __SendFeed( $rss, $site_config, $ttl, \@subject_lines );
-            __ExpireFeed( $rss, $site_config );
-            }
-
+				__SendFeed( $rss, $site_config, $ttl, \@subject_lines );
+				__ExpireFeed( $rss, $site_config );
+				}
+			}
         $IMAP_CONNECT->close();
         }
 
@@ -690,7 +692,7 @@ Content-Transfer-Encoding: 7bit
 Content-Base: $link
 Message-Id: $message_id
 Date: $date
-User-Agent: Rigel version $VERSION
+User-Agent: Rigel $VERSION
 X-RSS-Link: $link
 X-RSS-Aggregator: Rigel-checker
 X-RSS-Aggregate-Date: $a_date;
@@ -797,21 +799,9 @@ BODY
 
         my $mime_type;
 
-        if( $site_config->{'delivery-mode'} eq 'text'
-                or $site_config->{'delivery-mode'} eq 'textlink'
-                or $site_config->{'delivery-mode'} eq 'thtmllink')
-            {
-            $mime_type = 'text/plain';
-
-            # Since we're delivering in plain text, make sure that
-            # the subject line didn't get poluted with html from the
-            # rss feed.
-            $subject = __ConvertToText( $subject );
-            }
-        else
-            {
-            $mime_type = 'text/html';
-            }
+		# Make sure that the subject line didn't get poluted with html from the
+		# rss feed.
+		$subject = __ConvertToText( $subject );
 
         # if line feed character include, some mailer make header broken.. :<
         $subject =~ s/\n//g;
@@ -829,7 +819,7 @@ Subject: $m_subject
 To: $m_to
 Message-Id: $message_id
 Date: $date
-User-Agent: Rigel version $VERSION
+User-Agent: Rigel $VERSION
 X-RSS-Link: $link
 X-RSS-Channel-Link: $rss->{channel}->{link}
 X-RSS-Item-Link: $link
@@ -838,18 +828,6 @@ X-RSS-Aggregate-Date: $a_date
 X-RSS-Last-Modified: $l_date;
 BODY
 ;
-
-        # If we're going to deliver in MHTML mode, then the mime headers will be construted by the MHTML library.
-        if( $site_config->{'delivery-mode'} ne 'mhtmllink' )
-            {
-            $return_headers .=<<"BODY"
-MIME-Version: 1.0
-Content-Type: $mime_type; charset="UTF-8"
-Content-Transfer-Encoding: 8bit
-Content-Base: $link
-BODY
-;
-            }
 
         return $return_headers;
         }
@@ -871,117 +849,77 @@ BODY
         my $site_config = shift;
         my $rss         = shift;
         my $item        = shift;
-        my $headers        = "";
-        my $body         = "";
+        my $headers     = "";
+        my $body        = "";
         my $subject     = $site_config->{subject};
         my $from        = $site_config->{from};
         my $desc        = $item->description();
-        my $link         = $item->link();
+        my $link        = $item->link();
+        my $mime_type   = "text/html";
 
         $subject = RLConfig::ApplyTemplate( $rss, $item, undef, $subject );
         $from    = RLConfig::ApplyTemplate( $rss, $item, undef, $from );
 
-        RLDebug::OutputDebug( 2, "GetBody: " . $site_config->{'delivery-mode'} );
-
-        if( $site_config->{'delivery-mode'} eq 'embedded' )
-            {
-            $body =<<"BODY"
-<html>
-<head>
-<title>$subject</title>
-<style type="text/css">
-body {
-      margin: 0;
-      border: none;
-      padding: 0;
-}
-iframe {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  border: none;
-}
-</style>
-</head>
-<body>
-<iframe width="100%" height="100%" src="$link">
-$desc
-</iframe>
-</body>
-</html>
+		# By default, use basic MIME headers, these can be replaced later on
+		# by the specific delivery mode if required.
+        if( $site_config->{'body-process'} eq 'text' ) { $mime_type = 'text/plain'; }
+			
+        $headers =<<"BODY"
+MIME-Version: 1.0
+Content-Type: $mime_type; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+Content-Base: $link
 BODY
 ;
 
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'text' )
-           {
-            # convert html tag to appropriate text.
-            $subject = __ConvertToText( $subject );
-            $desc    = __ConvertToText( $desc );
+		# First, retreive the content, if we're following the link, use GetHTML, 
+		# otherwise it's just the description from the feed.
+        RLDebug::OutputDebug( 2, "Body source: " . $site_config->{'body-source'} );
+		if( $site_config->{'body-source'} eq 'link' )
+			{
+            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
+			}
+		else
+			{
+			$body = $desc;
+			}
+		
+		# Execute the first cropping action as defined in the site config
+        RLDebug::OutputDebug( 2, "Pre-cropping the body" );
+        $body = RLMHTML::CropBody( $body, $site_config->{'pre-crop-start'}, $site_config->{'pre-crop-end'} );
 
-            # Get rid of any newlines in the subject or link
-            $subject =~ s/\n//g;
-            $link =~ s/\n//g;
+		# Some feeds use relative url's instead of absolute, it's a little processor
+		# intensive to convert them so unless the feed needs it, it's not done by
+		# default.
+		if( $site_config->{'absolute-urls'} eq 'yes' )
+			{
+			RLDebug::OutputDebug( 2, "Converting relative URL's to Absolute" );
+			$body = RLMHTML::MakeLinksAbsolute( $body, $item->link() );
+			}
 
-            $body = $subject . "\n";
+		# Time to convert the body to it's final type, the default is to leave it alone.
+		if( $site_config->{'body-process'} eq 'text' )
+			{
+			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
+			RLDebug::OutputDebug( 2, "Converting body to text" );
+            eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
+ 			}
+		elsif( $site_config->{'body-process'} eq 'mhtml' )
+			{
+			# Call the MHTML code, since we've already retreived the body and 
+			# cropped it, there's no need to pass cropping or useragent to 
+			# GetMHTML and we will pass the existing body in as the last arg.
+			RLDebug::OutputDebug( 2, "Converting body to MHTML" );
+            $body = RLMHTML::GetMHTML( $item->link(), '', '', '', $body );
 
-            # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
-            if( $subject ne $desc )
-                {
-                $body .= "-" x length( $subject ) . "\n";
-                $body .= "$desc\n" if ($desc);
-                }
-
-            $body .= "\n$link";
-
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'mhtmllink' )
-            {
-            # Since the cropping of the original HTML message could make a significant difference
-            # to the resulting MHTML file size, let the MHTML library do the cropping for us instead of calling
-            # CropBody later.
-            $body = RLMHTML::GetMHTML( $item->link(), $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-
-            # The MHTML code returns both headers and the body in a single string, we need to split them up
+            # The MHTML code returns both headers and the body in a single 
+			# string, we need to split them up
             ( $headers, $body ) = split( /\r\n\r\n/, $body, 2 );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'htmllink' )
-            {
-            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'textlink' )
-            {
-            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
-			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
-            eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
-        elsif( $site_config->{'delivery-mode'} eq 'thtmllink' )
-            {
-            $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
-            eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
-            }
-        else
-            {
-            $body = $subject . "\r\n<hr>\r\n";
-
-            # Anytime the subject is the same as the description, skip the description.  AKA Twitter mode.
-            if( $subject ne $desc )
-                {
-                $body = $body . $desc ."\r\n<hr>\r\n";
-                }
-
-            $body = $body . "<hr>\r\n" . $link . "\r\n";
-
-            $body = RLMHTML::CropBody( $body, $site_config->{'crop-start'}, $site_config->{'crop-end'} );
-            }
+			}
+			
+		# Execute the second cropping action as defined in the site config
+        RLDebug::OutputDebug( 2, "Post-cropping the body" );
+        $body = RLMHTML::CropBody( $body, $site_config->{'post-crop-start'}, $site_config->{'post-crop-end'} );
 
         return ($headers, $body );
         }
@@ -1160,10 +1098,14 @@ BODY
         RLDebug::OutputDebug( 2, "config folder: $folder" );
         $IMAP_CONNECT->select( $folder );
 
+		my $show_v1_alert = 0;
+		
         @messages = $IMAP_CONNECT->messages();
 
         foreach $message (@messages)
             {
+			my $ua = $IMAP_CONNECT->get_header( $message, 'User-Agent' );
+			
             # Retreive the complete message and run it through the MIME parser
             eval { $e = $mp->parse_data( $IMAP_CONNECT->message_string( $message ) ); };
             my $error = ($@ || $mp->last_error);
@@ -1183,12 +1125,112 @@ BODY
 
             # parse the configuration options in to a configuration object
             %config = RLConfig::ParseConfigString( $feedconf, $feeddesc );
+
+			# check to see if the config message is from Rigel V1, if so, convert to the new
+			# format and alert the user to run a config refresh.
+			if( $ua =~ m/Rigel version .1/gi )
+				{
+				$show_v1_alert = 1;
+				
+				( %config->{'body-source'}, 
+				  %config->{'pre-crop-start'}, 
+				  %config->{'pre-crop-end'}, 
+				  %config->{'body-process'}, 
+				  %config->{'post-crop-start'}, 
+				  %config->{'post-crop-end'} ) = __ConvertV1toV2( %config->{'delivery-mode'}, 
+																  %config->{'crop-start'}, 
+																  %config->{'crop-end'} );
+				}
+
             push @config_list, { %config };
             }
 
+		if( $show_v1_alert > 0 )
+			{
+			RLCommon::LogLine( "Found Rigel Version 1 configuration message(s), please backup your configuration and then run \"perl Rigel -o -R\" to refresh the configuration messages.\r\n" );
+			}
+			
         return \@config_list;
         }
 
+    #
+    # This function converts the old version 1 configruation information in
+    # to the new version 2 standard.  This function will be removed when 
+	# version 3 is released.
+    #
+    #     __ConvertV1toV2( $delivery_type, $crop_start, $crop_end )
+    #
+    # Where:
+    #     $delivery_type is the old delivery-mode value and is one of embedded,
+    #	                 raw, text, mhtmllink, htmllink, textlink, thtmllink 
+	#     $crop_start is the old crop-start value
+	#     $crop_end is the old crop-end value
+    #
+	sub __ConvertV1toV2()
+		{
+		my $type 	   = shift;
+		my $crop_start = shift;
+		my $crop_end   = shift;
+		my $source	   = "";
+		my $pre_start  = "";
+		my $pre_end    = "";
+		my $process    = "";
+		my $post_start = "";
+		my $post_end   = "";
+		
+        if( $type eq 'embedded' )
+            {
+			$source     = "link";
+			$pre_start  = $crop_start;
+			$pre_end    = $crop_end;
+			$process    = "none";
+            }
+        elsif( $type eq 'text' )
+           {
+			$source     = "feed";
+			$process    = "text";
+			$post_start  = $crop_start;
+			$post_end    = $crop_end;
+            }
+        elsif( $type eq 'mhtmllink' )
+            {
+			$source     = "link";
+			$pre_start  = $crop_start;
+			$pre_end    = $crop_end;
+			$process    = "mhtml";
+            }
+        elsif( $type eq 'htmllink' )
+            {
+			$source     = "link";
+			$pre_start  = $crop_start;
+			$pre_end    = $crop_end;
+			$process    = "none";
+            }
+        elsif( $type eq 'textlink' )
+            {
+			$source     = "link";
+			$process    = "text";
+			$post_start  = $crop_start;
+			$post_end    = $crop_end;
+            }
+        elsif( $type eq 'thtmllink' )
+            {
+			$source     = "link";
+			$pre_start  = $crop_start;
+			$pre_end    = $crop_end;
+			$process    = "text";
+            }
+        else
+            {
+			$source     = "feed";
+			$pre_start  = $crop_start;
+			$pre_end    = $crop_end;
+			$process    = "none";
+            }
+
+		return ( $source, $pre_start, $pre_end, $process, $post_start, $post_end );
+		}
+		
     #
     # This function returns the textual version of the message body in a
     # MIME message
@@ -1303,7 +1345,7 @@ Subject: $feeddesc
 MIME-Version: 1.0
 Content-Type: text/plain;
 Content-Transfer-Encoding: 7bit
-User-Agent: Rigel version $VERSION
+User-Agent: Rigel $VERSION
 BODY
 ;
                 RLCommon::LogLine( "Adding feed: " . $siteurl . "\r\n" );
