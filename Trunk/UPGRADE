@@ -24,6 +24,9 @@ it is highly recommended that you create a backup copy of the configuration
 messages before you do so.  This will ensure you can go back to the previous
 configuration at any time.
 
+The automated update will also updated the Help messages as well as the Add
+templates to the latest version.
+
 In the future, Rigel will always support the previous major version's 
 configuration messages, however two major versions will not be supported.
 For example, V2 will support V1 and V2 configuration messages, however V3
