@@ -89,9 +89,9 @@ package RLConfig;
         'folder'        => 'RSS%{dir:sep}%{channel:title}',
         'type'          => 'items',
         'to'            => $DEFAULT_GLOBAL_CONFIG->{'user'},
-        'subject'       => '%{item:title}',
+        'subject'       => '%{item:title} [%{item:link}]',
         'from'          => $DEFAULT_GLOBAL_CONFIG->{'user'} . "@" . $DEFAULT_GLOBAL_CONFIG->{'host'},
-        'delivery-mode' => 'raw',
+        'delivery-mode' => 'raw',		# depricated
 		'body-source'   => 'feed',
 		'body-process'  => 'none',
 		'absolute-urls' => 'no',
@@ -104,8 +104,8 @@ package RLConfig;
         'last-subjects' => undef,
         'force-ttl'     => -1,
         'desc'          => "",
-        'crop-start'    => "",
-        'crop-end'      => "",
+        'crop-start'    => "",		# depricated
+        'crop-end'      => "",		# depricated
         'pre-crop-start'=> "",
         'pre-crop-end'  => "",
         'post-crop-start'=> "",
