@@ -1145,7 +1145,7 @@ BODY
             push @config_list, { %config };
             }
 
-		if( $show_v1_alert > 0 )
+		if( $show_v1_alert > 0 && $GLOBAL_CONFIG->{'config-update'} == 0 )
 			{
 			RLCommon::LogLine( "Found Rigel Version 1 configuration message(s), please backup your configuration and then run \"perl Rigel -o -R\" to refresh the configuration messages.\r\n" );
 			}
