@@ -384,9 +384,19 @@ BODY
     sub FeedSample
         {
         my $VERSION     = shift;
-        my $site_config = shift;
+        my $temp_site   = shift;
         my $samplename  = lc( shift );
 
+		# Perl passes all parameters in to functions by reference, therefore
+		# if we change a value here it will change the value from the calling
+		# location as well.  We don't want that, so first dereference the hash
+		# so that we make a copy of the hash instead of the hash reference.  
+		# Then make a copy to a new hash.
+		my %temp = %$temp_site;
+		# Now create a reference to the new hash so we can work with it more 
+		# easily.  We will now have a reference to a copy of the passed hash.
+		my $site_config = \%temp;
+		
         if( $samplename eq "register.co.uk" )
             {
             $site_config->{'desc'} = "The Register";
