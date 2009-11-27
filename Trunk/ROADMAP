@@ -4,5 +4,4 @@ Rigel Feature Roadmap
 Upcoming features for Rigel include:
 
 - Website as feeds
-- Support for no output to the console
 - Support to "send" the log to an e-mail address or IMAP folder
