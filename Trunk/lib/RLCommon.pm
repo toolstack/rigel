@@ -30,10 +30,11 @@ package RLCommon;
 
     our (@ISA, @EXPORT_OK);
     @ISA = qw(Exporter);
-    @EXPORT_OK = qw(SetCommonConfig GetRSS GetUser GetPass GetProxyPass StrTrim IsError LogLine RotateLog GetLogFileHandle);
+    @EXPORT_OK = qw(SetCommonConfig GetRSS GetUser GetPass GetProxyPass StrTrim IsError LogLine RotateLog GetLogFileHandle SendLogFile);
 
-    our %config  = undef;
-    our $LogFH   = undef;
+    our %config     = undef;
+    our $LogFH      = undef;
+	our $CurrentLog = undef;
 
     sub SetCommonConfig
         {
@@ -41,6 +42,8 @@ package RLCommon;
 
         my $filename = RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} );
 
+		$CurrentLog = $filename;
+		
         if( %config->{'log-file'} )
             {
             if( %config->{'log-rotate'} eq "append" )
@@ -70,7 +73,8 @@ package RLCommon;
             {
             close( $LogFH );
 
-            open( $LogFH, ">>" . RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} ) );
+			$CurrentLog = RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} );
+            open( $LogFH, ">>" . $CurrentLog );
             }
 
         return;
@@ -379,6 +383,79 @@ package RLCommon;
             }
         }
 
+    #
+    # This function send a copy of the log file to a folder on the IMAP server.
+    #
+    #     RLCommon::SendLogFile( $imap )
+    #
+    sub SendLogFile
+		{
+		my $imap = shift;
+		my $version = RLConfig::GetVersion();
+		my $body; 
+		my $data;
+		my $n;
+		my $folder;
+		
+        if( %config->{'log-folder'} ne undef )
+			{
+			$folder = RLConfig::ApplyTemplate( undef, undef, 1, %config->{'log-folder'} );
+			$folder = RLIMAP::GetRealFolderName( $folder, %config->{'directory_separator'}, %config->{'prefix'} );
+			RLDebug::OutputDebug( 1, "Log folder = $folder" );
+			RLIMAP::IMAPSelectFolder( $imap, $folder );
+
+			# if we're supposed to overwrite the log file, then we should
+			# delete all messages in the log folder before we append the
+			# new one.
+			if( %config->{'log-rotate'} eq 'overwrite' )
+				{
+				my @messages = $imap->messages();
+
+				# If we're updating the configuration messages, delete all the help messages
+				# as well to ensure the templates are up to date.
+				my $message;
+				
+				foreach $message (@messages)
+					{
+					$imap->delete_message( $message );
+					}
+				
+				$imap->select( $folder );
+				$imap->expunge( $folder );  # For some reason the folder has to be passed here otherwise the expunge fails
+				}
+			}
+			
+            my $headers =<<"BODY"
+From: Rigel@
+Subject: Rigel Log File: $CurrentLog
+MIME-Version: 1.0
+Content-Type: text/plain;
+Content-Transfer-Encoding: 7bit
+User-Agent: Rigel $version
+BODY
+;
+
+			# First, close out the current Log so we can read it.
+            close( $LogFH );
+
+			# Open the log for reading.
+			open( DAT, $CurrentLog );
+
+			# Read the entire log file in to $body
+			while( ( $n = read DAT, $data, 2000 ) != 0 ) 
+				{
+				$body .= $data;
+				}
+
+			# Close the log file again.
+			close( DAT );
+
+			# Finally, re-open the log file for writing.
+            open( $LogFH, ">>" . $CurrentLog );
+
+			# Now store the message to the IMAP folder.
+            $imap->append_string( $folder, $headers . "\r\n" . $body );
+		}
     }
 
 1;

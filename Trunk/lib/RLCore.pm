@@ -131,6 +131,9 @@ package RLCore;
 				__ExpireFeed( $rss, $site_config );
 				}
 			}
+			
+		RLCommon::SendLogFile( $IMAP_CONNECT );
+
         $IMAP_CONNECT->close();
         }
 

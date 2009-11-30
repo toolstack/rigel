@@ -67,6 +67,7 @@ package RLConfig;
         'log-file'             => undef,
         'log-rotate'           => 'overwrite',
         'force-console'        => undef,
+		'log-folder'           => undef,
         };
 
 	 if( $^O !~ /Win32/ )
