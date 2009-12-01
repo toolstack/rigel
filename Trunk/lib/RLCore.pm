@@ -110,29 +110,29 @@ package RLCore;
         my $site_config_list = __GetFeedsFromIMAP();
 
         # Update the IMAP configuration messages if it's been requested.
-		# otherwise process the feeds normally.
+        # otherwise process the feeds normally.
         if( $GLOBAL_CONFIG->{'config-update'} )
             {
             RLCommon::LogLine( "Updating the IMAP configuration messages...\r\n" );
             RLConfig::UpdateConfig( $IMAP_CONNECT, $site_config_list );
             }
-		else
-			{
-			for my $site_config (@{$site_config_list})
-				{
-				my ( $rss, $ttl, @subject_lines ) = __GetRSS( $site_config->{url}, $site_config );
+        else
+            {
+            for my $site_config (@{$site_config_list})
+                {
+                my ( $rss, $ttl, @subject_lines ) = __GetRSS( $site_config->{url}, $site_config );
 
-				if( !$rss )
-					{
-					next;
-					}
+                if( !$rss )
+                    {
+                    next;
+                    }
 
-				__SendFeed( $rss, $site_config, $ttl, \@subject_lines );
-				__ExpireFeed( $rss, $site_config );
-				}
-			}
-			
-		RLCommon::SendLogFile( $IMAP_CONNECT );
+                __SendFeed( $rss, $site_config, $ttl, \@subject_lines );
+                __ExpireFeed( $rss, $site_config );
+                }
+            }
+            
+        RLCommon::SendLogFile( $IMAP_CONNECT );
 
         $IMAP_CONNECT->close();
         }
@@ -214,9 +214,10 @@ package RLCore;
             }
 
         # Check to see if we should update based upon the RSS TTL value
-        my $ctime = time();
-        my @rss_and_response;
-
+        my $ctime              = time();
+        my $content            = "";
+        my $feed_last_modified = 0;
+        
         RLDebug::OutputDebug( 2, "Is $rss_ttl > $ctime ?" );
         if( $rss_ttl > $ctime )
             {
@@ -226,14 +227,33 @@ package RLCore;
             }
         else
             {
-            # We're good to go, get the update
-            @rss_and_response = RLCommon::GetRSS( $link, $headers, $rss_ttl );
-
+            # If this is a webpage instead of an RSS feed, create a temporary RSS
+            # feed for it
+            if( $site_config->{'body-source'} eq 'webpage' )
+                {
+                $content = __CreateRSSFeed( $link, $site_config );
+                $feed_last_modified = time();
+                }
+            else
+                {
+                # We're good to go, get the update
+                my @rss_and_response = RLCommon::GetRSS( $link, $headers, $rss_ttl );
+				
+				# If we get a response, setup the content and feed_last_modifed variables.
+				if( scalar( @rss_and_response ) > 0 )
+					{
+					$content = $rss_and_response[0];
+					my $response = $rss_and_response[1];
+					$feed_last_modified = $response->last_modified;
+					}
+                }
+                
             # If we didn't actually get an update from the feed, just return undef's
-            if( scalar(@rss_and_response) == 0 )
+			RLDebug::OutputDebug( 2, "Feed last modifed: " . $feed_last_modified );
+            if( $feed_last_modified == 0 )
                 {
                 RLCommon::LogLine( "\tFeed not modified, no update required.\r\n" );
-                return ( undef, undef, undef );
+                return (undef, undef, undef);
                 }
             }
 
@@ -297,8 +317,6 @@ package RLCore;
                 }
             }
 
-        my $content = $rss_and_response[0];
-        my $response = $rss_and_response[1];
         my $rss = undef;
         my $ttl = 0;
 
@@ -316,7 +334,7 @@ package RLCore;
             }
 
         # Parse the feed
-        eval { $rss = XML::FeedPP->new($content); };
+        eval { $rss = XML::FeedPP->new( $content ); };
 
         if( RLCommon::IsError() )
             {
@@ -346,7 +364,7 @@ package RLCore;
         $IMAP_CONNECT->expunge();
 
         # copy session information
-        $rss->{'Rigel:last-modified'} = HTTP::Date::time2str ($response->last_modified);
+        $rss->{'Rigel:last-modified'} = HTTP::Date::time2str( $feed_last_modified );
         $rss->{'Rigel:message-id'}    = $message_id;
         $rss->{'Rigel:rss-link'}      = $link;
 
@@ -487,10 +505,11 @@ package RLCore;
                     }
 
                 # if message not found, append it.
-				RLDebug::OutputDebug( 2, "Result: @search" );
+                RLDebug::OutputDebug( 2, "Result: @search" );
                 if( @search == 0 )
                     {
-                    if( $site_config->{'use-subjects'} )
+                    RLDebug::OutputDebug( 2, "Use Subjects? " . $site_config->{'use-subjects'} );
+                    if( $site_config->{'use-subjects'} eq 'yes' )
                         {
                         # if the subject check is enabled, validate the current subject line
                         # against the old subject lines, make sure we disable special chacters
@@ -510,12 +529,13 @@ package RLCore;
                     }
                 else
                     {
+                    RLDebug::OutputDebug( 2, "rss_date: $rss_date" );
                     if( !$rss_date )
                         {
                         next ; # date field is not found, we ignore it.
                         }
 
-                    RLDebug::OutputDebug( 2, "Didn't find the articel in the IMAP folder and we have a valid date." );
+                    RLDebug::OutputDebug( 2, "Didn't find the article in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
                     my ( $latest, $lmsg ) = RLIMAP::GetLatestDate( $IMAP_CONNECT, \@search );
@@ -724,7 +744,7 @@ BODY
         $IMAP_CONNECT->select( $folder );
         my $uid = $IMAP_CONNECT->append_string( $folder, $body, "Seen" );
 
-        # As we cannot count on the above addpend_string to actually mark the
+        # As we cannot count on the above append_string to actually mark the
         # messages as seen and $uid may or may not acutall contain the message
         # make sure they're marked as read
         RLIMAP::MarkFolderRead( $IMAP_CONNECT, $folder );
@@ -802,9 +822,9 @@ BODY
 
         my $mime_type;
 
-		# Make sure that the subject line didn't get poluted with html from the
-		# rss feed.
-		$subject = __ConvertToText( $subject );
+        # Make sure that the subject line didn't get poluted with html from the
+        # rss feed.
+        $subject = __ConvertToText( $subject );
 
         # if line feed character include, some mailer make header broken.. :<
         $subject =~ s/\n//g;
@@ -863,10 +883,10 @@ BODY
         $subject = RLConfig::ApplyTemplate( $rss, $item, undef, $subject );
         $from    = RLConfig::ApplyTemplate( $rss, $item, undef, $from );
 
-		# By default, use basic MIME headers, these can be replaced later on
-		# by the specific delivery mode if required.
+        # By default, use basic MIME headers, these can be replaced later on
+        # by the specific delivery mode if required.
         if( $site_config->{'body-process'} eq 'text' ) { $mime_type = 'text/plain'; }
-			
+            
         $headers =<<"BODY"
 MIME-Version: 1.0
 Content-Type: $mime_type; charset="UTF-8"
@@ -875,52 +895,52 @@ Content-Base: $link
 BODY
 ;
 
-		# First, retreive the content, if we're following the link, use GetHTML, 
-		# otherwise it's just the description from the feed.
+        # First, retreive the content, if we're following the link, use GetHTML, 
+        # otherwise it's just the description from the feed.
         RLDebug::OutputDebug( 2, "Body source: " . $site_config->{'body-source'} );
-		if( $site_config->{'body-source'} eq 'link' )
-			{
+        if( $site_config->{'body-source'} eq 'link' || $site_config->{'body-source'} eq 'webpage' )
+            {
             $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
-			}
-		else
-			{
-			$body = $desc;
-			}
-		
-		# Execute the first cropping action as defined in the site config
+            }
+        else
+            {
+            $body = $desc;
+            }
+        
+        # Execute the first cropping action as defined in the site config
         RLDebug::OutputDebug( 2, "Pre-cropping the body" );
         $body = RLMHTML::CropBody( $body, $site_config->{'pre-crop-start'}, $site_config->{'pre-crop-end'} );
 
-		# Some feeds use relative url's instead of absolute, it's a little processor
-		# intensive to convert them so unless the feed needs it, it's not done by
-		# default.
-		if( $site_config->{'absolute-urls'} eq 'yes' )
-			{
-			RLDebug::OutputDebug( 2, "Converting relative URL's to Absolute" );
-			$body = RLMHTML::MakeLinksAbsolute( $body, $item->link() );
-			}
+        # Some feeds use relative url's instead of absolute, it's a little processor
+        # intensive to convert them so unless the feed needs it, it's not done by
+        # default.
+        if( $site_config->{'absolute-urls'} eq 'yes' )
+            {
+            RLDebug::OutputDebug( 2, "Converting relative URL's to Absolute" );
+            $body = RLMHTML::MakeLinksAbsolute( $body, $item->link() );
+            }
 
-		# Time to convert the body to it's final type, the default is to leave it alone.
-		if( $site_config->{'body-process'} eq 'text' )
-			{
-			# HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
-			RLDebug::OutputDebug( 2, "Converting body to text" );
+        # Time to convert the body to it's final type, the default is to leave it alone.
+        if( $site_config->{'body-process'} eq 'text' )
+            {
+            # HTML::FormatText::WithLinks::AndTables is a little flaky, eval it so things don't blow up.
+            RLDebug::OutputDebug( 2, "Converting body to text" );
             eval { $body = HTML::FormatText::WithLinks::AndTables->convert( $body ); };
- 			}
-		elsif( $site_config->{'body-process'} eq 'mhtml' )
-			{
-			# Call the MHTML code, since we've already retreived the body and 
-			# cropped it, there's no need to pass cropping or useragent to 
-			# GetMHTML and we will pass the existing body in as the last arg.
-			RLDebug::OutputDebug( 2, "Converting body to MHTML" );
+             }
+        elsif( $site_config->{'body-process'} eq 'mhtml' )
+            {
+            # Call the MHTML code, since we've already retreived the body and 
+            # cropped it, there's no need to pass cropping or useragent to 
+            # GetMHTML and we will pass the existing body in as the last arg.
+            RLDebug::OutputDebug( 2, "Converting body to MHTML" );
             $body = RLMHTML::GetMHTML( $item->link(), '', '', '', $body );
 
             # The MHTML code returns both headers and the body in a single 
-			# string, we need to split them up
+            # string, we need to split them up
             ( $headers, $body ) = split( /\r\n\r\n/, $body, 2 );
-			}
-			
-		# Execute the second cropping action as defined in the site config
+            }
+            
+        # Execute the second cropping action as defined in the site config
         RLDebug::OutputDebug( 2, "Post-cropping the body" );
         $body = RLMHTML::CropBody( $body, $site_config->{'post-crop-start'}, $site_config->{'post-crop-end'} );
 
@@ -1101,14 +1121,14 @@ BODY
         RLDebug::OutputDebug( 2, "config folder: $folder" );
         $IMAP_CONNECT->select( $folder );
 
-		my $show_v1_alert = 0;
-		
+        my $show_v1_alert = 0;
+        
         @messages = $IMAP_CONNECT->messages();
 
         foreach $message (@messages)
             {
-			my $ua = $IMAP_CONNECT->get_header( $message, 'User-Agent' );
-			
+            my $ua = $IMAP_CONNECT->get_header( $message, 'User-Agent' );
+            
             # Retreive the complete message and run it through the MIME parser
             eval { $e = $mp->parse_data( $IMAP_CONNECT->message_string( $message ) ); };
             my $error = ($@ || $mp->last_error);
@@ -1129,111 +1149,111 @@ BODY
             # parse the configuration options in to a configuration object
             %config = RLConfig::ParseConfigString( $feedconf, $feeddesc );
 
-			# check to see if the config message is from Rigel V1, if so, convert to the new
-			# format and alert the user to run a config refresh.
-			if( $ua =~ m/Rigel version .1/gi )
-				{
-				$show_v1_alert = 1;
-				
-				( %config->{'body-source'}, 
-				  %config->{'pre-crop-start'}, 
-				  %config->{'pre-crop-end'}, 
-				  %config->{'body-process'}, 
-				  %config->{'post-crop-start'}, 
-				  %config->{'post-crop-end'} ) = __ConvertV1toV2( %config->{'delivery-mode'}, 
-																  %config->{'crop-start'}, 
-																  %config->{'crop-end'} );
-				}
+            # check to see if the config message is from Rigel V1, if so, convert to the new
+            # format and alert the user to run a config refresh.
+            if( $ua =~ m/Rigel version .1/gi )
+                {
+                $show_v1_alert = 1;
+                
+                ( %config->{'body-source'}, 
+                  %config->{'pre-crop-start'}, 
+                  %config->{'pre-crop-end'}, 
+                  %config->{'body-process'}, 
+                  %config->{'post-crop-start'}, 
+                  %config->{'post-crop-end'} ) = __ConvertV1toV2( %config->{'delivery-mode'}, 
+                                                                  %config->{'crop-start'}, 
+                                                                  %config->{'crop-end'} );
+                }
 
             push @config_list, { %config };
             }
 
-		if( $show_v1_alert > 0 && $GLOBAL_CONFIG->{'config-update'} == 0 )
-			{
-			RLCommon::LogLine( "Found Rigel Version 1 configuration message(s), please backup your configuration and then run \"perl Rigel -o -R\" to refresh the configuration messages.\r\n" );
-			}
-			
+        if( $show_v1_alert > 0 && $GLOBAL_CONFIG->{'config-update'} == 0 )
+            {
+            RLCommon::LogLine( "Found Rigel Version 1 configuration message(s), please backup your configuration and then run \"perl Rigel -o -R\" to refresh the configuration messages.\r\n" );
+            }
+            
         return \@config_list;
         }
 
     #
     # This function converts the old version 1 configruation information in
     # to the new version 2 standard.  This function will be removed when 
-	# version 3 is released.
+    # version 3 is released.
     #
     #     __ConvertV1toV2( $delivery_type, $crop_start, $crop_end )
     #
     # Where:
     #     $delivery_type is the old delivery-mode value and is one of embedded,
-    #	                 raw, text, mhtmllink, htmllink, textlink, thtmllink 
-	#     $crop_start is the old crop-start value
-	#     $crop_end is the old crop-end value
+    #                     raw, text, mhtmllink, htmllink, textlink, thtmllink 
+    #     $crop_start is the old crop-start value
+    #     $crop_end is the old crop-end value
     #
-	sub __ConvertV1toV2()
-		{
-		my $type 	   = shift;
-		my $crop_start = shift;
-		my $crop_end   = shift;
-		my $source	   = "";
-		my $pre_start  = "";
-		my $pre_end    = "";
-		my $process    = "";
-		my $post_start = "";
-		my $post_end   = "";
-		
+    sub __ConvertV1toV2()
+        {
+        my $type        = shift;
+        my $crop_start = shift;
+        my $crop_end   = shift;
+        my $source       = "";
+        my $pre_start  = "";
+        my $pre_end    = "";
+        my $process    = "";
+        my $post_start = "";
+        my $post_end   = "";
+        
         if( $type eq 'embedded' )
             {
-			$source     = "link";
-			$pre_start  = $crop_start;
-			$pre_end    = $crop_end;
-			$process    = "none";
+            $source     = "link";
+            $pre_start  = $crop_start;
+            $pre_end    = $crop_end;
+            $process    = "none";
             }
         elsif( $type eq 'text' )
            {
-			$source     = "feed";
-			$process    = "text";
-			$post_start  = $crop_start;
-			$post_end    = $crop_end;
+            $source     = "feed";
+            $process    = "text";
+            $post_start  = $crop_start;
+            $post_end    = $crop_end;
             }
         elsif( $type eq 'mhtmllink' )
             {
-			$source     = "link";
-			$pre_start  = $crop_start;
-			$pre_end    = $crop_end;
-			$process    = "mhtml";
+            $source     = "link";
+            $pre_start  = $crop_start;
+            $pre_end    = $crop_end;
+            $process    = "mhtml";
             }
         elsif( $type eq 'htmllink' )
             {
-			$source     = "link";
-			$pre_start  = $crop_start;
-			$pre_end    = $crop_end;
-			$process    = "none";
+            $source     = "link";
+            $pre_start  = $crop_start;
+            $pre_end    = $crop_end;
+            $process    = "none";
             }
         elsif( $type eq 'textlink' )
             {
-			$source     = "link";
-			$process    = "text";
-			$post_start  = $crop_start;
-			$post_end    = $crop_end;
+            $source     = "link";
+            $process    = "text";
+            $post_start  = $crop_start;
+            $post_end    = $crop_end;
             }
         elsif( $type eq 'thtmllink' )
             {
-			$source     = "link";
-			$pre_start  = $crop_start;
-			$pre_end    = $crop_end;
-			$process    = "text";
+            $source     = "link";
+            $pre_start  = $crop_start;
+            $pre_end    = $crop_end;
+            $process    = "text";
             }
         else
             {
-			$source     = "feed";
-			$pre_start  = $crop_start;
-			$pre_end    = $crop_end;
-			$process    = "none";
+            $source     = "feed";
+            $pre_start  = $crop_start;
+            $pre_end    = $crop_end;
+            $process    = "none";
             }
 
-		return ( $source, $pre_start, $pre_end, $process, $post_start, $post_end );
-		}
-		
+        return ( $source, $pre_start, $pre_end, $process, $post_start, $post_end );
+        }
+        
     #
     # This function returns the textual version of the message body in a
     # MIME message
@@ -1357,13 +1377,13 @@ BODY
                 $IMAP_CONNECT->delete_message( $message );
                 }
 
-			# If we're updating the configuration messages, delete all the add messages
-			# as well to ensure the templates are up to date.
-			if( $GLOBAL_CONFIG->{'config-update'} )
-				{
+            # If we're updating the configuration messages, delete all the add messages
+            # as well to ensure the templates are up to date.
+            if( $GLOBAL_CONFIG->{'config-update'} )
+                {
                 $IMAP_CONNECT->delete_message( $message );
-				}
-			}
+                }
+            }
 
         # You can't change the folder during the above loop or the return
         # from messages() becomes invalid, so loop thorugh all the messages
@@ -1446,23 +1466,23 @@ BODY
         $IMAP_CONNECT->select( $HelpFolder );
         @messages = $IMAP_CONNECT->messages();
 
-		# If we're updating the configuration messages, delete all the help messages
-		# as well to ensure the templates are up to date.
-		if( $GLOBAL_CONFIG->{'config-update'} )
-			{
-			my $message;
-			
-			foreach $message (@messages)
-				{
-				$IMAP_CONNECT->delete_message( $message );
-				}
-			
-			$IMAP_CONNECT->select( $HelpFolder );
-			$IMAP_CONNECT->expunge( $HelpFolder );  # For some reason the folder has to be passed here otherwise the expunge fails
-			
-			@messages = $IMAP_CONNECT->messages();
-			}
-		
+        # If we're updating the configuration messages, delete all the help messages
+        # as well to ensure the templates are up to date.
+        if( $GLOBAL_CONFIG->{'config-update'} )
+            {
+            my $message;
+            
+            foreach $message (@messages)
+                {
+                $IMAP_CONNECT->delete_message( $message );
+                }
+            
+            $IMAP_CONNECT->select( $HelpFolder );
+            $IMAP_CONNECT->expunge( $HelpFolder );  # For some reason the folder has to be passed here otherwise the expunge fails
+            
+            @messages = $IMAP_CONNECT->messages();
+            }
+        
         # If the help folder is empty, append the help message and samples
         if( scalar( @messages ) == 0 )
             {
@@ -1566,6 +1586,35 @@ BODY
             }
 
         return $fixed;
+        }
+
+    #
+    # This function 'creates' a feed based upon a web page.
+    #
+    #     __CreateRSSFeed( $link )
+    #
+    # Where:
+    #     $link is the URL of the web site
+    #
+    sub __CreateRSSFeed()
+        {
+        my $link = shift;
+        
+        my $pubDate = HTTP::Date::time2str();
+        my $title = "Website: " . $link;
+        
+        my $feed = XML::FeedPP::RSS->new();
+
+        $feed->title( $title );
+        $feed->link( $link );
+        $feed->pubDate( $pubDate );
+        
+        my $item =$feed->add_item();
+        $item->title( $title );
+        $item->link( $link );
+        $item->pubDate( $pubDate );
+
+        return $feed->to_string();
         }
     }
 

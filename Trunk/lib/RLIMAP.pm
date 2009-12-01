@@ -186,10 +186,10 @@ package RLIMAP;
         my $folder  = shift;
 
         if( ! $imap->select( $folder ) )
-			{
-			IMAPCreateFolder( $imap, $folder );
-			$imap->select( $folder ) || RLCommon::LogLine( "@!\r\n" );
-			}
+            {
+            IMAPCreateFolder( $imap, $folder );
+            $imap->select( $folder ) || RLCommon::LogLine( "@!\r\n" );
+            }
         }
 
     #
