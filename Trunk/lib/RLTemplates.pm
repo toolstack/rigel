@@ -72,7 +72,7 @@ $site_config->{'url'}
 # Source mail address, the "From:" header will be set to this value
 #from = $site_config->{'from'}
 #
-# Body source for the articles: feed/link
+# Body source for the articles: feed/link/webpage
 #body-source = $site_config->{'body-source'}
 #
 # Cropping of the body text before it is processed by any body-process 
@@ -213,6 +213,7 @@ Welcome to Rigel, an RSS to IMAP gateway
                 * text/html, text/plain mail format support.
                 * You can tell Rigel to retrive the full content and add it
                   to the message instead of the content from thr RSS feed.
+                * Rigel can retreive any webpage and treat it like an RSS feed.
                 * You can unify unread RSS article management via IMAP. This
                   is useful in case of using multiple client.
                 * IMAP over SSL support
@@ -258,13 +259,25 @@ Adding Feeds
         The options that are available are:
 
                 folder
-                type
-                sync
+                to
+                subject
+                from
+                body-source
+                pre-crop-start
+                pre-crop-end
+                absolute-urls
+                body-process
+                post-crop-start
+                post-crop-end
+                ignore-dates
+                article-order
                 expire
                 expire-unseen
                 expire-folder
-                subject
-                from
+                sync
+                use-subjects
+                force-ttl
+                user-agent
 
         See the configuration file for details on these.
 
@@ -315,37 +328,45 @@ Macros
                 %{date:weekday}         The current day of the week (1=Sun, 2=Mon, etc.)
                 %{date:yearday}         The current day of the year (1-365)
 
-Delivery mode
--------------
-        Rigel can deliver mail in three different delivery modes:
+Body Source
+-----------
+        Rigel can retreive the body of an article from three different sources:
 
-                - Plain Text (text)
-                        All items are converted to plain text (7-bit ASCII)
-                - Raw Feed (raw, default)
+                - feed
+                        Uses whatever the feed provides in the article description
+                - link
+                        Rigel will act like a web browser and connect to the link
+                        provided in the feed and retreive the entire webpage.
+                - webpage
+                        Rigel will assume that this is not really an RSS feed at all
+                        and instead is just a standalone website.  Rigel will connect
+                        to it as a browser and retrieve the entire webpage.
+
+        By default, Rigel will connect using a user agent string in the following 
+        format:
+        
+                Rigel/%{version} (%{OS})
+                
+        However, some websites may require a more conventional user agent string and
+        so this can be configured on a per feed basis.
+        
+Body Process
+------------
+        Once Rigel has the artcile body it can process it in several ways:
+
+                - Raw Feed (none)
                         Uses whatever the feed provides (usually a mix of
-                        text with some HTML markup
-                - Embedded HTML (embedded)
-                        Creates an HTML doc with an embedded external link
-                        to the article (basically shows the web page that
-                        the article points to).  As this is an external link
-                        you have to be connected to the Internet to see the
-                        content in this mode.
-                - mhtmllink
-                        Retreive the webpage in the rss link and convert it
+                        text with some HTML markup)
+                - Text (text)
+                        All items are converted to plain text (7-bit ASCII)
+                - MHTML (mhtml)
+                        Retrieve the webpage in the rss link and convert it
                         to a mime HTML mail message with all css and images
                         embedded in the message.  This allows for offline
                         reading, but can generate very large messages.
-                - htmllink
-                        Retrive the webpage in the rss link and create an
-                        HTML message from it.  This allows for offline
-                        reading, but no css or images will be available.
-                - textlink
-                        Retreive the webpage in the rss link and create a
-                        text message from it.
 
         You can configure delivery mode by setting "delivery-mode" value in
         Rigel.conf, and can override its value with command line option "-d".
-
 
 BODY
 ;
@@ -387,16 +408,16 @@ BODY
         my $temp_site   = shift;
         my $samplename  = lc( shift );
 
-		# Perl passes all parameters in to functions by reference, therefore
-		# if we change a value here it will change the value from the calling
-		# location as well.  We don't want that, so first dereference the hash
-		# so that we make a copy of the hash instead of the hash reference.  
-		# Then make a copy to a new hash.
-		my %temp = %$temp_site;
-		# Now create a reference to the new hash so we can work with it more 
-		# easily.  We will now have a reference to a copy of the passed hash.
-		my $site_config = \%temp;
-		
+        # Perl passes all parameters in to functions by reference, therefore
+        # if we change a value here it will change the value from the calling
+        # location as well.  We don't want that, so first dereference the hash
+        # so that we make a copy of the hash instead of the hash reference.  
+        # Then make a copy to a new hash.
+        my %temp = %$temp_site;
+        # Now create a reference to the new hash so we can work with it more 
+        # easily.  We will now have a reference to a copy of the passed hash.
+        my $site_config = \%temp;
+        
         if( $samplename eq "register.co.uk" )
             {
             $site_config->{'desc'} = "The Register";
@@ -405,7 +426,7 @@ BODY
             $site_config->{'body-source'} = "link";
             $site_config->{'pre-crop-start'} = "<div id=\"article\">";
             $site_config->{'pre-crop-end'} = "<p class=\"wptl btm\">";
-			$site_config->{'body-process'} = "text";
+            $site_config->{'body-process'} = "text";
             $site_config->{'order'} = "-1";
             }
         elsif( $samplename eq "theinquirer.net" )
@@ -514,8 +535,8 @@ BODY
         $item->{'body-source'}     = "#body-source = $site_config->{'body-source'}";
         $item->{'pre-crop-start'}  = "#pre-crop-start = $site_config->{'pre-crop-start'}";
         $item->{'pre-crop-end'}    = "#pre-crop-end = $site_config->{'pre-crop-end'}";
-		$item->{'body-process'}    = "#body-process = $site_config->{'body-process'}";
-		$item->{'absolute-urls'}   = "#absolute-urls = $site_config->{'absolute-urls'}";
+        $item->{'body-process'}    = "#body-process = $site_config->{'body-process'}";
+        $item->{'absolute-urls'}   = "#absolute-urls = $site_config->{'absolute-urls'}";
         $item->{'post-crop-start'} = "#post-crop-start = $site_config->{'post-crop-start'}";
         $item->{'post-crop-end'}   = "#post-crop-end = $site_config->{'post-crop-end'}";
         $item->{'article-order'}   = "#article-order = $site_config->{'article-order'}";
@@ -528,7 +549,7 @@ BODY
         $item->{'use-subjects'}    = "#use-subjects = $site_config->{'use-subjects'}";
         $item->{'force-ttl'}       = "#force-ttl = $site_config->{'force-ttl'}";
         $item->{'ignore-dates'}    = "#ignore-dates = $site_config->{'ignore-dates'}";
-		$item->{'user-agent'}      = "#user-agent = Rigel/%{version} (%{OS})";
+        $item->{'user-agent'}      = "#user-agent = Rigel/%{version} (%{OS})";
 
         return $item;
         }

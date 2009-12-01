@@ -11,6 +11,7 @@ Welcome to Rigel, an RSS to IMAP gateway
                 * Multiple mail formats supported.
                 * You can tell Rigel to retrieve the full content and add it
                   to the message instead of the content from the RSS feed.
+                * Rigel can retreive any webpage and treat it like an RSS feed.
                 * You can unify unread RSS article management via IMAP. This
                   is useful in case of using multiple clients.
                 * IMAP over SSL supported.

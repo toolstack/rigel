@@ -51,7 +51,7 @@ package RLConfig;
         'user'                 => $^O !~ /Win32/ ? $ENV{USER} : $ENV{USERNAME},
         'password'             => undef,
         'host'                 => 'localhost',
-		'OS'				   => $^O,
+        'OS'                   => $^O,
         'port'                 => 143,
         'directory-separator'  => '.',
         'interval'             => 60,
@@ -67,24 +67,24 @@ package RLConfig;
         'log-file'             => undef,
         'log-rotate'           => 'overwrite',
         'force-console'        => undef,
-		'log-folder'           => undef,
+        'log-folder'           => undef,
         };
 
-	 if( $^O !~ /Win32/ )
-		{
-		if( $ENV{'HOSTNAME'} )
-			{
-			$DEFAULT_GLOBAL_CONFIG->{'host'} = $ENV{'HOSTNAME'};
-			}
-		}
-	else
-		{
-		if( $ENV{'COMPUTERNAME'} )
-			{
-			$DEFAULT_GLOBAL_CONFIG->{'host'} = $ENV{'COMPUTERNAME'};
-			}
-		}
-			
+     if( $^O !~ /Win32/ )
+        {
+        if( $ENV{'HOSTNAME'} )
+            {
+            $DEFAULT_GLOBAL_CONFIG->{'host'} = $ENV{'HOSTNAME'};
+            }
+        }
+    else
+        {
+        if( $ENV{'COMPUTERNAME'} )
+            {
+            $DEFAULT_GLOBAL_CONFIG->{'host'} = $ENV{'COMPUTERNAME'};
+            }
+        }
+            
     our $DEFAULT_SITE_CONFIG =
         {
         'folder'        => 'RSS%{dir:sep}%{channel:title}',
@@ -92,10 +92,10 @@ package RLConfig;
         'to'            => $DEFAULT_GLOBAL_CONFIG->{'user'},
         'subject'       => '%{item:title} [%{item:link}]',
         'from'          => $DEFAULT_GLOBAL_CONFIG->{'user'} . "@" . $DEFAULT_GLOBAL_CONFIG->{'host'},
-        'delivery-mode' => 'raw',		# depricated
-		'body-source'   => 'feed',
-		'body-process'  => 'none',
-		'absolute-urls' => 'no',
+        'delivery-mode' => 'raw',        # depricated
+        'body-source'   => 'feed',
+        'body-process'  => 'none',
+        'absolute-urls' => 'no',
         'expire-unseen' => 'no',
         'expire'        => -1,
         'expire-folder' => undef,
@@ -105,15 +105,15 @@ package RLConfig;
         'last-subjects' => undef,
         'force-ttl'     => -1,
         'desc'          => "",
-        'crop-start'    => "",		# depricated
-        'crop-end'      => "",		# depricated
+        'crop-start'    => "",        # depricated
+        'crop-end'      => "",        # depricated
         'pre-crop-start'=> "",
         'pre-crop-end'  => "",
         'post-crop-start'=> "",
         'post-crop-end' => "",
         'article-order' => 1,
         'ignore-dates'  => 'no',
-		'user-agent'    => 'Rigel/$VERSION ($^O)',
+        'user-agent'    => 'Rigel/$VERSION ($^O)',
         };
 
     #
@@ -337,10 +337,10 @@ package RLConfig;
             $cnf{'channel:description'} = $rss->description();
             $cnf{'channel:dc:date'}     = $rss->pubDate() || "";
 
-			$cnf{'channel:hostname'}	= $rss->link();
-			$cnf{'channel:hostname'} 	=~ s/.*:\/\///;
-			$cnf{'channel:hostname'} 	=~ s/\/.*$//;
-			
+            $cnf{'channel:hostname'}    = $rss->link();
+            $cnf{'channel:hostname'}     =~ s/.*:\/\///;
+            $cnf{'channel:hostname'}     =~ s/\/.*$//;
+            
             $cnf{'dashline:channel:title'} = "-" x length( $cnf{'channel:title'} );
             }
 
@@ -358,8 +358,8 @@ package RLConfig;
 
         $cnf{host}            = $DEFAULT_GLOBAL_CONFIG->{host};
         $cnf{user}            = $DEFAULT_GLOBAL_CONFIG->{user};
-		$cnf{OS}			  = $DEFAULT_GLOBAL_CONFIG->{OS};
-		$cnf{version}         = $VERSION;
+        $cnf{OS}              = $DEFAULT_GLOBAL_CONFIG->{OS};
+        $cnf{version}         = $VERSION;
         $cnf{'last-modified'} = $rss->{'Rigel:last-modified'};
         $cnf{'rss-link'}      = $rss->{'Rigel:rss-link'};
         $cnf{'dir:sep'}       = $DEFAULT_GLOBAL_CONFIG->{'directory_separator'};
