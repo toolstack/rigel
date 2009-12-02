@@ -246,11 +246,11 @@ package RLCore;
 					my $response = $rss_and_response[1];
 					$feed_last_modified = $response->last_modified;
 					
-					# if the response didn't have a last_modified time, set it to a 
-					# realy low value so new items will get added.
+					# if the response didn't have a last_modified time, set it to 
+					# the current time so new items will get added.
 					if( $feed_last_modified == undef )
 						{
-						$feed_last_modified = 1;
+						$feed_last_modified = time();
 						}
 					}
                 }
