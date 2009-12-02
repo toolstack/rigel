@@ -78,9 +78,9 @@ package RLDebug;
     #
     sub OutputDebug
         {
-        my $level = shift;
+        my $level  = shift;
         my $string = shift;
-        my $var = shift;
+        my $var    = shift;
 
         if( $__DebugLevel >= $level )
             {

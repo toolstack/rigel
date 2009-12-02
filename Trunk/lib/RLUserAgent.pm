@@ -32,7 +32,7 @@ package RLUserAgent;
         {
         my $pkg_name     = shift;
         (%config)        = %{(shift)};
-        my $ua = LWP::UserAgent->new( @_ );
+		my $ua           = LWP::UserAgent->new( @_ );
 
         $ua->agent( "Rigel/" . %config->{'version'} );
 
@@ -43,7 +43,7 @@ package RLUserAgent;
     # This function retrives a set of basic credientals for a proxy server
     # either from the config file or interactivly.
     #
-    #     RLUserAgent::->get_basic_credentials(  $realm, $uri, $isproxy )
+    #     RLUserAgent::->get_basic_credentials( $realm, $uri, $isproxy )
     #
     # Where:
     #     $realm is HTTP realm setting (unused at this time)

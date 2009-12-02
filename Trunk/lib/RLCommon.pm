@@ -36,6 +36,15 @@ package RLCommon;
     our $LogFH      = undef;
     our $CurrentLog = undef;
 
+    #
+    # This function sets up the common components that will be used for Rigel
+	# including the log file.
+    #
+    #     RLCommon::SetCommonConfig( $config )
+    #
+    # Where:
+    #     $config is the global configuration variable
+	#
     sub SetCommonConfig
         {
         (%config) = %{(shift)};
@@ -65,7 +74,7 @@ package RLCommon;
     # This function rotates to the next log file name if unique logging is
     # enabled.
     #
-    #     RLCommon::RotateLog( )
+    #     RLCommon::RotateLog()
     #
     sub RotateLog
         {
@@ -84,7 +93,7 @@ package RLCommon;
     # This function returns an array with two entires, the rss feed as a
     # string and the response code from the HTTP connection.
     #
-    #     RLCommon::GetRSS(  $URL,  $headers, $ttl  )
+    #     RLCommon::GetRSS( $URL, $headers, $ttl )
     #
     # Where:
     #     $URL is the url of the feed to retreive
@@ -176,7 +185,7 @@ package RLCommon;
     # This function interactivly prompts (if required) for a username and
     # returns it.
     #
-    #     RLCommon::GetUser(  $prompt,  $is_proxy  )
+    #     RLCommon::GetUser( $prompt, $is_proxy )
     #
     # Where:
     #     $prompt is the text to display before the user enters data
@@ -217,7 +226,7 @@ package RLCommon;
     # This function interactivly prompts (if required) for a password and
     # returns it.
     #
-    #     RLCommon::GetPass(  $prompt,  $is_proxy  )
+    #     RLCommon::GetPass( $prompt,  $is_proxy )
     #
     # Where:
     #     $prompt is the text to display before the user enters data
@@ -309,7 +318,7 @@ package RLCommon;
     #
     sub StrTrim
         {
-        my $str     = shift;
+        my $str = shift;
 
         if( !defined( $str ) )
             {
@@ -349,7 +358,7 @@ package RLCommon;
     #
     sub LogLine
         {
-        my $line    = shift;
+        my $line = shift;
 
         # If we have a logfile to write to, then don't write to the console, unless
         # we are being forced to.
@@ -369,7 +378,7 @@ package RLCommon;
     # This function returns the current log file handle if one exists, otherwise
     # stdout is returned.  This is used for IMAP debugging.
     #
-    #     RLCommon::GetLogFileHandle( )
+    #     RLCommon::GetLogFileHandle()
     #
     sub GetLogFileHandle
         {
@@ -390,7 +399,7 @@ package RLCommon;
     #
     sub SendLogFile
         {
-        my $imap = shift;
+        my $imap    = shift;
         my $version = RLConfig::GetVersion();
         my $body; 
         my $data;
@@ -457,7 +466,7 @@ BODY
         $imap->append_string( $folder, $headers . "\r\n" . $body, "Seen" );
 
         # As we cannot count on the above append_string to actually mark the
-        # messages as seen and $uid may or may not acutall contain the message
+        # messages as seen and $uid may or may not acutally contain the message
         # make sure they're marked as read
         RLIMAP::MarkFolderRead( $imap, $folder );
         }

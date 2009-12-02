@@ -34,7 +34,7 @@ package RLTemplates;
     # This function returns the template message for adding feeds
     # to Rigel
     #
-    #     RLTemplates::NewFeed( $Version, $site_config)
+    #     RLTemplates::NewFeed( $Version, $site_config )
     #
     # Where:
     #     $Version is the current version of Rigel
@@ -184,7 +184,7 @@ BODY
     #
     # This function returns the template message for help
     #
-    #     RLTemplates::Help( $Version, $site_config)
+    #     RLTemplates::Help( $Version, $site_config )
     #
     # Where:
     #     $Version is the current version of Rigel
@@ -378,7 +378,7 @@ BODY
     # This function returns an array of all the sample feed configuration
     # names to add to the Help folder
     #
-    #     RLTemplates::FeedSampleList( )
+    #     RLTemplates::FeedSampleList()
     #
     sub FeedSampleList
         {
@@ -395,7 +395,7 @@ BODY
     # This function returns the template message a sample feed
     # to Rigel
     #
-    #     RLTemplates::FeedSample( $Version, $site_config, $name)
+    #     RLTemplates::FeedSample( $Version, $site_config, $name )
     #
     # Where:
     #     $Version is the current version of Rigel
@@ -470,7 +470,7 @@ BODY
     # This function returns the config message that would generate
     # the $site_config array
     #
-    #     RLTemplates::GenerateConfig( $Version, $site_config)
+    #     RLTemplates::GenerateConfig( $Version, $site_config )
     #
     # Where:
     #     $Version is the current version of Rigel

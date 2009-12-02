@@ -44,7 +44,7 @@ package RLConfig;
 
     our $VERSION = "V1.0 post release development";
 
-    # fallback config value(real default value)
+    # fallback config value (real default value)
     # these values may be overridden by the config file or cmdline options.
     our $DEFAULT_GLOBAL_CONFIG =
         {
@@ -105,8 +105,8 @@ package RLConfig;
         'last-subjects' => undef,
         'force-ttl'     => -1,
         'desc'          => "",
-        'crop-start'    => "",        # depricated
-        'crop-end'      => "",        # depricated
+        'crop-start'    => "",           # depricated
+        'crop-end'      => "",           # depricated
         'pre-crop-start'=> "",
         'pre-crop-end'  => "",
         'post-crop-start'=> "",
@@ -141,7 +141,7 @@ package RLConfig;
     # This function updates the IMAP configuraiton messages with
     # the current template.
     #
-    #     RLConfig::UpdateConfig(  $imap, \@sites)
+    #     RLConfig::UpdateConfig( $imap, \@sites )
     #
     # Where:
     #     $imap is the IMAP connection handle
@@ -188,7 +188,7 @@ package RLConfig;
     # This function parses a text string and extracts a URL and configuration
     # items from it.
     #
-    #     RLConfig::ParseConfigString(  $feedconf, $feeddesc )
+    #     RLConfig::ParseConfigString( $feedconf, $feeddesc )
     #
     # Where:
     #     $feedconf is a feed configuration object returned by GetSiteConfig()
@@ -252,7 +252,7 @@ package RLConfig;
     #
     # This function sets a global configuration variable for a given setting
     #
-    #     RLConfig::SetGlobalConfig(  $key, $value )
+    #     RLConfig::SetGlobalConfig( $key, $value )
     #
     # Where:
     #     $key is the configuration variable you want to set
@@ -269,7 +269,7 @@ package RLConfig;
     #
     # This function returns the version of Rigel
     #
-    #     RLConfig::GetVersion( )
+    #     RLConfig::GetVersion()
     #
     sub GetVersion
         {
@@ -279,7 +279,7 @@ package RLConfig;
     #
     # This function returns the default global configuration settings
     #
-    #     RLConfig::GetGlobalConfig( )
+    #     RLConfig::GetGlobalConfig()
     #
     sub GetGlobalConfig
         {
@@ -299,7 +299,7 @@ package RLConfig;
     #
     # This function applies the Rigel configuration templates to a string
     #
-    #     RLConfig::ApplyTemplate(  $rss, $item, $folder, $string)
+    #     RLConfig::ApplyTemplate( $rss, $item, $folder, $string )
     #
     # Where:
     #     $rss is the feed (optional)
@@ -397,7 +397,7 @@ package RLConfig;
     # This function parses the Rigel.conf file and updates the default global
     # and site configuration variables
     #
-    #     __ParseConfig( )
+    #     __ParseConfig()
     #
     sub __ParseConfig
         {
@@ -463,7 +463,7 @@ package RLConfig;
     #
     # This function parses the command line options.
     #
-    #     __ParseOptions( )
+    #     __ParseOptions()
     #
     sub __ParseOptions
         {

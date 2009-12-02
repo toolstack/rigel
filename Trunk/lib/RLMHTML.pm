@@ -162,7 +162,7 @@ package RLMHTML;
     # This function returns a character string that represents the web page
     # as an HTML file
     #
-    #     RLMHTML::GetHTML(  $url )
+    #     RLMHTML::GetHTML( $url )
     #
     # Where:
     #     $url is the web site to retreive
@@ -178,7 +178,7 @@ package RLMHTML;
     # This function crops a string at the first occurance of $crop_start and
     # the first occurance of $crop_end after $crop_start.
     #
-    #     RLMHTML::CropyBody(  $site_body, $crop_start, $crop_end )
+    #     RLMHTML::CropyBody( $site_body, $crop_start, $crop_end )
     #
     # Where:
     #     $site_body is the string to crop
@@ -250,7 +250,7 @@ package RLMHTML;
     #
     # This function returns the absolute URL give a relative url and a base url
     #
-    #     __absoluteURL(  $RelativeURL,  $BaseURL  )
+    #     __absoluteURL( $RelativeURL, $BaseURL )
     #
     # Where:
     #     $RelativeURL is the relative url
