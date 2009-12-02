@@ -132,7 +132,7 @@ package RLIMAP;
     #
     # This function compares IMAP message dates and returns the latest one
     #
-    #     RLIMAP::GetLatestDate(  @messages, $date )
+    #     RLIMAP::GetLatestDate( @messages, $date )
     #
     # Where:
     #     @messages is an array of message ID's to compare
@@ -175,7 +175,7 @@ package RLIMAP;
     #
     # This function selects an IMAP folder, creating it if required
     #
-    #     RLIMAP::IMAPSelectFolder(  $folder)
+    #     RLIMAP::IMAPSelectFolder( $folder )
     #
     # Where:
     #     $folder is the folder to create/select
@@ -195,7 +195,7 @@ package RLIMAP;
     #
     # This function creates an IMAP folder
     #
-    #     RLIMAP::IMAPCreateFolder(  $folder)
+    #     RLIMAP::IMAPCreateFolder( $folder )
     #
     # Where:
     #     $folder is the folder to create
@@ -215,7 +215,7 @@ package RLIMAP;
     # This function returns the full IMAP path to a folder, incuding any prefix
     # and directory seperatores
     #
-    #     RLIMAP::GetRealFolderName(  $folder, $dirsep)
+    #     RLIMAP::GetRealFolderName( $folder, $dirsep )
     #
     # Where:
     #     $folder is the folder you want to get

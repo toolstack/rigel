@@ -34,7 +34,7 @@ package RLUnicode;
     #
     # This function converts a string to UTF7 encoding
     #
-    #     RLUnicode::ToUTF7(  $string  )
+    #     RLUnicode::ToUTF7( $string )
     #
     # Where:
     #     $string is the string to convert
@@ -58,7 +58,7 @@ package RLUnicode;
     #
     # This function converts a string to UTF8 encoding
     #
-    #     RLUnicode::ToUTF8(  $string, $from )
+    #     RLUnicode::ToUTF8( $string, $from )
     #
     # Where:
     #     $string is the string to convert
@@ -85,7 +85,7 @@ package RLUnicode;
     #
     # This function converts a string to MIME encoding
     #
-    #     RLUnicode::ToMIME(  $string, $from )
+    #     RLUnicode::ToMIME( $string, $from )
     #
     # Where:
     #     $string is the string to convert

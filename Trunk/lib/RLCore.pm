@@ -145,7 +145,7 @@ package RLCore;
     # This function does the grunt work of getting the feed, ensuring TTL's
     # are handled and if any updates need to be made
     #
-    #     __GetRSS( $url, $site_config)
+    #     __GetRSS( $url, $site_config )
     #
     # Where:
     #     $url is the url of the feed
@@ -633,7 +633,7 @@ package RLCore;
     # This function does the grunt work of expiring feed items on the IMAP
     # server.
     #
-    #     __ExpireFeed( $rss, $site)
+    #     __ExpireFeed( $rss, $site )
     #
     # Where:
     #     $rss is the feed as a string
@@ -695,7 +695,7 @@ package RLCore;
     # This function stores the last update message on the IMAP server for
     # a feed
     #
-    #     __SendLastUpdate(  $rss, $ttl, $subjects )
+    #     __SendLastUpdate( $rss, $ttl, $subjects )
     #
     # Where:
     #     $rss is the rss feed
@@ -761,7 +761,7 @@ BODY
     # This function stores a single article on the IMAP server in the
     # appropriate format.
     #
-    #     __SendItem(  $site, $folder, $rss, $item )
+    #     __SendItem( $site, $folder, $rss, $item )
     #
     # Where:
     #     $site is the site configuration array
@@ -957,7 +957,7 @@ BODY
     #
     # This function converts an rss item with HTML markup in it to plain text
     #
-    #     __ConvertToText(  $string)
+    #     __ConvertToText( $string )
     #
     # Where:
     #     $string is the string to convert
@@ -1044,7 +1044,7 @@ BODY
     #
     # This function creates a message id to be used in the IMAP messages
     #
-    #     __GenerateMessageID(  $rss, $item)
+    #     __GenerateMessageID( $rss, $item )
     #
     # Where:
     #     $rss is the feed (unused)
@@ -1058,11 +1058,10 @@ BODY
         return sprintf( '%s@%s', RLCommon::StrTrim( $item->link() ), $GLOBAL_CONFIG->{host} );
         }
 
-
     #
     # This function returns the last modified date for an rss item
     #
-    #     __GetRSSDate(  $rss, $item)
+    #     __GetRSSDate( $rss, $item )
     #
     # Where:
     #     $rss is the feed (unused)
@@ -1086,7 +1085,7 @@ BODY
     #
     # This function returns a HTTP formated time for an rss item
     #
-    #     __GetDate( $rss, $item)
+    #     __GetDate( $rss, $item )
     #
     # Where:
     #     $rss is the feed (unused)
@@ -1105,7 +1104,7 @@ BODY
     # This function returns an array of feed site configurations from the
     # IMAP server
     #
-    #     __GetFeedsFromIMAP( )
+    #     __GetFeedsFromIMAP()
     #
     sub __GetFeedsFromIMAP
         {
@@ -1265,7 +1264,7 @@ BODY
     # This function returns the textual version of the message body in a
     # MIME message
     #
-    #     __GetMIMETextBody(  $mime)
+    #     __GetMIMETextBody( $mime )
     #
     # Where:
     #     $mime is the mime encoded message to retreive
@@ -1305,7 +1304,7 @@ BODY
     #
     # This function processes and add/delete messages on the IMAP server
     #
-    #     __ProcessChangeRequests( )
+    #     __ProcessChangeRequests()
     #
     sub __ProcessChangeRequests
         {
@@ -1458,7 +1457,7 @@ BODY
     # This function checks the help folder and updates messages
     # as required.
     #
-    #     __VerifyHelp( )
+    #     __VerifyHelp()
     #
     sub __VerifyHelp
         {
@@ -1522,7 +1521,7 @@ BODY
     #
     # This function 'fixes' some common feeds errors
     #
-    #     __FixFeed(  $feed)
+    #     __FixFeed( $feed )
     #
     # Where:
     #     $feed is the raw feed to fix
@@ -1603,7 +1602,7 @@ BODY
     # Where:
     #     $link is the URL of the web site
     #
-    sub __CreateRSSFeed()
+    sub __CreateRSSFeed
         {
         my $link = shift;
         
