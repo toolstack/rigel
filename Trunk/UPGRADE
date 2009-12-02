@@ -16,7 +16,7 @@ format:
        configuration messages.
        
 If you have modified other aspects of your configuration messages (like the 
-comments then option 2 will delete those changes and replace them with the 
+comments) then option 2 will delete those changes and replace them with the 
 standard template that can be found in the "Add" folder.
 
 If you are going to let Rigel do the configuration message refresh for you

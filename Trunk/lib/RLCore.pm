@@ -245,11 +245,18 @@ package RLCore;
 					$content = $rss_and_response[0];
 					my $response = $rss_and_response[1];
 					$feed_last_modified = $response->last_modified;
+					
+					# if the response didn't have a last_modified time, set it to a 
+					# realy low value so new items will get added.
+					if( $feed_last_modified == undef )
+						{
+						$feed_last_modified = 1;
+						}
 					}
                 }
                 
             # If we didn't actually get an update from the feed, just return undef's
-			RLDebug::OutputDebug( 2, "Feed last modifed: " . $feed_last_modified );
+			RLDebug::OutputDebug( 2, "Feed last modified: " . $feed_last_modified );
             if( $feed_last_modified == 0 )
                 {
                 RLCommon::LogLine( "\tFeed not modified, no update required.\r\n" );
