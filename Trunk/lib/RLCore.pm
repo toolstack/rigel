@@ -1171,7 +1171,12 @@ BODY
                                                                   %config->{'crop-end'} );
                 }
 
-            push @config_list, { %config };
+			# If the only-one-feed option has not been enabled, or it has and this is the
+			# feed to use, then add it to the config list.
+			if( $GLOBAL_CONFIG->{'only-one'} eq undef || $GLOBAL_CONFIG->{'only-one'} eq $feeddesc )
+				{
+				push @config_list, { %config };
+				}
             }
 
         if( $show_v1_alert > 0 && $GLOBAL_CONFIG->{'config-update'} == 0 )

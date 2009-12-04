@@ -68,6 +68,7 @@ package RLConfig;
         'log-rotate'           => 'overwrite',
         'force-console'        => undef,
         'log-folder'           => undef,
+		'only-one'             => undef,
         };
 
      if( $^O !~ /Win32/ )
@@ -477,7 +478,7 @@ package RLConfig;
                    'm|last-modified-folder=s'      => \$DEFAULT_GLOBAL_CONFIG->{'last-modified-folder'},
                    'password=s'                    => \$DEFAULT_GLOBAL_CONFIG->{'password'},
                    'p|prefix=s'                    => \$DEFAULT_GLOBAL_CONFIG->{'prefix'},
-                   'D|debug'                       => \$DEFAULT_GLOBAL_CONFIG->{'debug'},
+                   'D|debug=s'                     => \$DEFAULT_GLOBAL_CONFIG->{'debug'},
                    'proxy=s'                       => \$DEFAULT_GLOBAL_CONFIG->{'proxy'},
                    'proxy-user=s'                  => \$DEFAULT_GLOBAL_CONFIG->{'proxy-user'},
                    'proxy-pass=s'                  => \$DEFAULT_GLOBAL_CONFIG->{'proxy-pass'},
@@ -487,11 +488,11 @@ package RLConfig;
                    'i|interval=s'                  => \$DEFAULT_GLOBAL_CONFIG->{'interval'},
                    'S|use-ssl'                     => \$DEFAULT_GLOBAL_CONFIG->{'use-ssl'},
                    'e|encrypt=s'                   => \$DEFAULT_GLOBAL_CONFIG->{'encrypt'},
-                   'd|delivery-mode=s'             => \$DEFAULT_SITE_CONFIG->{'delivery-mode'},
                    'h|help'                        => \$DEFAULT_GLOBAL_CONFIG->{'help'},
                    'v|version'                     => \$DEFAULT_GLOBAL_CONFIG->{'version'},
                    'f|configfile=s'                => \$DEFAULT_GLOBAL_CONFIG->{'config-file'},
                    'R|refreshconfig'               => \$DEFAULT_GLOBAL_CONFIG->{'config-update'},
+                   'O|only-one-feed=s'             => \$DEFAULT_GLOBAL_CONFIG->{'only-one'},
                     );
 
         # at this point. @ARGV reference contents is changed!.
