@@ -36,29 +36,30 @@ sub ShowUsage
 
 Usage: Rigel [options]
 
--s,  --host=HOST           use HOST as an IMAP host [localhost]
--P,  --port=INT            use INT as a port number [143]
--u,  --user=USER           use USER as a user name [$ENV{USER}]
-     --password=PASSWORD   use PASSWORD as your password
--p,  --prefix=PREFIX       use PREFIX as a folder prefix name []
-                           set "INBOX" when you use courier-imap
+-c,  --cram-md5            use cram-md5 authentication
+-D   --debug=LEVEL         Enable debug mode
+-e   --encrypt             encrypt a string (used for passwords)
+-f   --configfile          Location and name of the configuration file.
+-h   --help                this help.
+-i,  --interval=MIN        run at MIN intervals [30]
 -m,  --last-modified-folder=FOLDER
                            use "FOLDER" as the last-modified-folder
--c,  --cram-md5            use cram-md5 authentication
--o,  --once                run once and exit
 -n,  --nodaemon            run as a foreground process
--i,  --interval=MIN        run at MIN intervals [30]
+-o,  --once                run once and exit
+-O,  --only-one-feed=FEED  Only update a single feed with the 
+                           description of "FEED".s
+-p,  --prefix=PREFIX       use PREFIX as a folder prefix name []
+                           set "INBOX" when you use courier-imap
      --proxy=HOST          use HOST as a http proxy
      --proxy-user=USER     use proxy username
      --proxy-pass=PASS     use proxy password
--S   --use-ssl             use Secure Socket Layer(SSL)
--e   --encrypt             encrypt a string (used for passwords)
--d   --delivery-mode=MODE  mail delivery mode.
-                           MODE is "text"(default) or "html"
--f   --configfile          Location and name of the configuration file.
--h   --help                this help.
+-P,  --port=INT            use INT as a port number [143]
 -R   --refreshconfig       Reformat all IMAP config messages to use the
                            standard template.
+-s,  --host=HOST           use HOST as an IMAP host [localhost]
+-S   --use-ssl             use Secure Socket Layer(SSL)
+-u,  --user=USER           use USER as a user name [$ENV{USER}]
+     --password=PASSWORD   use PASSWORD as your password
 -v   --version             version info.
 
 EOS
