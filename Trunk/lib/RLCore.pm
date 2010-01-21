@@ -312,9 +312,9 @@ package RLCore;
             # Now that we have the last updated subject list in a big string, time
             # to prase it in to an array.
             my $beyond_headers = 0;
-            foreach my $subject ( split( '\n', $subject_glob ) )
+            foreach my $subject ( split( '\r\n', $subject_glob ) )
                 {
-                if( $beyond_headers == 1 )
+                if( $beyond_headers eq 1 )
                     {
                     push @subject_lines, $subject;
                     RLDebug::OutputDebug( 1, "subject line = $subject" );
@@ -512,7 +512,7 @@ package RLCore;
                     }
 
                 # if message not found, append it.
-                RLDebug::OutputDebug( 2, "Result: @search" );
+                RLDebug::OutputDebug( 2, "IMAP Search Result: @search" );
                 if( @search == 0 )
                     {
                     RLDebug::OutputDebug( 2, "Use Subjects? " . $site_config->{'use-subjects'} );
@@ -542,15 +542,16 @@ package RLCore;
                         next ; # date field is not found, we ignore it.
                         }
 
-                    RLDebug::OutputDebug( 2, "Didn't find the article in the IMAP folder and we have a valid date." );
+                    RLDebug::OutputDebug( 2, "Found the article in the IMAP folder and we have a valid date." );
 
                     # get last-modified_date of IMAP search result.
                     my ( $latest, $lmsg ) = RLIMAP::GetLatestDate( $IMAP_CONNECT, \@search );
                     RLDebug::OutputDebug( 2, "latest date = $latest" );
 
-                    # if rss date is newer, delete search result and add rss items.
-                    # by this, duplicate message is replaced with lastest one.
-                    if( $rss_time > $latest )
+                    # if rss date is newer and we haven't been told to ignore them, 
+					# delete the search result and re-add the rss item so that the
+					# updated message is stroed in the IMAP folder.
+                    if( $rss_time > $latest && $site_config->{'ignore-dates'} eq "no" )
                         {
                         RLDebug::OutputDebug( 2, "updating items!" );
                         push @delete_mail, @search;
