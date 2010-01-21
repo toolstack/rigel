@@ -3,7 +3,33 @@ Rigel change log:
 
 version ?.?
 -----------
-
+        - Rewrote the entire delivery-mode logic, now more flexible but uses 
+		  different configuration variables, see the UPGRADE doc for how to
+		  converts to the new format
+        - Addition of user-agent string for link retreival
+		- cropping start and end now both remove the text that is cropped upon
+		- Rigel -R now only refreshes the configuraiton items and then exits 
+		  instead of also processing feeds
+		- refreshconfig option now updates both help files and add templates
+		- Fixed a bug in the FeedSample that was overwriting the default site
+  		  configuration variable
+		- change the V1 config warning message to not display if Rigel's been 
+		  run with the -R command
+		- Added support to send the log file to an IMAP folder
+		- Updated IMAP folder select code to only 'create' the folder if the 
+		  inital select fails
+		- Fixed bug which would force the subject cache to always be used
+		- Added support for webpages
+		- Updated feed last modifed code so that when a feed has no last 
+		  modified date, the current time is used instead
+		- Added new command line option --only-one-feed to tell Rigel to 
+		  only process a single feed from the configuration folder instead
+		  of all of them based on the feed description/message subject line.
+		- Clean up of the -h command line output to match real options
+		- Removed --delivery-mode command line option
+		- Fixed issue with the subject caching code when the change to 
+		  \r\n was made
+		- Fixed logic issue in the date comparison code for articles
 
 version 1.0
 -----------
