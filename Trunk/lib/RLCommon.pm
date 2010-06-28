@@ -38,13 +38,13 @@ package RLCommon;
 
     #
     # This function sets up the common components that will be used for Rigel
-	# including the log file.
+    # including the log file.
     #
     #     RLCommon::SetCommonConfig( $config )
     #
     # Where:
     #     $config is the global configuration variable
-	#
+    #
     sub SetCommonConfig
         {
         (%config) = %{(shift)};

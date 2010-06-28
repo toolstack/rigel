@@ -157,18 +157,26 @@ $site_config->{'url'}
 #   %{newline}                         The newline character
 #   %{rss-link}                        The URL of the feed
 #   %{user}                            The IMAP user name
-#   %{date:dow}                        The current day of the week (3 letters)
-#   %{date:longdow}                    The current day of the week (long form)
-#   %{date:month}                      The current month (3 letters)
-#   %{date:longmonth}                  The current month (long form)
 #   %{date:sec}                        The current seconds past the hour (0-59)
 #   %{date:min}                        The current minutes past the hour (0-59)
 #   %{date:hour}                       The current hour of the day (0-23)
-#   %{date:dom}                        The current day of the month (1-31)
+#   %{date:day}                        The current day of the month (1-31)
 #   %{date:monthnumber}                The current month's number (1-12)
 #   %{date:year}                       The current year (4 digit )
 #   %{date:weekday}                    The current day of the week (1=Sun, 2=Mon, etc.)
 #   %{date:yearday}                    The current day of the year (1-365)
+#   %{date:dow}                        The current day of the week (3 letters, first capatialized)
+#   %{date:dow:lc}                     The current day of the week (3 letters, lower case)
+#   %{date:dow:uc}                     The current day of the week (3 letters, upper case)
+#   %{date:longdow}                    The current day of the week (long form)
+#   %{date:longdow:lc}                 The current day of the week (long form, lower case)
+#   %{date:longdow:uc}                 The current day of the week (long form, upper case)
+#   %{date:month}                      The current month (3 letters)
+#   %{date:month:lc}                   The current month (3 letters, lower case)
+#   %{date:month:uc}                   The current month (3 letters, upper case)
+#   %{date:longmonth}                  The current month (long form)
+#   %{date:longmonth:lc}               The current month (long form, lower case)
+#   %{date:longmonth:uc}               The current month (long form, upper case)
 #
 #   Note that not all items may be available at all times, ie. during folder
 #   creation only the channel items are available as the item information has
@@ -291,8 +299,8 @@ Macros
                 %{host}                 Hostname
                 %{user}                 Username
                 %{rss-link}             RSS URL
-				%{OS}					OS type
-				%{version}				Rigel's version
+                %{OS}                    OS type
+                %{version}                Rigel's version
                 %{dir:sep}              The IMAP server's folder separator
                 %{dir:manage}           The folder that Rigel stores it's
                                         management items in
@@ -310,23 +318,31 @@ Macros
                 %{item:dc:creator}      dc:creator of every RSS item.(undefined
                                         in some RSS)
                 %{channel:link}         Link of RSS channel.
-				%{channel:hostname}		The hostname from the channel link.
+                %{channel:hostname}        The hostname from the channel link.
                 %{channel:title}        Title of RSS channel.
                 %{channel:description}  Description of RSS channel.
                 %{channel:dc:date}      dc:date of RSS channel. (undefined in
                                         some RSS)
-                %{date:dow}             The current day of the week (3 letters)
-                %{date:longdow}         The current day of the week (long form)
-                %{date:month}           The current month (3 letters)
-                %{date:longmonth}       The current month (long form)
                 %{date:sec}             The current seconds past the hour (0-59)
                 %{date:min}             The current minutes past the hour (0-59)
                 %{date:hour}            The current hour of the day (0-23)
-                %{date:dom}             The current day of the month (1-31)
+                %{date:day}             The current day of the month (1-31)
                 %{date:monthnumber}     The current month's number (1-12)
                 %{date:year}            The current year (4 digit )
                 %{date:weekday}         The current day of the week (1=Sun, 2=Mon, etc.)
                 %{date:yearday}         The current day of the year (1-365)
+                %{date:dow}             The current day of the week (3 letters, first capatialized)
+                %{date:dow:lc}          The current day of the week (3 letters, lower case)
+                %{date:dow:uc}          The current day of the week (3 letters, upper case)
+                %{date:longdow}         The current day of the week (long form)
+                %{date:longdow:lc}      The current day of the week (long form, lower case)
+                %{date:longdow:uc}      The current day of the week (long form, upper case)
+                %{date:month}           The current month (3 letters)
+                %{date:month:lc}        The current month (3 letters, lower case)
+                %{date:month:uc}        The current month (3 letters, upper case)
+                %{date:longmonth}       The current month (long form)
+                %{date:longmonth:lc}    The current month (long form, lower case)
+                %{date:longmonth:uc}    The current month (long form, upper case)
 
 Body Source
 -----------

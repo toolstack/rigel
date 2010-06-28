@@ -68,7 +68,7 @@ package RLConfig;
         'log-rotate'           => 'overwrite',
         'force-console'        => undef,
         'log-folder'           => undef,
-		'only-one'             => undef,
+        'only-one'             => undef,
         };
 
      if( $^O !~ /Win32/ )
@@ -319,10 +319,18 @@ package RLConfig;
 
         ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:day'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
 
-        $cnf{'date:dow'} = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat' )[$cnf{'date:weekday'}];
+        $cnf{'date:dow'} = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat' )[$cnf{'date:weekday'}%7];
+        $cnf{'date:dow:lc'} = lc( $cnf{'date:dow'} );
+        $cnf{'date:dow:uc'} = uc( $cnf{'date:dow'} );
         $cnf{'date:longdow'} = ( 'Sunday', 'Monday', 'Tueday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' )[$cnf{'date:weekday'}];
+        $cnf{'date:longdow:lc'} = lc( $cnf{'date:longdow'} );
+        $cnf{'date:longdow:uc'} = uc( $cnf{'date:longdow'} );
         $cnf{'date:month'} = ( "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec" )[$cnf{'date:monthnumber'}];
+        $cnf{'date:month:lc'} = lc( $cnf{'date:month'} );
+        $cnf{'date:month:uc'} = uc( $cnf{'date:month'} );
         $cnf{'date:longmonth'} = ( "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" )[$cnf{'date:monthnumber'}];
+        $cnf{'date:longmonth:lc'} = lc( $cnf{'date:longmonth'} );
+        $cnf{'date:longmonth:uc'} = uc( $cnf{'date:longmonth'} );
         $cnf{'date:year'} += 1900;
         $cnf{'date:monthnumber'} += 1;
         $cnf{'date:weekday'} += 1;

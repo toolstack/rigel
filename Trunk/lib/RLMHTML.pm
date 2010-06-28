@@ -230,37 +230,37 @@ package RLMHTML;
             }
 
         # Find all the img objects we want to make absolute
-		my %imgs_dups;
+        my %imgs_dups;
         my @imgs = $tree->find( 'img' );
         my $img = "";
 
         foreach $img (@imgs)
             {
             my $img_src = $img->attr( 'src' );
-			$imgs_dups{$img_src}++;
-			if( $imgs_dups{$img_src} eq 1 ) 
-				{
-				my $abs_url = __absoluteURL( $img_src, $BaseURL );
-				$sitebody =~ s/\Q$img_src\E/$abs_url/g;
-				}
+            $imgs_dups{$img_src}++;
+            if( $imgs_dups{$img_src} eq 1 ) 
+                {
+                my $abs_url = __absoluteURL( $img_src, $BaseURL );
+                $sitebody =~ s/\Q$img_src\E/$abs_url/g;
+                }
             }
 
         # Find all the address objects we want to make absolute
-		my %address_dups;
+        my %address_dups;
         my @addresses = $tree->find( 'a' );
         my $address = "";
 
         foreach $address (@addresses)
             {
-			my $address_href = $address->attr( 'href' );
-			$address_dups{$address_href}++;
-			if( $address_dups{$address_href} eq 1 ) 
-				{
-				my $abs_url = __absoluteURL( $address_href, $BaseURL );
-				$sitebody =~ s/\Q$address_href\E/$abs_url/g;
-				}
+            my $address_href = $address->attr( 'href' );
+            $address_dups{$address_href}++;
+            if( $address_dups{$address_href} eq 1 ) 
+                {
+                my $abs_url = __absoluteURL( $address_href, $BaseURL );
+                $sitebody =~ s/\Q$address_href\E/$abs_url/g;
+                }
             }
-			
+            
         return $sitebody;
         }
         
