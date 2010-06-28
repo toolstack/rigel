@@ -1,8 +1,8 @@
 Rigel change log:
 ================
 
-version ?.?
------------
+version 2.0RC1
+--------------
         - Rewrote the entire delivery-mode logic, now more flexible but uses 
           different configuration variables, see the UPGRADE doc for how to
           converts to the new format
@@ -30,6 +30,12 @@ version ?.?
         - Fixed issue with the subject caching code when the change to 
           \r\n was made
         - Fixed logic issue in the date comparison code for articles
+		- Added duplicate checks to the absulte URL code to ensure
+		  they are only replaced once
+		- Added address tags to the list of tags that absolute URL update
+		- Added suuport for Websites to use variables in their URL's
+		- Fixed incorrect list of macro's for date items in the config
+		  file and the template messages
 
 version 1.0
 -----------
