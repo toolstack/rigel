@@ -40,7 +40,7 @@ Requirements
 
         You also need an IMAP server, Rigel should work with just about any
         IMAP server, however it has only been verified at this time with
-        Microsoft Exchange 2003/2007.
+        Microsoft Exchange 2003/2007/2010.
 
         Rigel has been thoroughly tested on OpenSUSE Linux but it should run
         on just about any *nix variant that support Perl and the above modules.
@@ -198,18 +198,26 @@ Macros
                 %{channel:description}  Description of RSS channel.
                 %{channel:dc:date}      dc:date of RSS channel. (undefined in
                                         some RSS)
-                %{date:dow}             The current day of the week (3 letters)
-                %{date:longdow}         The current day of the week (long form)
-                %{date:month}           The current month (3 letters)
-                %{date:longmonth}       The current month (long form)
                 %{date:sec}             The current seconds past the hour (0-59)
                 %{date:min}             The current minutes past the hour (0-59)
                 %{date:hour}            The current hour of the day (0-23)
-                %{date:dom}             The current day of the month (1-31)
+                %{date:day}             The current day of the month (1-31)
                 %{date:monthnumber}     The current month's number (1-12)
                 %{date:year}            The current year (4 digit )
                 %{date:weekday}         The current day of the week (1=Sun, 2=Mon, etc.)
                 %{date:yearday}         The current day of the year (1-365)
+                %{date:dow}             The current day of the week (3 letters, first capatialized)
+                %{date:dow:lc}          The current day of the week (3 letters, lower case)
+                %{date:dow:uc}          The current day of the week (3 letters, upper case)
+                %{date:longdow}         The current day of the week (long form)
+                %{date:longdow:lc}      The current day of the week (long form, lower case)
+                %{date:longdow:uc}      The current day of the week (long form, upper case)
+                %{date:month}           The current month (3 letters)
+                %{date:month:lc}        The current month (3 letters, lower case)
+                %{date:month:uc}        The current month (3 letters, upper case)
+                %{date:longmonth}       The current month (long form)
+                %{date:longmonth:lc}    The current month (long form, lower case)
+                %{date:longmonth:uc}    The current month (long form, upper case)
 
 Body Source
 -----------

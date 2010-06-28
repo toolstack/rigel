@@ -3,7 +3,7 @@ Upgrading from Rigel V1 to V2
 
 Rigel V2 has updated the configuration items used to determine how articles 
 are delivered to the IMAP messages, at this time Rigel will read and process
-V1 and V2 configuration messages, however it will through out a warning about
+V1 and V2 configuration messages, however it will throw out a warning about
 the V1 messages.
 
 You have two choices on how to "upgrade" the configuration messages to the V2

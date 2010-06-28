@@ -1,5 +1,5 @@
-Rigel V?.? (??? ??, ????)
-=========================
+Rigel V2.0RC1 (June 28, 2010)
+=============================
 
 Welcome to Rigel, an RSS to IMAP gateway
 ----------------------------------------
@@ -26,6 +26,10 @@ Welcome to Rigel, an RSS to IMAP gateway
 
 News
 ----
+        June 28/2010
+		        - V2.0 RC1!  Lots of changes, see the change log for all.  Make
+				  sure you already read the UGPRADE document as some configuration
+				  variables have changed.
         October 26/2009
                 - Version 1.0 release
         August 18/2009
