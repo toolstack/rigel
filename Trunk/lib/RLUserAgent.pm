@@ -32,7 +32,7 @@ package RLUserAgent;
         {
         my $pkg_name     = shift;
         (%config)        = %{(shift)};
-		my $ua           = LWP::UserAgent->new( @_ );
+        my $ua           = LWP::UserAgent->new( @_ );
 
         $ua->agent( "Rigel/" . %config->{'version'} );
 

@@ -154,6 +154,7 @@ package RLCore;
     sub __GetRSS
         {
         my $link        = shift;
+        my $reallink    = RLConfig::ApplyTemplate( undef, undef, 1, $link );
         my $site_config = shift;
         my $folder      = RLConfig::ApplyTemplate( undef, undef, 1, $GLOBAL_CONFIG->{'last-modified-folder'} );
         my $headers     = {};
@@ -237,26 +238,27 @@ package RLCore;
             else
                 {
                 # We're good to go, get the update
-                my @rss_and_response = RLCommon::GetRSS( $link, $headers, $rss_ttl );
-				
-				# If we get a response, setup the content and feed_last_modifed variables.
-				if( scalar( @rss_and_response ) > 0 )
-					{
-					$content = $rss_and_response[0];
-					my $response = $rss_and_response[1];
-					$feed_last_modified = $response->last_modified;
-					
-					# if the response didn't have a last_modified time, set it to 
-					# the current time so new items will get added.
-					if( $feed_last_modified == undef )
-						{
-						$feed_last_modified = time();
-						}
-					}
+                RLDebug::OutputDebug( 1, "RealLink: $reallink\r\n" );
+                my @rss_and_response = RLCommon::GetRSS( $reallink, $headers, $rss_ttl );
+                
+                # If we get a response, setup the content and feed_last_modifed variables.
+                if( scalar( @rss_and_response ) > 0 )
+                    {
+                    $content = $rss_and_response[0];
+                    my $response = $rss_and_response[1];
+                    $feed_last_modified = $response->last_modified;
+                    
+                    # if the response didn't have a last_modified time, set it to 
+                    # the current time so new items will get added.
+                    if( $feed_last_modified == undef )
+                        {
+                        $feed_last_modified = time();
+                        }
+                    }
                 }
                 
             # If we didn't actually get an update from the feed, just return undef's
-			RLDebug::OutputDebug( 2, "Feed last modified: " . $feed_last_modified );
+            RLDebug::OutputDebug( 2, "Feed last modified: " . $feed_last_modified );
             if( $feed_last_modified == 0 )
                 {
                 RLCommon::LogLine( "\tFeed not modified, no update required.\r\n" );
@@ -549,8 +551,8 @@ package RLCore;
                     RLDebug::OutputDebug( 2, "latest date = $latest" );
 
                     # if rss date is newer and we haven't been told to ignore them, 
-					# delete the search result and re-add the rss item so that the
-					# updated message is stroed in the IMAP folder.
+                    # delete the search result and re-add the rss item so that the
+                    # updated message is stroed in the IMAP folder.
                     if( $rss_time > $latest && $site_config->{'ignore-dates'} eq "no" )
                         {
                         RLDebug::OutputDebug( 2, "updating items!" );
@@ -906,7 +908,17 @@ BODY
         # First, retreive the content, if we're following the link, use GetHTML, 
         # otherwise it's just the description from the feed.
         RLDebug::OutputDebug( 2, "Body source: " . $site_config->{'body-source'} );
-        if( $site_config->{'body-source'} eq 'link' || $site_config->{'body-source'} eq 'webpage' )
+
+        if( $site_config->{'body-source'} eq 'webpage' )
+            {
+            # If we getting a webpage, then we need to apply the template items to the
+            # link as $item->link() is generated from the config message when we create
+            # the "fake" rss feed for the website.
+            my $reallink = RLConfig::ApplyTemplate( undef, undef, 1, $item->link() );
+            
+            $body = RLMHTML::GetHTML( $reallink, $site_config->{'user-agent'} );
+            }
+        elsif( $site_config->{'body-source'} eq 'link' )
             {
             $body = RLMHTML::GetHTML( $item->link(), $site_config->{'user-agent'} );
             }
@@ -1172,12 +1184,12 @@ BODY
                                                                   %config->{'crop-end'} );
                 }
 
-			# If the only-one-feed option has not been enabled, or it has and this is the
-			# feed to use, then add it to the config list.
-			if( $GLOBAL_CONFIG->{'only-one'} eq undef || $GLOBAL_CONFIG->{'only-one'} eq $feeddesc )
-				{
-				push @config_list, { %config };
-				}
+            # If the only-one-feed option has not been enabled, or it has and this is the
+            # feed to use, then add it to the config list.
+            if( $GLOBAL_CONFIG->{'only-one'} eq undef || $GLOBAL_CONFIG->{'only-one'} eq $feeddesc )
+                {
+                push @config_list, { %config };
+                }
             }
 
         if( $show_v1_alert > 0 && $GLOBAL_CONFIG->{'config-update'} == 0 )
