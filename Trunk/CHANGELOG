@@ -1,6 +1,10 @@
 Rigel change log:
 ================
 
+version x.x
+-----------
+        - 
+
 version 2.0RC1
 --------------
         - Rewrote the entire delivery-mode logic, now more flexible but uses 
