@@ -319,6 +319,11 @@ package RLConfig;
 
         ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:day'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
 
+        $cnf{'date:sec:zp'} = sprintf( "%02d", $cnf{'date:sec'} );
+        $cnf{'date:min:zp'} = sprintf( "%02d", $cnf{'date:min'} );
+        $cnf{'date:hour:zp'} = sprintf( "%02d", $cnf{'date:hour'} );
+        $cnf{'date:day:zp'} = sprintf( "%02d", $cnf{'date:day'} );
+        $cnf{'date:monthnumber:zp'} = sprintf( "%02d", $cnf{'date:monthnumber'} );
         $cnf{'date:dow'} = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat' )[$cnf{'date:weekday'}%7];
         $cnf{'date:dow:lc'} = lc( $cnf{'date:dow'} );
         $cnf{'date:dow:uc'} = uc( $cnf{'date:dow'} );

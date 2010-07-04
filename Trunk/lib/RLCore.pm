@@ -232,7 +232,7 @@ package RLCore;
             # feed for it
             if( $site_config->{'body-source'} eq 'webpage' )
                 {
-                $content = __CreateRSSFeed( $link, $site_config );
+                $content = __CreateRSSFeed( $reallink, $site_config );
                 $feed_last_modified = time();
                 }
             else
