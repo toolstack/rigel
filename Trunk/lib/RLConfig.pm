@@ -330,7 +330,7 @@ package RLConfig;
         $cnf{'date:longdow'} = ( 'Sunday', 'Monday', 'Tueday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' )[$cnf{'date:weekday'}];
         $cnf{'date:longdow:lc'} = lc( $cnf{'date:longdow'} );
         $cnf{'date:longdow:uc'} = uc( $cnf{'date:longdow'} );
-        $cnf{'date:month'} = ( "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec" )[$cnf{'date:monthnumber'}];
+        $cnf{'date:month'} = ( "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" )[$cnf{'date:monthnumber'}];
         $cnf{'date:month:lc'} = lc( $cnf{'date:month'} );
         $cnf{'date:month:uc'} = uc( $cnf{'date:month'} );
         $cnf{'date:longmonth'} = ( "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" )[$cnf{'date:monthnumber'}];
