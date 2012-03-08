@@ -346,9 +346,9 @@ package RLConfig;
 
         if( $rss )
             {
-            $cnf{'channel:title'}       = $rss->title();
-            $cnf{'channel:link'}        = $rss->link();
-            $cnf{'channel:description'} = $rss->description();
+            $cnf{'channel:title'}       = RLCommon::StrTrim( $rss->title() );
+            $cnf{'channel:link'}        = RLCommon::StrTrim( $rss->link() );
+            $cnf{'channel:description'} = RLCommon::StrTrim( $rss->description() );
             $cnf{'channel:dc:date'}     = $rss->pubDate() || "";
 
             $cnf{'channel:hostname'}    = $rss->link();
@@ -360,9 +360,9 @@ package RLConfig;
 
         if( $item )
             {
-            $cnf{'item:description'}  = $item->description();
-            $cnf{'item:link'}         = $item->link();
-            $cnf{'item:title'}        = $item->title();
+            $cnf{'item:description'}  = RLCommon::StrTrim( $item->description() );
+            $cnf{'item:link'}         = RLCommon::StrTrim( $item->link() );
+            $cnf{'item:title'}        = RLCommon::StrTrim( $item->title() );
             $cnf{'item:dc:date'}      = $item->pubDate();
             $cnf{'item:dc:subject'}   = $item->category();
             $cnf{'item:dc:creator'}   = $item->author();
