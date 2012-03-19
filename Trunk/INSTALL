@@ -30,6 +30,7 @@ Requirements
                 Mail::IMAPClient
                 Mail::IMAPClient::BodyStructure
                 Text::Unidecode
+                WWW::Shorten::TinyURL
                 XML::FeedPP
                 XML::Parser
                 XML::Parser::Expat
@@ -184,6 +185,8 @@ Macros
                 %{last-modified}        Last-Modified header which web server
                                         returns.
                 %{item:link}            Link value of every RSS item.
+                %{item:link:tinyurl}    Link value of every RSS item, processed 
+                                        through tinyurl.com.
                 %{item:title}           Title of every RSS item.
                 %{item:description}     Description of every RSS item
                 %{item:dc:date}         dc:date of every RSS item.(undefined
@@ -193,7 +196,7 @@ Macros
                 %{item:dc:creator}      dc:creator of every RSS item.(undefined
                                         in some RSS)
                 %{channel:link}         Link of RSS channel.
-                %{channel:hostname}        The hostname of the channel url.
+                %{channel:hostname}     The hostname of the channel url.
                 %{channel:title}        Title of RSS channel.
                 %{channel:description}  Description of RSS channel.
                 %{channel:dc:date}      dc:date of RSS channel. (undefined in

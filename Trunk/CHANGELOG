@@ -3,12 +3,14 @@ Rigel change log:
 
 version ?.?
 -----------
-		- 
+        - Added %{item:link:tinyurl} config value to get around sites with
+          extreamly long url's that some mail client's cannot process in 
+          their subject lines
 
 version 2.0
 -----------
         - Added strtrim's to feed variables to remove extra spaces on some 
-		  feeds.
+          feeds.
 
 version 2.0RC1
 --------------
@@ -21,7 +23,7 @@ version 2.0RC1
           instead of also processing feeds
         - refreshconfig option now updates both help files and add templates
         - Fixed a bug in the FeedSample that was overwriting the default site
-            configuration variable
+          configuration variable
         - change the V1 config warning message to not display if Rigel's been 
           run with the -R command
         - Added support to send the log file to an IMAP folder

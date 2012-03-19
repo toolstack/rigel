@@ -37,6 +37,7 @@ package RLConfig;
     use RLIMAP;
     use RLTemplates;
     use Exporter;
+	use WWW::Shorten::TinyURL;
 
     our (@ISA, @EXPORT_OK);
     @ISA = qw(Exporter);
@@ -367,7 +368,12 @@ package RLConfig;
             $cnf{'item:dc:subject'}   = $item->category();
             $cnf{'item:dc:creator'}   = $item->author();
 
-            $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} )
+            $cnf{'dashline:item:title'} = "-" x length( $cnf{'item:title'} );
+
+			if( $from =~ m/%{item:link:tinyurl}/ )
+				{
+				$cnf{'item:link:tinyurl'} = WWW::Shorten::TinyURL::makeashorterlink($cnf{'item:link'});
+				}
             }
 
         $cnf{host}            = $DEFAULT_GLOBAL_CONFIG->{host};

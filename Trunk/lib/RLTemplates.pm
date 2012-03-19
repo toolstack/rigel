@@ -152,6 +152,7 @@ $site_config->{'url'}
 #   %{item:dc:subject}                 The item subject
 #   %{item:description}                The item description
 #   %{item:link}                       The item URL
+#   %{item:link:tinyurl}               The item URL, run through tinyurl.com first
 #   %{item:title}                      The item title
 #   %{last-modified}                   The time the feed was last updated
 #   %{newline}                         The newline character
@@ -314,6 +315,8 @@ Macros
                 %{last-modified}        Last-Modified header which web server
                                         returns.
                 %{item:link}            Link value of every RSS item.
+                %{item:link:tinyurl}    Link value of every RSS item, processed 
+										through tinyurl.com.
                 %{item:title}           Title of every RSS item.
                 %{item:description}     Description of every RSS item
                 %{item:dc:date}         dc:date of every RSS item.(undefined
