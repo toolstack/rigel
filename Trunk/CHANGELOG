@@ -4,8 +4,8 @@ Rigel change log:
 version ?.?
 -----------
         - Added %{item:link:tinyurl} and %{channel:link:tinyurl} config value
-		  to get around sites with extreamly long url's that some mail 
-		  client's cannot process in their subject lines
+          to get around sites with extreamly long url's that some mail 
+          client's cannot process in their subject lines
 
 version 2.0
 -----------
