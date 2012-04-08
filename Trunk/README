@@ -26,9 +26,9 @@ Welcome to Rigel, an RSS to IMAP gateway
 
 News
 ----
-		April 8/2102
-				- V2.1 relased!  Added support for TinyURL for channel and item 
-				  links!
+        April 8/2102
+                - V2.1 relased!  Added support for TinyURL for channel and item 
+                  links!
         March 8/2012
                 - V2.0 released!  After a LOOOOONG delay, it's finally here!  Only
                   one minor change since the RC, so I guess it's pretty stable.
@@ -57,15 +57,15 @@ News
 Where to download and get support
 ---------------------------------
         Rigel is hosted at sourceforge (https://sourceforge.net/projects/rigel)
-		and has a homepage with updates at ToolStack.com 
-		(http://toolstack.com/Rigel).
+        and has a homepage with updates at ToolStack.com 
+        (http://toolstack.com/Rigel).
 
 Acknowledgement
 ---------------
         Rigel is a fork from rss2imap, their code, while apparently no
         longer maintained, is still the core of Rigel, please visit
         their sourceforge page (http://sourceforge.net/projects/rss2imap) for 
-		more information.
+        more information.
 
 Change Log
 ----------
