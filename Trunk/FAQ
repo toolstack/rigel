@@ -25,5 +25,7 @@ A: The most likely cause of this is that Rigel by default looks at the article
    question and all articles will be treated as new.  Subject caching will
    then be used as the only methodology to exclude articles from the feed.
 
-
+Q: I upgraded to V2.1 and Rigel now will not run, what happened?
+----------------------------------------------------------------
+A: WWW::Shorten is now a required library, please install it and try again.
 

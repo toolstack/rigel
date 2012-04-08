@@ -30,7 +30,7 @@ Requirements
                 Mail::IMAPClient
                 Mail::IMAPClient::BodyStructure
                 Text::Unidecode
-                WWW::Shorten::TinyURL
+                WWW::Shorten
                 XML::FeedPP
                 XML::Parser
                 XML::Parser::Expat
