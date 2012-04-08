@@ -1,6 +1,9 @@
 Rigel change log:
 =================
 
+version X.Y
+-----------
+
 version 2.1
 -----------
         - Added %{item:link:tinyurl} and %{channel:link:tinyurl} config value
