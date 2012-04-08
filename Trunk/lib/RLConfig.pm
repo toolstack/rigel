@@ -357,6 +357,11 @@ package RLConfig;
             $cnf{'channel:hostname'}     =~ s/\/.*$//;
             
             $cnf{'dashline:channel:title'} = "-" x length( $cnf{'channel:title'} );
+			
+			if( $from =~ m/%{channel:link:tinyurl}/ )
+				{
+				$cnf{'channel:link:tinyurl'} = WWW::Shorten::TinyURL::makeashorterlink($cnf{'channel:link'});
+				}
             }
 
         if( $item )
