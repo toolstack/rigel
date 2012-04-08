@@ -1,7 +1,7 @@
 Rigel change log:
 =================
 
-version ?.?
+version 2.1
 -----------
         - Added %{item:link:tinyurl} and %{channel:link:tinyurl} config value
           to get around sites with extreamly long url's that some mail 
