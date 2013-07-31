@@ -208,9 +208,14 @@ package RLCore;
             RLDebug::OutputDebug( 1, "New TTL epoch = " . HTTP::Date::time2str( $rss_ttl ) );
             }
 
+		# if we have a status update message and we're not disabling the TTL, add the if modified header
         if( $latest )
             {
-            $headers = { 'If-Modified-Since' => HTTP::Date::time2str( $latest ) };
+			if( $site_config->{'force-ttl'} != 0 )
+				{
+				$headers = { 'If-Modified-Since' => HTTP::Date::time2str( $latest ) };
+				}
+				
             $site_config->{'last-updated'} = $latest;
             }
 
@@ -405,6 +410,12 @@ package RLCore;
         my @old_subject_lines = @{$subjects};
         my $old_subject_glob = "\n";
 
+		# Check to make sure the IMAP connection is still active
+		if( $IMAP_CONNECT->IsUnconnected() )
+			{
+			$IMAP_CONNECT->reconnect();
+			}
+		
         # Re-globify the old subject lines for easier searching later if we
         # have any
         if( $subjects )
@@ -750,6 +761,13 @@ BODY
 
         my $folder = RLConfig::ApplyTemplate( undef, undef, 1, "%{dir:lastmod}" );
         $folder = RLIMAP::GetRealFolderName( $folder, $GLOBAL_CONFIG->{'directory_separator'}, $GLOBAL_CONFIG->{'prefix'} );
+
+		# Check to make sure the IMAP connection is still active
+		if( $IMAP_CONNECT->IsUnconnected() )
+			{
+			$IMAP_CONNECT->reconnect();
+			}
+
         RLDebug::OutputDebug( 2, "last update folder: $folder" );
         $IMAP_CONNECT->select( $folder );
         my $uid = $IMAP_CONNECT->append_string( $folder, $body, "Seen" );
@@ -783,7 +801,7 @@ BODY
         my $body        = "";
         my $message        = "";
 
-        # Generate the message headers
+		# Generate the message headers
         $headers = __GetHeaders( $site_config, $rss, $item );
 
         # Format the body and generate any addditional headers that are type dependent (like MHTMLLINK)
@@ -964,6 +982,16 @@ BODY
         RLDebug::OutputDebug( 2, "Post-cropping the body" );
         $body = RLMHTML::CropBody( $body, $site_config->{'post-crop-start'}, $site_config->{'post-crop-end'} );
 
+		# Add the link to the top of the message body.
+        if( $site_config->{'body-process'} eq 'text' )
+			{
+			$body = "Article Link: " . $item->link() . "\r\n\r\n" . $body;
+			}
+		else
+			{
+			$body = "Article Link: <a href='" . $item->link() . "'>" . $item->link() . "</a><br><br>\r\n\r\n" . $body;
+			}
+		
         return ($headers, $body);
         }
 

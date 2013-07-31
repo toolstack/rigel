@@ -132,9 +132,10 @@ package RLIMAP;
     #
     # This function compares IMAP message dates and returns the latest one
     #
-    #     RLIMAP::GetLatestDate( @messages, $date )
+    #     RLIMAP::GetLatestDate( $IMAP_Connection, @messages, $date )
     #
     # Where:
+	#	  $IMAP_Connection is the connection to the IMAP server
     #     @messages is an array of message ID's to compare
     #     $date is the date to use, if omitted, the current date is used
     #
@@ -291,6 +292,5 @@ package RLIMAP;
             }
         }
     }
-
-
+	
 1;
