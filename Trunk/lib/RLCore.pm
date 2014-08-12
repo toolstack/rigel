@@ -1202,14 +1202,14 @@ BODY
                 {
                 $show_v1_alert = 1;
                 
-                ( %config->{'body-source'}, 
-                  %config->{'pre-crop-start'}, 
-                  %config->{'pre-crop-end'}, 
-                  %config->{'body-process'}, 
-                  %config->{'post-crop-start'}, 
-                  %config->{'post-crop-end'} ) = __ConvertV1toV2( %config->{'delivery-mode'}, 
-                                                                  %config->{'crop-start'}, 
-                                                                  %config->{'crop-end'} );
+                ( $config{'body-source'}, 
+                  $config{'pre-crop-start'}, 
+                  $config{'pre-crop-end'}, 
+                  $config{'body-process'}, 
+                  $config{'post-crop-start'}, 
+                  $config{'post-crop-end'} ) = __ConvertV1toV2( $config{'delivery-mode'}, 
+                                                                  $config{'crop-start'}, 
+                                                                  $config{'crop-end'} );
                 }
 
             # If the only-one-feed option has not been enabled, or it has and this is the

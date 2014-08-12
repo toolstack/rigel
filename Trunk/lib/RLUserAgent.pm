@@ -34,7 +34,7 @@ package RLUserAgent;
         (%config)        = %{(shift)};
         my $ua           = LWP::UserAgent->new( @_ );
 
-        $ua->agent( "Rigel/" . %config->{'version'} );
+        $ua->agent( "Rigel/" . $config{'version'} );
 
         bless $ua, $pkg_name;
         }
@@ -61,14 +61,14 @@ package RLUserAgent;
 
         if( $isproxy )
             {
-            if ( %config->{'proxy-user'} && %config->{'proxy-pass'} )
+            if ( $config{'proxy-user'} && $config{'proxy-pass'} )
                 {
-                return ( %config->{'proxy-user'}, %config->{'proxy-pass'} );
+                return ( $config{'proxy-user'}, $config{'proxy-pass'} );
                 }
 
-            if ( %config->{'proxy-user'})
+            if ( $config{'proxy-user'})
                 {
-                return ( %config->{'proxy-user'}, RLCommon::GetPass( "Your Proxy Password: ", 1 ) );
+                return ( $config{'proxy-user'}, RLCommon::GetPass( "Your Proxy Password: ", 1 ) );
                 }
             else
                 {
