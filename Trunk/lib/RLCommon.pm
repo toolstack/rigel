@@ -49,17 +49,17 @@ package RLCommon;
         {
         (%config) = %{(shift)};
 
-        my $filename = RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} );
+        my $filename = RLConfig::ApplyTemplate( undef, undef, undef, $config{'log-file'} );
 
         $CurrentLog = $filename;
         
-        if( %config->{'log-file'} )
+        if( $config{'log-file'} )
             {
-            if( %config->{'log-rotate'} eq "append" )
+            if( $config{'log-rotate'} eq "append" )
                 {
                 open( $LogFH, ">>" . $filename );
                 }
-            elsif( %config->{'log-rotate'} eq "unique" )
+            elsif( $config{'log-rotate'} eq "unique" )
                 {
                 open( $LogFH, ">>" . $filename );
                 }
@@ -78,11 +78,11 @@ package RLCommon;
     #
     sub RotateLog
         {
-        if( %config->{'log-rotate'} eq "unique" )
+        if( $config{'log-rotate'} eq "unique" )
             {
             close( $LogFH );
 
-            $CurrentLog = RLConfig::ApplyTemplate( undef, undef, undef, %config->{'log-file'} );
+            $CurrentLog = RLConfig::ApplyTemplate( undef, undef, undef, $config{'log-file'} );
             open( $LogFH, ">>" . $CurrentLog );
             }
 
@@ -109,11 +109,11 @@ package RLCommon;
         my $ua               = RLUserAgent->new( \%config );
         my @rss_and_response = ();
 
-        RLDebug::OutputDebug( 2, "Proxy Dump = ", %config->{'proxy'} );
+        RLDebug::OutputDebug( 2, "Proxy Dump = ", $config{'proxy'} );
 
-        if( %config->{'proxy'} )
+        if( $config{'proxy'} )
             {
-            $ua->proxy( ['http','ftp'], %config->{'proxy'} );
+            $ua->proxy( ['http','ftp'], $config{'proxy'} );
             }
 
         my $request = HTTP::Request->new( 'GET' );
@@ -201,9 +201,9 @@ package RLCommon;
             $prompt = "UserName: ";
             }
 
-        if( $isproxy && defined %config->{'proxy-user'} )
+        if( $isproxy && defined $config{'proxy-user'} )
             {
-            return %config->{'proxy-user'};
+            return $config{'proxy-user'};
             }
 
         # prompt and get username
@@ -212,7 +212,7 @@ package RLCommon;
         chomp( $user );
         $user = undef unless length $user;
 
-        if( !defined %config->{'proxy-user'} && $isproxy )
+        if( !defined $config{'proxy-user'} && $isproxy )
             {
             # add username to @ARGV
             push @ARGV, "--proxy-user";
@@ -242,9 +242,9 @@ package RLCommon;
             $prompt = "Password: ";
             }
 
-        if( $isproxy && defined %config->{'proxy-pass'} )
+        if( $isproxy && defined $config{'proxy-pass'} )
             {
-            return %config->{'proxy-pass'};
+            return $config{'proxy-pass'};
             }
 
         RLCommon::LogLine( $prompt );
@@ -283,7 +283,7 @@ package RLCommon;
         chomp( $password );
         $password = undef unless length $password;
 
-        if( !defined %config->{'proxy-pass'} && $isproxy )
+        if( !defined $config{'proxy-pass'} && $isproxy )
             {
             # add password to @ARGV
             push @ARGV, "--proxy-pass";
@@ -302,7 +302,7 @@ package RLCommon;
     sub GetProxyPass
         {
 
-        if( %config->{'proxy'} && %config->{'proxy-user'} )
+        if( $config{'proxy'} && $config{'proxy-user'} )
             {
             GetPass( 'proxy password: ', 1 );
             }
@@ -362,13 +362,13 @@ package RLCommon;
 
         # If we have a logfile to write to, then don't write to the console, unless
         # we are being forced to.
-        if( ( not defined( %config->{'log-file'} ) ) || defined( %config->{'force-console'} ) )
+        if( ( not defined( $config{'log-file'} ) ) || defined( $config{'force-console'} ) )
             {
             print $line;
             }
 
         # Write ot the logfile if we have one.
-        if( defined( %config->{'log-file'} ) )
+        if( defined( $config{'log-file'} ) )
             {
             print $LogFH $line;
             }
@@ -405,33 +405,33 @@ package RLCommon;
         my $data;
         my $n;
         my $folder;
-        
-        if( %config->{'log-folder'} ne undef )
+       
+	# if there is no folder to store the log file, just return as there is nothing to do. 
+        if( $config{'log-folder'} eq undef )
+	    {
+	    return;
+	    }
+
+        $folder = RLConfig::ApplyTemplate( undef, undef, 1, $config{'log-folder'} );
+        $folder = RLIMAP::GetRealFolderName( $folder, $config{'directory_separator'}, $config{'prefix'} );
+        RLDebug::OutputDebug( 1, "Log folder = $folder" );
+        RLIMAP::IMAPSelectFolder( $imap, $folder );
+
+        # if we're supposed to overwrite the log file, then we should
+        # delete all messages in the log folder before we append the
+        # new one.
+        if( $config{'log-rotate'} eq 'overwrite' )
             {
-            $folder = RLConfig::ApplyTemplate( undef, undef, 1, %config->{'log-folder'} );
-            $folder = RLIMAP::GetRealFolderName( $folder, %config->{'directory_separator'}, %config->{'prefix'} );
-            RLDebug::OutputDebug( 1, "Log folder = $folder" );
-            RLIMAP::IMAPSelectFolder( $imap, $folder );
-
-            # if we're supposed to overwrite the log file, then we should
-            # delete all messages in the log folder before we append the
-            # new one.
-            if( %config->{'log-rotate'} eq 'overwrite' )
+            my @messages = $imap->messages();
+            my $message;
+                
+            foreach $message (@messages)
                 {
-                my @messages = $imap->messages();
-
-                # If we're updating the configuration messages, delete all the help messages
-                # as well to ensure the templates are up to date.
-                my $message;
-                
-                foreach $message (@messages)
-                    {
-                    $imap->delete_message( $message );
-                    }
-                
-                $imap->select( $folder );
-                $imap->expunge( $folder );  # For some reason the folder has to be passed here otherwise the expunge fails
+                $imap->delete_message( $message );
                 }
+                
+            $imap->select( $folder );
+            $imap->expunge( $folder );  # For some reason the folder has to be passed here otherwise the expunge fails
             }
             
         my $headers =<<"BODY"
