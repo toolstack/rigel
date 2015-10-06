@@ -320,6 +320,10 @@ package RLConfig;
 
         ($cnf{'date:sec'},$cnf{'date:min'},$cnf{'date:hour'},$cnf{'date:day'},$cnf{'date:monthnumber'},$cnf{'date:year'},$cnf{'date:weekday'},$cnf{'date:yearday'}) = localtime(time);
 
+        $cnf{'date:year'} += 1900;
+        $cnf{'date:weekday'} += 1;
+        $cnf{'date:yearday'} += 1;
+
         $cnf{'date:sec:zp'} = sprintf( "%02d", $cnf{'date:sec'} );
         $cnf{'date:min:zp'} = sprintf( "%02d", $cnf{'date:min'} );
         $cnf{'date:hour:zp'} = sprintf( "%02d", $cnf{'date:hour'} );
@@ -337,13 +341,11 @@ package RLConfig;
         $cnf{'date:longmonth'} = ( "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" )[$cnf{'date:monthnumber'}];
         $cnf{'date:longmonth:lc'} = lc( $cnf{'date:longmonth'} );
         $cnf{'date:longmonth:uc'} = uc( $cnf{'date:longmonth'} );
-        $cnf{'date:year'} += 1900;
-        $cnf{'date:monthnumber'} += 1;
-        $cnf{'date:weekday'} += 1;
-        $cnf{'date:yearday'} += 1;
         $cnf{'date:sec'} = sprintf( "%02d", $cnf{'date:sec'} );
         $cnf{'date:min'} = sprintf( "%02d", $cnf{'date:min'} );
         $cnf{'date:hour'} = sprintf( "%02d", $cnf{'date:hour'} );
+
+        $cnf{'date:monthnumber'} += 1;
 
         if( $rss )
             {
